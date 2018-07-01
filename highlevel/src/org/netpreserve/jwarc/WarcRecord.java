@@ -9,7 +9,7 @@ import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
 import java.time.Instant;
 
-public interface WarcRecord extends HasHeaders {
+public interface WarcRecord extends Message {
 
     /**
      * The type of WARC record. No identifier scheme is mandated by this specification, but each WARC-Record-ID shall be
@@ -35,13 +35,6 @@ public interface WarcRecord extends HasHeaders {
      */
     default Instant getDate() {
         return Instant.parse(getHeaders().get(WarcHeaders.WARC_DATE));
-    }
-
-    /**
-     * The number of octets in the block or zero if no block is present.
-     */
-    default long getContentLength() {
-        return Long.parseLong(WarcHeaders.CONTENT_LENGTH);
     }
 
     /**
@@ -85,17 +78,13 @@ public interface WarcRecord extends HasHeaders {
         return value == null ? null : Long.valueOf(value);
     }
 
-    interface Builder<R extends WarcRecord, B extends Builder<R,B>> extends HasHeaders.Builder<R,B> {
+    interface Builder<R extends WarcRecord, B extends Builder<R,B>> extends Message.Builder<R,B> {
         default B setRecordId(String recordId) {
             return setHeader(WarcHeaders.WARC_RECORD_ID, recordId);
         }
 
         default B setDate(Instant date) {
             return setHeader(WarcHeaders.WARC_DATE, date.toString());
-        }
-
-        default B setContentLength(long contentLength) {
-            return setHeader(WarcHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
         }
 
         default B setBlockDigest(String algorithm, String value) {

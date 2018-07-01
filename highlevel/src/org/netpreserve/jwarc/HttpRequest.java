@@ -5,6 +5,5 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcRequest extends WarcRecord, HasConcurrentTo, HasPayload, HasTargetURI,
-        HasIPAddress {
+public interface HttpRequest extends HttpMessage {
 }

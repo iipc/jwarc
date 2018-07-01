@@ -7,7 +7,7 @@ package org.netpreserve.jwarc;
 
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
-public interface WarcInfo extends WarcRecord, HasContentType {
+public interface WarcInfo extends WarcRecord {
     /**
      * The filename containing this 'warcinfo' record.
      */
@@ -15,7 +15,7 @@ public interface WarcInfo extends WarcRecord, HasContentType {
         return getHeaders().get(WarcHeaders.WARC_FILENAME);
     }
 
-    interface Builder extends HasContentType.Builder<WarcConversion, Builder> {
+    interface Builder extends WarcRecord.Builder<WarcConversion, Builder> {
         default Builder getFilename(String filename) {
             return setHeader(WarcHeaders.WARC_FILENAME, filename);
         }

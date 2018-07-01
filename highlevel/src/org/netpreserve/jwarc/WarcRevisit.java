@@ -9,7 +9,7 @@ import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
 import java.time.Instant;
 
-public interface WarcRevisit extends WarcRecord, HasContentType, HasConcurrentTo, HasRefersTo, HasPayload, HasTargetURI,
+public interface WarcRevisit extends WarcRecord, HasConcurrentTo, HasRefersTo, HasPayload, HasTargetURI,
         HasIPAddress {
     /**
      * The WARC-Target-URI of a record for which the present record is considered a revisit of.

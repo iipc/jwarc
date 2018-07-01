@@ -5,16 +5,18 @@
 
 package org.netpreserve.jwarc;
 
+import org.netpreserve.jwarc.lowlevel.HeaderField;
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 import org.netpreserve.jwarc.lowlevel.WarcTypes;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WarcRecords {
-    private static Map<String,WarcRecordConstructor> constructors = initConstructors();
+    private static Map<String, WarcRecordConstructor> constructors = initConstructors();
 
     private static Map<String, WarcRecordConstructor> initConstructors() {
         Map<String, WarcRecordConstructor> map = new ConcurrentHashMap<>();
@@ -37,15 +39,15 @@ public class WarcRecords {
     }
 
     /**
-     * Construct a WarcRecord for map of valid headers.
-     *
+     * Construct a WarcRecord from a map of headers.
+     * <p>
      * Constructors for extension WARC-Type values may be registered using the
      * {@link #registerConstructor(String, WarcRecordConstructor)} method.
      *
      * @throws IllegalArgumentException if the WARC-Type header is unknown or missing
      */
-    public static WarcRecord fromHeaders(Map<String,String> headers) {
-        Map<String, String> copy = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    public static WarcRecord fromHeaders(Map<HeaderField, String> headers) {
+        Map<HeaderField, String> copy = new HashMap<>();
         copy.putAll(headers);
         copy = Collections.unmodifiableMap(copy);
 

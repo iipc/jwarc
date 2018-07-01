@@ -5,13 +5,14 @@
 
 package org.netpreserve.jwarc;
 
+import org.netpreserve.jwarc.lowlevel.HeaderField;
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public abstract class WarcRecordBuilderImpl<R extends WarcRecord, B extends WarcRecord.Builder<R, B>> implements WarcRecord.Builder<R, B> {
-    protected Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    protected Map<HeaderField, String> headers = new HashMap<>();
 
     WarcRecordBuilderImpl(String warcType) {
         headers.put(WarcHeaders.WARC_TYPE, warcType);
@@ -19,7 +20,7 @@ public abstract class WarcRecordBuilderImpl<R extends WarcRecord, B extends Warc
 
     @Override
     @SuppressWarnings("unchecked")
-    public B setHeader(String header, String value) {
+    public B setHeader(HeaderField header, String value) {
         headers.put(header, value);
         return (B) this;
     }

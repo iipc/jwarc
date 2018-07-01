@@ -7,8 +7,8 @@ package org.netpreserve.jwarc;
 
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
-public interface WarcConversion extends WarcRecord, HasContentType, HasRefersTo, HasPayload, HasTargetURI {
-    interface Builder extends HasContentType.Builder<WarcConversion, Builder>,
+public interface WarcConversion extends WarcRecord, HasRefersTo, HasPayload, HasTargetURI {
+    interface Builder extends
             HasRefersTo.Builder<WarcConversion, Builder>,
             HasTargetURI.Builder<WarcConversion, Builder>,
             HasPayload.Builder<WarcConversion, Builder> {

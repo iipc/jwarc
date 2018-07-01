@@ -5,10 +5,9 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcMetadata extends WarcRecord, HasContentType, HasConcurrentTo, HasRefersTo, HasTargetURI,
+public interface WarcMetadata extends WarcRecord, HasConcurrentTo, HasRefersTo, HasTargetURI,
         HasIPAddress {
-    interface Builder extends HasContentType.Builder<WarcMetadata, Builder>,
-            HasRefersTo.Builder<WarcMetadata, Builder>,
+    interface Builder extends HasRefersTo.Builder<WarcMetadata, Builder>,
             HasTargetURI.Builder<WarcMetadata, Builder>,
             HasConcurrentTo.Builder<WarcMetadata, Builder> {
     }

@@ -5,10 +5,9 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcResource extends WarcRecord, HasContentType, HasConcurrentTo, HasPayload, HasTargetURI,
+public interface WarcResource extends WarcRecord, HasConcurrentTo, HasPayload, HasTargetURI,
         HasIPAddress {
-    interface Builder extends HasContentType.Builder<WarcResource, Builder>,
-            HasConcurrentTo.Builder<WarcResource, Builder>,
+    interface Builder extends HasConcurrentTo.Builder<WarcResource, Builder>,
             HasTargetURI.Builder<WarcResource, Builder>,
             HasPayload.Builder<WarcResource, Builder> {
     }
