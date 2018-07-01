@@ -1,0 +1,104 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ */
+
+package org.netpreserve.jwarc;
+
+import java.security.MessageDigest;
+import java.util.Locale;
+import java.util.Objects;
+
+public class Digest {
+
+    private final String algorithm;
+    private final String value;
+
+    public Digest(String digest) {
+        int i = digest.indexOf(':');
+        if (i == -1) {
+            throw new IllegalArgumentException("Invalid WARC-Digest");
+        }
+        this.algorithm = digest.substring(0, i);
+        this.value = digest.substring(i + 1);
+    }
+
+    public Digest(String algorithm, String value) {
+        this.algorithm = algorithm;
+        this.value = value;
+    }
+
+    public Digest(String algorithm, byte[] value) {
+        this(algorithm, base32Encode(value));
+    }
+
+    public Digest(MessageDigest messageDigest) {
+        algorithm = messageDigest.getAlgorithm().replace("-", "").toLowerCase(Locale.US);
+        value = base32Encode(messageDigest.digest());
+    }
+
+    String getAlgorithm() {
+        return algorithm;
+    }
+
+    String toBase32() {
+        return value;
+    }
+
+    byte[] getBytes() { return base32Decode(value); }
+
+    public String toPrefixedBase32() {
+        return algorithm + ":" + value;
+    }
+
+    static String base32Encode(byte[] data) {
+        StringBuilder out = new StringBuilder(data.length / 5 * 8);
+        for (int i = 0; i < data.length;) {
+            long bits = 0L;
+            for (int j = 0; j < 5; j++) {
+                bits = bits << 8 | data[i++] & 0xff;
+            }
+            for (int j = 0; j < 8; j++) {
+                out.append("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".charAt((int) (bits >> 5 * (7 - j)) & 31));
+            }
+        }
+        return out.toString();
+    }
+
+    static byte[] base32Decode(String data) {
+        byte[] out = new byte[data.length() / 8 * 5];
+        for (int i = 0, k = 0; k < out.length;) {
+            long bits = 0L;
+            for (int j = 0; j < 8; j++) {
+                int c = data.charAt(i++) | 'A' ^ 'a';
+                int value;
+                if (c >= 'a' && c <= 'z') {
+                    value = c - 'a';
+                } else if (c >= '2' && c <= '7') {
+                    value = c - '2' + 26;
+                } else {
+                    throw new IllegalArgumentException("Invalid base32 character: " + c);
+                }
+                bits = bits << 5 | value;
+            }
+            for (int j = 0; j < 5; j++) {
+                out[k++] = (byte) ((bits >> 8 * (4 - j)) & 0xff);
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Digest digest = (Digest) o;
+        return Objects.equals(algorithm, digest.algorithm) &&
+                Objects.equals(value, digest.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(algorithm, value);
+    }
+}
