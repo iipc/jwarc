@@ -5,14 +5,13 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 import org.netpreserve.jwarc.lowlevel.WarcTypes;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WarcRecords {
@@ -46,8 +45,8 @@ public class WarcRecords {
      *
      * @throws IllegalArgumentException if the WARC-Type header is unknown or missing
      */
-    public static WarcRecord fromHeaders(Map<HeaderField, String> headers) {
-        Map<HeaderField, String> copy = new HashMap<>();
+    public static WarcRecord fromHeaders(Map<HeaderName, String> headers) {
+        Map<HeaderName, String> copy = new HashMap<>();
         copy.putAll(headers);
         copy = Collections.unmodifiableMap(copy);
 

@@ -7,29 +7,41 @@ package org.netpreserve.jwarc.lowlevel;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-public final class HeaderField {
+/**
+ * Case-insensitive header field name.
+ *
+ * Per the WARC and HTTP specifications field names must be ASCII and cannot cannot control characters or separators.
+ */
+public final class HeaderName {
+    private static final boolean[] ILLEGAL = initIllegalLookup();
     private final byte[] bytes;
     private int hashCode;
 
-    HeaderField(ByteBuffer buffer) {
-        bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+    public HeaderName(String name) {
+        bytes = name.getBytes(US_ASCII);
+        for (byte b : bytes) {
+            if (ILLEGAL[b]) {
+                throw new IllegalArgumentException("illegal character in field name: " + b);
+            }
+        }
     }
 
-    HeaderField(String name) {
-        this.bytes = name.getBytes(US_ASCII);
+    /**
+     * Assumes the parser has already verified the name is legal.
+     */
+    HeaderName(byte[] bytes, int length) {
+        this.bytes = Arrays.copyOf(bytes, length);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        HeaderField that = (HeaderField) o;
+        HeaderName that = (HeaderName) o;
         if (bytes.length != that.bytes.length) return false;
         if (hashCode != 0 && that.hashCode != 0 && hashCode != that.hashCode()) return false;
         for (int i = 0; i < bytes.length; i++) {
@@ -79,5 +91,16 @@ public final class HeaderField {
         return new String(bytes, US_ASCII);
     }
 
+    private static boolean[] initIllegalLookup() {
+        boolean[] illegal = new boolean[256];
+        String separators = "()<>@,;:\\\"/[]?={} \t";
+        for (int i = 0; i < separators.length(); i++) {
+            illegal[separators.charAt(i)] = true;
+        }
+        for (int i = 0; i < 32; i++) { // control characters
+            illegal[i] = true;
+        }
+        return illegal;
+    }
 
 }

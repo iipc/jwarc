@@ -5,19 +5,19 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 
 import java.util.Map;
 
 class WarcRecordImpl implements WarcRecord {
-    private final Map<HeaderField,String> headers;
+    private final Map<HeaderName,String> headers;
 
-    WarcRecordImpl(Map<HeaderField, String> headers) {
+    WarcRecordImpl(Map<HeaderName, String> headers) {
         this.headers = headers;
     }
 
     @Override
-    public Map<HeaderField, String> getHeaders() {
+    public Map<HeaderName, String> getHeaders() {
         return headers;
     }
 }

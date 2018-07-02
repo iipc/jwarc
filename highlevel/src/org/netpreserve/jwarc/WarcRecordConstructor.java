@@ -5,11 +5,11 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 
 import java.util.Map;
 
 @FunctionalInterface
 public interface WarcRecordConstructor {
-    WarcRecord construct(Map<HeaderField, String> headers);
+    WarcRecord construct(Map<HeaderName, String> headers);
 }

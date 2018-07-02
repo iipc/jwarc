@@ -5,13 +5,13 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 import org.netpreserve.jwarc.lowlevel.WarcTypes;
 
 import java.util.Map;
 
 class WarcContinuationImpl extends WarcRecordImpl implements WarcContinuation {
-    WarcContinuationImpl(Map<HeaderField, String> headers) {
+    WarcContinuationImpl(Map<HeaderName, String> headers) {
         super(headers);
     }
 

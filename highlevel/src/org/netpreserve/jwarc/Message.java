@@ -5,7 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 import org.netpreserve.jwarc.lowlevel.WarcHeaders;
 
 import java.util.Map;
@@ -14,7 +14,7 @@ import java.util.Map;
  * A message consisting of headers and a content block. Forms the basis of protocols and formats like HTTP and WARC.
  */
 public interface Message {
-    Map<HeaderField, String> getHeaders();
+    Map<HeaderName, String> getHeaders();
 
     /**
      * The number of octets in the block or zero if no block is present.
@@ -34,7 +34,7 @@ public interface Message {
     interface Builder<R extends Message, B extends Builder<R, B>> {
         R build();
 
-        B setHeader(HeaderField header, String value);
+        B setHeader(HeaderName header, String value);
 
         default B setContentLength(long contentLength) {
             return setHeader(WarcHeaders.CONTENT_LENGTH, String.valueOf(contentLength));

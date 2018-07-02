@@ -5,12 +5,12 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 
 import java.util.Map;
 
 class WarcRequestImpl extends WarcRecordImpl implements WarcRequest {
-    WarcRequestImpl(Map<HeaderField, String> headers) {
+    WarcRequestImpl(Map<HeaderName, String> headers) {
         super(headers);
     }
 }

@@ -5,12 +5,12 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderField;
+import org.netpreserve.jwarc.lowlevel.HeaderName;
 
 import java.util.Map;
 
 class WarcRevisitImpl extends WarcRecordImpl implements WarcRevisit {
-    WarcRevisitImpl(Map<HeaderField, String> headers) {
+    WarcRevisitImpl(Map<HeaderName, String> headers) {
         super(headers);
     }
 }
