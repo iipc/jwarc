@@ -5,7 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+import org.netpreserve.jwarc.parser.ProtocolVersion;
 
 import java.nio.channels.ReadableByteChannel;
 

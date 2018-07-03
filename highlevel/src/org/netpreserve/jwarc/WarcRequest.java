@@ -5,7 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+import org.netpreserve.jwarc.parser.ProtocolVersion;
 
 public class WarcRequest extends WarcCaptureRecord {
     WarcRequest(ProtocolVersion version, Headers headers, WarcBody body) {

@@ -44,7 +44,7 @@ warc_header := version warc_fields @{ fbreak; };
 
 }%%
 
-package org.netpreserve.jwarc.lowlevel;
+package org.netpreserve.jwarc.parser;
 
 import java.nio.ByteBuffer;
 import java.util.*;

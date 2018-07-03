@@ -11,7 +11,7 @@
 // line 45 "WarcHeaderParser.rl"
 
 
-package org.netpreserve.jwarc.lowlevel;
+package org.netpreserve.jwarc.parser;
 
 import java.nio.ByteBuffer;
 import java.util.*;

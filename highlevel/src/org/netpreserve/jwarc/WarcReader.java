@@ -5,7 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.FormatDetectingParser;
+import org.netpreserve.jwarc.parser.FormatDetectingParser;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

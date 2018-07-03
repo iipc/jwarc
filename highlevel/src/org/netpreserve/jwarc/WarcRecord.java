@@ -5,9 +5,9 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
-import org.netpreserve.jwarc.lowlevel.WarcHeaderHandler;
-import org.netpreserve.jwarc.lowlevel.WarcHeaderParser;
+import org.netpreserve.jwarc.parser.ProtocolVersion;
+import org.netpreserve.jwarc.parser.WarcHeaderHandler;
+import org.netpreserve.jwarc.parser.WarcHeaderParser;
 
 import java.io.EOFException;
 import java.io.IOException;
