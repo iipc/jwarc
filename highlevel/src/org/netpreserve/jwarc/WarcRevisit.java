@@ -5,34 +5,50 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.WarcHeaders;
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
 
+import java.net.URI;
 import java.time.Instant;
+import java.util.Optional;
 
-public interface WarcRevisit extends WarcRecord, HasConcurrentTo, HasRefersTo, HasPayload, HasTargetURI,
-        HasIPAddress {
+/**
+ * A WARC record describing a subsequent visitation of content previously archived. Typically used to indicate the
+ * content had not changed and therefore a duplicate copy of it was not recorded.
+ */
+public abstract class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
     /**
-     * The WARC-Target-URI of a record for which the present record is considered a revisit of.
+     * Revisit profile for when the payload content was the same as determined by a strong digest function.
      */
-    default String getRefersToTargetURI() {
-        return getHeaders().get(WarcHeaders.WARC_REFERS_TO_TARGET_URI);
+    URI IDENTICAL_PAYLOAD_DIGEST = URI.create("http://netpreserve.org/warc/1.1/revisit/identical-payload-digest");
+
+    /**
+     * Revisit profile for when the server said the content had not changed.
+     */
+    URI SERVER_NOT_MODIFIED = URI.create("http://netpreserve.org/warc/1.1/revisit/server-not-modified");
+
+    WarcRevisit(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
     }
 
     /**
-     * The WARC-Date of a record for which the present record is considered a revisit of.
+     * The target URI of the record this record is a revisit of.
      */
-    default Instant getRefersToDate() {
-        String value = getHeaders().get(WarcHeaders.WARC_REFERS_TO_DATE);
-        return value == null ? null : Instant.parse(value);
+    public Optional<URI> refersToTargetURI() {
+        return headers().sole("WARC-Refers-To-Target-URI").map(URI::create);
     }
 
     /**
-     * A URI signifying the kind of analysis and handling applied in a ‘revisit’ record. (Like an XML namespace, the URI
-     * may, but needs not, return human-readable or machine-readable documentation.) If reading software does not
-     * recognize the given URI as a supported kind of handling, it shall not attempt to interpret the associated record
-     * block.
+     * The date of the record this record is a revisit of.
      */
-    default String getProfile() {
-        return getHeaders().get(WarcHeaders.WARC_PROFILE);
+    public Optional<Instant> refersToDate() {
+        return headers().sole("WARC-Refers-To-Date").map(Instant::parse);
+    }
+
+    /**
+     * The revisit profile explaining why this capture was written as a revisit record. The standard profiles are
+     * {@link #IDENTICAL_PAYLOAD_DIGEST} and {@link #SERVER_NOT_MODIFIED}.
+     */
+    public URI profile() {
+        return headers().sole("WARC-Profile").map(URI::create).get();
     }
 }

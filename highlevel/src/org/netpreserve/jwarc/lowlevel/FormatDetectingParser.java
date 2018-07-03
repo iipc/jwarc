@@ -9,11 +9,16 @@ import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-public class MagicParser {
+public class FormatDetectingParser {
     private State state = State.START;
     private GzipHeaderParser gzipHeaderParser;
+    private WarcHeaderParser warcHeaderParser;
     private ByteBuffer buffer = ByteBuffer.allocate(1024);
     private Inflater inflater;
+
+    public FormatDetectingParser(WarcHeaderHandler handler) {
+        warcHeaderParser = new WarcHeaderParser(handler);
+    }
 
     public void update(ByteBuffer data) throws DataFormatException {
         if (inflater == null) {
@@ -51,6 +56,13 @@ public class MagicParser {
                     state = State.START;
                 }
                 break;
+
+            case WARC_HEADER:
+                warcHeaderParser.parse(data);
+                if (warcHeaderParser.isFinished()) {
+
+                }
+
         }
     }
 

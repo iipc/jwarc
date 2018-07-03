@@ -7,6 +7,11 @@ package org.netpreserve.jwarc;
 
 public enum TruncationReason {
     /**
+     * no truncation occurred
+     */
+    NOT_TRUNCATED,
+
+    /**
      * exceeds configured max length
      */
     LENGTH,
@@ -24,5 +29,5 @@ public enum TruncationReason {
     /**
      * other/unknown reason
      */
-    UNSPECIFIED
+    UNSPECIFIED;
 }

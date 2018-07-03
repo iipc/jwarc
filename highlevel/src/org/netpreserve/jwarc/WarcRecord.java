@@ -5,106 +5,154 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.WarcHeaders;
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+import org.netpreserve.jwarc.lowlevel.WarcHeaderHandler;
+import org.netpreserve.jwarc.lowlevel.WarcHeaderParser;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-public interface WarcRecord extends Message {
+public class WarcRecord extends Message {
+    private static final Map<String, Constructor> constructors = new ConcurrentHashMap<>();
+    private final WarcBody warcBody;
 
-    /**
-     * The type of WARC record. No identifier scheme is mandated by this specification, but each WARC-Record-ID shall be
-     * a legal URI and clearly indicate a documented and registered scheme to which it conforms (e.g. via a URI scheme
-     * prefix such as "http:" or "urn:").
-     *
-     * All records shall have a WARC-Record-ID field.
-     */
-    default String getType() {
-        return getHeaders().get(WarcHeaders.WARC_TYPE);
+    static {
+        constructors.put("continuation", WarcContinuation::new);
+        constructors.put("conversion", WarcConversion::new);
+        constructors.put("metadata", WarcMetadata::new);
+        constructors.put("request", WarcRequest::new);
+        constructors.put("resource", WarcResource::new);
+        constructors.put("response", WarcResponse::new);
+        constructors.put("warcinfo", Warcinfo::new);
+    }
+
+    WarcRecord(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+        this.warcBody = body;
+    }
+
+    @Override
+    public WarcBody body() {
+        return warcBody;
     }
 
     /**
-     * An identifier assigned to the current record that is globally unique for its period of intended use.
+     * The globally unique identifier for this record.
      */
-    default String getRecordId() {
-        return getHeaders().get(WarcHeaders.WARC_RECORD_ID);
+    public URI id() {
+        return URI.create(headers().sole("WARC-Record-ID").get());
     }
 
     /**
-     * The instant that data capture for record creation began. Multiple records written as part of a single capture
-     * event should use the same date, even though the times of their writing will not be exactly synchronized.
+     * The instant that data capture for this record began.
      */
-    default Instant getDate() {
-        return Instant.parse(getHeaders().get(WarcHeaders.WARC_DATE));
+    public Instant date() {
+        return Instant.parse(headers().sole("WARC-Date").get());
     }
 
-    /**
-     * An optional parameter indicating the algorithm name and calculated value of a digest applied to the full block
-     * of the record.
-     */
-    default Digest getBlockDigest() {
-        String value = getHeaders().get(WarcHeaders.WARC_BLOCK_DIGEST);
-        return value == null ? null : new Digest(value);
-    }
 
     /**
-     * For practical reasons, writers of a WARC file may place limits on the time or storage allocated to archiving
-     * a single resource. As a result, only a truncated portion of the original resource may be available for saving
-     * into a WARC record.
+     * The reason why this record was truncated or {@link TruncationReason#NOT_TRUNCATED}.
      */
-    default TruncationReason getTruncated() {
-        String value = getHeaders().get(WarcHeaders.WARC_TRUNCATED);
-        return value == null ? null : TruncationReason.valueOf(value.toUpperCase());
-    }
-
-    /**
-     * When present the record ID of the associated {@link WarcInfo} record for this record. Typically, this is set
-     * only when the {@link WarcInfo} is not available from context such as after distributing single records into
-     * separate WARC files.
-     */
-    default String getWarcinfoId() {
-        return getHeaders().get(WarcHeaders.WARC_WARCINFO_ID);
+    public TruncationReason truncated() {
+        return headers().sole("WARC-Truncated")
+                .map(value -> TruncationReason.valueOf(value.toUpperCase()))
+                .orElse(TruncationReason.NOT_TRUNCATED);
     }
 
     /**
      * The current record's relative ordering in a sequence of segmented records.
-     *
+     * <p>
      * In the first segment of any record that is completed in one or more later {@link WarcContinuation} records, this
      * parameter is mandatory. Its value there is "1". In a {@link WarcContinuation} record, this parameter is also
      * mandatory. Its value is the sequence number of the current segment in the logical whole record, increasing by
      * 1 in each next segment.
      */
-    default Long getSegmentNumber() {
-        String value = getHeaders().get(WarcHeaders.WARC_SEGMENT_NUMBER);
-        return value == null ? null : Long.valueOf(value);
+    public Optional<Long> segmentNumber() {
+        return headers().sole("WARC-Segment-Number").map(Long::valueOf);
     }
 
-    interface Builder<R extends WarcRecord, B extends Builder<R,B>> extends Message.Builder<R,B> {
-        default B setRecordId(String recordId) {
-            return setHeader(WarcHeaders.WARC_RECORD_ID, recordId);
+
+    public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        Handler handler = new Handler();
+        WarcHeaderParser parser = new WarcHeaderParser(handler);
+
+        while (true) {
+            parser.parse(buffer);
+            if (parser.isFinished()) break;
+            if (parser.isError()) throw new ParsingException("invalid warc file");
+            buffer.compact();
+            int n = channel.read(buffer);
+            if (n < 0) throw new EOFException();
+            buffer.flip();
         }
 
-        default B setDate(Instant date) {
-            return setHeader(WarcHeaders.WARC_DATE, date.toString());
+        Headers headers = new Headers(handler.headerMap);
+        WarcBody body = new WarcBody(headers, channel, buffer);
+        String type = headers.sole("WARC-Type").orElse("unknown");
+        return constructors.getOrDefault(type, WarcRecord::new).construct(handler.version, headers, body);
+    }
+
+    public static WarcRecord parse(ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
+        return parse(channel, buffer);
+    }
+
+    @FunctionalInterface
+    public interface Constructor {
+        WarcRecord construct(ProtocolVersion version, Headers headers, WarcBody body);
+    }
+
+    private static class Handler implements WarcHeaderHandler {
+        private Map<String,List<String>> headerMap = new TreeMap<>();
+        private String name;
+        private ProtocolVersion version;
+
+        @Override
+        public void version(ProtocolVersion version) {
+            this.version = version;
         }
 
-        default B setBlockDigest(String algorithm, String value) {
-            return setBlockDigest(new Digest(algorithm, value));
+        @Override
+        public void name(String name) {
+            this.name = name;
         }
 
-        default B setBlockDigest(Digest digest) {
-            return setHeader(WarcHeaders.WARC_BLOCK_DIGEST, digest.toPrefixedBase32());
+        @Override
+        public void value(String value) {
+            headerMap.computeIfAbsent(name, name -> new ArrayList<>()).add(value);
+        }
+    }
+
+    public static abstract class Builder<R extends WarcRecord, B extends Builder<R, B>> extends Message.Builder<R, B> {
+        public B recordId(String recordId) {
+            return header("WARC-Record-ID", recordId);
         }
 
-        default B setTruncated(TruncationReason truncationReason) {
-            return setHeader(WarcHeaders.WARC_TRUNCATED, truncationReason.name().toLowerCase());
+        public B date(Instant date) {
+            return header("WARC-Date", date.toString());
         }
 
-        default B setWarcinfoId(String warcinfoId) {
-            return setHeader(WarcHeaders.WARC_WARCINFO_ID, warcinfoId);
+        public B blockDigest(String algorithm, String value) {
+            return blockDigest(new Digest(algorithm, value));
         }
 
-        default B setSegmentNumber(long segmentNumber) {
-            return setHeader(WarcHeaders.WARC_SEGMENT_NUMBER, String.valueOf(segmentNumber));
+        public B blockDigest(Digest digest) {
+            return header("WARC-Block-Digest", digest.toPrefixedBase32());
+        }
+
+        public B truncated(TruncationReason truncationReason) {
+            return header("WARC-Truncated", truncationReason.name().toLowerCase());
+        }
+        public B segmentNumber(long segmentNumber) {
+            return header("WARC-Segment-Number", String.valueOf(segmentNumber));
         }
     }
 }

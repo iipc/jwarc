@@ -5,37 +5,40 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.WarcHeaders;
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
 
-public interface WarcContinuation extends WarcRecord, HasPayload, HasTargetURI {
-    /**
-     * Identifies the starting record in a series of segmented records whose content blocks are reassembled to obtain a
-     * logically complete content block.
-     */
-    default String getSegmentOriginId() {
-        return getHeaders().get(WarcHeaders.WARC_SEGMENT_ORIGIN_ID);
+import java.util.Optional;
+
+public class WarcContinuation extends WarcTargetRecord {
+    WarcContinuation(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
     }
 
     /**
-     * In the final record of a segmented series, the WARC-Segment-Total-Length reports the total length of all segment
-     * content blocks when concatenated together.
+     * The id of the first record in the series of segments this record is part of.
      */
-    default Long getSegmentTotalLength() {
-        String value = getHeaders().get(WarcHeaders.WARC_SEGMENT_TOTAL_LENGTH);
-        return value == null ? null : Long.valueOf(value);
+    public String segmentOriginId() {
+        return headers().sole("WARC-Segment-Origin-Id").get();
     }
 
-    static Builder builder() {
-        return new WarcContinuationImpl.Builder();
+    /**
+     * The total length of the content blocks of all segments added together.
+     */
+    public Optional<Long> segmentTotalLength() {
+        return headers().sole("WARC-Segment-Total-Length").map(Long::valueOf);
     }
 
-    interface Builder extends HasTargetURI.Builder<WarcContinuation, Builder> {
-        default Builder setSegmentOriginId(String segmentOriginId) {
-            return setHeader(WarcHeaders.WARC_SEGMENT_ORIGIN_ID, segmentOriginId);
+    public static Builder builder() {
+        return null;
+    }
+
+    public static abstract class Builder extends WarcTargetRecord.Builder<WarcContinuation, Builder> {
+        public Builder segmentOriginId(String segmentOriginId) {
+            return setHeader("WARC-Segment-Origin-Id", segmentOriginId);
         }
 
-        default Builder setSegmentTotalLength(long segmentTotalLength) {
-            return setHeader(WarcHeaders.WARC_SEGMENT_TOTAL_LENGTH, Long.toString(segmentTotalLength));
+        public Builder segmentTotalLength(long segmentTotalLength) {
+            return setHeader("WARC-Segment-Total-Length", Long.toString(segmentTotalLength));
         }
     }
 }

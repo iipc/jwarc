@@ -5,20 +5,13 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.WarcHeaders;
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
 
-public interface WarcConversion extends WarcRecord, HasRefersTo, HasPayload, HasTargetURI {
-    interface Builder extends
-            HasRefersTo.Builder<WarcConversion, Builder>,
-            HasTargetURI.Builder<WarcConversion, Builder>,
-            HasPayload.Builder<WarcConversion, Builder> {
+public class WarcConversion extends WarcTargetRecord {
+    WarcConversion(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+    }
 
-        default Builder setSegmentOriginId(String segmentOriginId) {
-            return setHeader(WarcHeaders.WARC_SEGMENT_ORIGIN_ID, segmentOriginId);
-        }
-
-        default Builder setSegmentTotalLength(long segmentTotalLength) {
-            return setHeader(WarcHeaders.WARC_SEGMENT_TOTAL_LENGTH, Long.toString(segmentTotalLength));
-        }
+    public abstract static class Builder extends WarcTargetRecord.Builder<WarcConversion, Builder> {
     }
 }

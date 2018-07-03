@@ -6,8 +6,7 @@
 package org.netpreserve.jwarc.lowlevel;
 
 public interface WarcHeaderHandler {
-    void majorVersion(int major);
-    void minorVersion(int minor);
-    void field(HeaderName field);
+    void version(ProtocolVersion version);
+    void name(String name);
     void value(String value);
 }

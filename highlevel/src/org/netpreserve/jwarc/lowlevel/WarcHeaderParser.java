@@ -1,9 +1,14 @@
 
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ */
+
 // line 1 "WarcHeaderParser.rl"
 // recompile: ragel -J WarcHeaderParser.rl -o WarcHeaderParser.java
 // diagram:   ragel -Vp WarcHeaderParser.rl | dot -TPng | feh -
 
-// line 48 "WarcHeaderParser.rl"
+// line 45 "WarcHeaderParser.rl"
 
 
 package org.netpreserve.jwarc.lowlevel;
@@ -11,6 +16,7 @@ package org.netpreserve.jwarc.lowlevel;
 import java.nio.ByteBuffer;
 import java.util.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class WarcHeaderParser {
     private final WarcHeaderHandler handler;
@@ -18,7 +24,8 @@ public class WarcHeaderParser {
     private byte[] buf = new byte[256];
     private int bufPos = 0;
     private int endOfText;
-    private int number;
+    private int major;
+    private int minor;
 
     public WarcHeaderParser(WarcHeaderHandler handler) {
         this.handler = handler;
@@ -27,17 +34,18 @@ public class WarcHeaderParser {
 
     public void reset() {
         
-// line 31 "WarcHeaderParser.java"
+// line 33 "WarcHeaderParser.java"
 	{
 	cs = warc_start;
 	}
 
-// line 71 "WarcHeaderParser.rl"
+// line 70 "WarcHeaderParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
         }
-        number = 0;
+        major = 0;
+        minor = 0;
         endOfText = 0;
     }
 
@@ -55,7 +63,7 @@ public class WarcHeaderParser {
         int pe = data.limit();
 
         
-// line 59 "WarcHeaderParser.java"
+// line 62 "WarcHeaderParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -145,33 +153,33 @@ case 1:
 	break;
 	case 2:
 // line 11 "WarcHeaderParser.rl"
-	{ number = number * 10 + data.get(p) - '0'; }
+	{ major = major * 10 + data.get(p) - '0'; }
 	break;
 	case 3:
 // line 12 "WarcHeaderParser.rl"
-	{ endOfText = bufPos; }
+	{ minor = minor * 10 + data.get(p) - '0'; }
 	break;
 	case 4:
 // line 13 "WarcHeaderParser.rl"
-	{ handler.majorVersion(number); number = 0; }
+	{ endOfText = bufPos; }
 	break;
 	case 5:
 // line 14 "WarcHeaderParser.rl"
-	{ handler.minorVersion(number); number = 0; }
+	{ handler.version(new ProtocolVersion("WARC", major, minor)); }
 	break;
 	case 6:
 // line 15 "WarcHeaderParser.rl"
-	{ handler.field(new HeaderName(buf, bufPos)); bufPos = 0; }
+	{ handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
 	break;
 	case 7:
 // line 16 "WarcHeaderParser.rl"
 	{ handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
 	break;
 	case 8:
-// line 45 "WarcHeaderParser.rl"
+// line 43 "WarcHeaderParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 175 "WarcHeaderParser.java"
+// line 178 "WarcHeaderParser.java"
 			}
 		}
 	}
@@ -204,12 +212,12 @@ case 5:
     }
 
     
-// line 208 "WarcHeaderParser.java"
+// line 211 "WarcHeaderParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
-	    5,    1,    6,    1,    7,    1,    8,    2,    1,    0,    2,    3,
+	    5,    1,    6,    1,    7,    1,    8,    2,    1,    0,    2,    4,
 	    0,    2,    7,    0
 	};
 }
@@ -310,9 +318,9 @@ private static final byte _warc_trans_targs[] = init__warc_trans_targs_0();
 private static byte[] init__warc_trans_actions_0()
 {
 	return new byte [] {
-	    0,    0,    0,    0,    0,    0,    5,    9,    5,   11,    0,    0,
+	    0,    0,    0,    0,    0,    0,    5,    0,    7,   11,    0,    0,
 	    1,   17,   13,    0,    0,    1,    0,    0,   15,   25,    3,   19,
-	   22,    7,    1
+	   22,    9,    1
 	};
 }
 
@@ -323,7 +331,7 @@ static final int warc_start = 1;
 static final int warc_first_final = 20;
 static final int warc_error = 0;
 
-static final int warc_en_header = 1;
+static final int warc_en_warc_header = 1;
 
 
 // line 105 "WarcHeaderParser.rl"

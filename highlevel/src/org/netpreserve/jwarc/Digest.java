@@ -37,7 +37,7 @@ public class Digest {
         value = base32Encode(messageDigest.digest());
     }
 
-    String getAlgorithm() {
+    String algorithm() {
         return algorithm;
     }
 
@@ -45,7 +45,7 @@ public class Digest {
         return value;
     }
 
-    byte[] getBytes() { return base32Decode(value); }
+    byte[] toBytes() { return base32Decode(value); }
 
     public String toPrefixedBase32() {
         return algorithm + ":" + value;

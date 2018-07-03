@@ -5,10 +5,13 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcResource extends WarcRecord, HasConcurrentTo, HasPayload, HasTargetURI,
-        HasIPAddress {
-    interface Builder extends HasConcurrentTo.Builder<WarcResource, Builder>,
-            HasTargetURI.Builder<WarcResource, Builder>,
-            HasPayload.Builder<WarcResource, Builder> {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+public class WarcResource extends WarcCaptureRecord {
+    WarcResource(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+    }
+
+    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcResource, Builder> {
     }
 }

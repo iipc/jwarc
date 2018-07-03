@@ -5,6 +5,19 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcRequest extends WarcRecord, HasConcurrentTo, HasPayload, HasTargetURI,
-        HasIPAddress {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+public class WarcRequest extends WarcCaptureRecord {
+    WarcRequest(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+    }
+
+    /**
+     * Parses the content body of this record as HTTP request.
+     * <p/>
+     * This is a convenience method for <code>HttpRequest.parse(request.body().channel())</code>.
+     */
+    public HttpRequest http() {
+        return HttpRequest.parse(body().channel());
+    }
 }

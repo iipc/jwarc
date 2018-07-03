@@ -5,10 +5,13 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcMetadata extends WarcRecord, HasConcurrentTo, HasRefersTo, HasTargetURI,
-        HasIPAddress {
-    interface Builder extends HasRefersTo.Builder<WarcMetadata, Builder>,
-            HasTargetURI.Builder<WarcMetadata, Builder>,
-            HasConcurrentTo.Builder<WarcMetadata, Builder> {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+public class WarcMetadata extends WarcCaptureRecord {
+    WarcMetadata(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+    }
+
+    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcMetadata, Builder> {
     }
 }

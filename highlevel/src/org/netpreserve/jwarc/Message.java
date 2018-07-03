@@ -5,43 +5,48 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.lowlevel.HeaderName;
-import org.netpreserve.jwarc.lowlevel.WarcHeaders;
-
-import java.util.Map;
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
 
 /**
  * A message consisting of headers and a content block. Forms the basis of protocols and formats like HTTP and WARC.
  */
-public interface Message {
-    Map<HeaderName, String> getHeaders();
+public abstract class Message {
+    private final ProtocolVersion version;
+    private final Headers headers;
+    private final Body body;
 
-    /**
-     * The number of octets in the block or zero if no block is present.
-     */
-    default long getContentLength() {
-        String value = getHeaders().get(WarcHeaders.CONTENT_LENGTH);
-        return value == null ? 0 : Long.parseLong(value);
+    Message(ProtocolVersion version, Headers headers, Body body) {
+        this.version = version;
+        this.headers = headers;
+        this.body = body;
     }
 
     /**
-     * The MIME type (as defined in RFC2045) of the information contained in the record's block.
+     * The named header fields of this message.
      */
-    default String getContentType() {
-        return getHeaders().get(WarcHeaders.CONTENT_TYPE);
+    public Headers headers() {
+        return headers;
     }
 
-    interface Builder<R extends Message, B extends Builder<R, B>> {
-        R build();
+    /**
+     * The content body of this message.
+     */
+    public Body body() {
+        return body;
+    }
 
-        B setHeader(HeaderName header, String value);
+    /**
+     * The version of the network protocol or file format containing this message.
+     */
+    public ProtocolVersion version() {
+        return version;
+    }
 
-        default B setContentLength(long contentLength) {
-            return setHeader(WarcHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
-        }
+    public static abstract class Builder<R extends Message, B extends Builder<R, B>> {
+        public abstract R build();
 
-        default B setContentType(String contentType) {
-            return setHeader(WarcHeaders.CONTENT_TYPE, contentType);
-        }
+        public abstract B header(String name, String value);
+
+        public abstract B setHeader(String name, String value);
     }
 }

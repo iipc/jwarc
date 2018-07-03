@@ -5,5 +5,16 @@
 
 package org.netpreserve.jwarc;
 
-public interface HttpResponse extends HttpMessage {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+import java.nio.channels.ReadableByteChannel;
+
+public abstract class HttpResponse extends HttpMessage {
+    HttpResponse(ProtocolVersion version, Headers headers, Body body) {
+        super(version, headers, body);
+    }
+
+    public static HttpResponse parse(ReadableByteChannel channel) {
+        return null;
+    }
 }

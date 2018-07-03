@@ -5,5 +5,10 @@
 
 package org.netpreserve.jwarc;
 
-public interface HttpMessage extends Message {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+public abstract class HttpMessage extends Message {
+    HttpMessage(ProtocolVersion version, Headers headers, Body body) {
+        super(version, headers, body);
+    }
 }

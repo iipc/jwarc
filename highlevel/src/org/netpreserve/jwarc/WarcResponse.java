@@ -5,10 +5,22 @@
 
 package org.netpreserve.jwarc;
 
-public interface WarcResponse extends WarcRecord, HasConcurrentTo, HasPayload, HasTargetURI,
-        HasIPAddress {
-    interface Builder extends HasConcurrentTo.Builder<WarcResponse, Builder>,
-            HasTargetURI.Builder<WarcResponse, Builder>,
-            HasPayload.Builder<WarcResponse, Builder> {
+import org.netpreserve.jwarc.lowlevel.ProtocolVersion;
+
+public class WarcResponse extends WarcCaptureRecord {
+    WarcResponse(ProtocolVersion version, Headers headers, WarcBody body) {
+        super(version, headers, body);
+    }
+
+    /**
+     * Parses the HTTP response captured by this record.
+     * <p/>
+     * This is a convenience method for <code>HttpResponse.parse(response.body().channel())</code>.
+     */
+    public HttpResponse http() {
+        return HttpResponse.parse(body().channel());
+    }
+
+    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {
     }
 }
