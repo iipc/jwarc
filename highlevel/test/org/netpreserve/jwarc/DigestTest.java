@@ -25,6 +25,4 @@ public class DigestTest {
     public void test2()  {
         assertEquals("AELZ2347", Digest.base32Encode(Digest.base32Decode("aelz2347")));
     }
-
-
 }
