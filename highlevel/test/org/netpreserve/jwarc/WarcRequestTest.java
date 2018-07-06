@@ -45,7 +45,6 @@ public class WarcRequestTest {
         assertEquals(ProtocolVersion.WARC_1_0, request.version());
         assertEquals(ProtocolVersion.HTTP_1_0, request.http().version());
         assertEquals("close", request.http().headers().sole("connection"));
-
     }
 
 }

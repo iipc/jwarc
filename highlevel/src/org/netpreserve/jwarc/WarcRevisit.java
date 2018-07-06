@@ -17,14 +17,24 @@ import java.util.Optional;
  */
 public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
     /**
-     * Revisit profile for when the payload content was the same as determined by a strong digest function.
+     * WARC 1.0 revisit profile for when the payload content was the same as determined by a strong digest function.
      */
-    URI IDENTICAL_PAYLOAD_DIGEST = URI.create("http://netpreserve.org/warc/1.1/revisit/identical-payload-digest");
+    public static final URI IDENTICAL_PAYLOAD_DIGEST_1_0 = URI.create("http://netpreserve.org/warc/1.0/revisit/identical-payload-digest");
 
     /**
-     * Revisit profile for when the server said the content had not changed.
+     * WARC 1.1 revisit profile for when the payload content was the same as determined by a strong digest function.
      */
-    URI SERVER_NOT_MODIFIED = URI.create("http://netpreserve.org/warc/1.1/revisit/server-not-modified");
+    public static final URI IDENTICAL_PAYLOAD_DIGEST_1_1 = URI.create("http://netpreserve.org/warc/1.1/revisit/identical-payload-digest");
+
+    /**
+     * WARC 1.0 revisit profile for when the server said the content had not changed.
+     */
+    public static final URI SERVER_NOT_MODIFIED_1_0 = URI.create("http://netpreserve.org/warc/1.0/revisit/server-not-modified");
+
+    /**
+     * WARC 1.1 revisit profile for when the server said the content had not changed.
+     */
+    public static final URI SERVER_NOT_MODIFIED_1_1 = URI.create("http://netpreserve.org/warc/1.1/revisit/server-not-modified");
 
     WarcRevisit(ProtocolVersion version, Headers headers, WarcBody body) {
         super(version, headers, body);
@@ -46,7 +56,8 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
 
     /**
      * The revisit profile explaining why this capture was written as a revisit record. The standard profiles are
-     * {@link #IDENTICAL_PAYLOAD_DIGEST} and {@link #SERVER_NOT_MODIFIED}.
+     * {@link #IDENTICAL_PAYLOAD_DIGEST_1_0}, {@link #IDENTICAL_PAYLOAD_DIGEST_1_1}, {@link #SERVER_NOT_MODIFIED_1_0}
+     * and {@link #SERVER_NOT_MODIFIED_1_1}.
      */
     public URI profile() {
         return headers().sole("WARC-Profile").map(URI::create).get();
@@ -59,13 +70,24 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
 
     public static class Builder extends WarcCaptureRecord.Builder<WarcRevisit, Builder> {
 
-        protected Builder(String type) {
+        public Builder(URI profile) {
             super("revisit");
+            setHeader("WARC-Profile", profile.toString());
         }
 
         @Override
         public WarcRevisit build() {
             return build(WarcRevisit::new);
+        }
+
+        public Builder refersTo(URI recordId) {
+            return setHeader("WARC-Refers-To", WarcRecord.formatId(recordId));
+        }
+
+        public Builder refersTo(URI recordId, URI targetURI, Instant date) {
+            setHeader("WARC-Refers-To-Target-URI", targetURI.toString());
+            setHeader("WARC-Refers-To-Date", date.toString());
+            return refersTo(recordId);
         }
     }
 }

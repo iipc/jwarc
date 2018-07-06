@@ -9,7 +9,6 @@ import org.netpreserve.jwarc.parser.ProtocolVersion;
 
 import java.net.URI;
 import java.util.Optional;
-import java.util.UUID;
 
 public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
     WarcConversion(ProtocolVersion version, Headers headers, WarcBody body) {
@@ -24,10 +23,6 @@ public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
     public static class Builder extends WarcTargetRecord.Builder<WarcConversion, Builder> {
         public Builder() {
             super("conversion");
-        }
-
-        public Builder refersTo(UUID uuid) {
-            return addHeader("WARC-Refers-To", WarcRecord.formatId(uuid));
         }
 
         public Builder refersTo(URI recordId) {

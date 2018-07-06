@@ -37,4 +37,14 @@ public class WarcConversionTest {
         assertEquals("image/neoimg", conversion.body().type());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), conversion.targetURI());
     }
+
+    @Test
+    public void builder() throws IOException {
+        URI reference = URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0");
+        WarcConversion conversion = new WarcConversion.Builder()
+                .refersTo(reference)
+                .build();
+        assertEquals("conversion", conversion.type());
+        assertEquals(reference, conversion.refersTo().get());
+    }
 }

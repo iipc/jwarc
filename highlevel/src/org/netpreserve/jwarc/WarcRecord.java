@@ -11,6 +11,7 @@ import org.netpreserve.jwarc.parser.WarcHeaderParser;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -30,6 +31,7 @@ public class WarcRecord extends Message {
         constructors.put("request", WarcRequest::new);
         constructors.put("resource", WarcResource::new);
         constructors.put("response", WarcResponse::new);
+        constructors.put("revisit", WarcRevisit::new);
         constructors.put("warcinfo", Warcinfo::new);
     }
 
@@ -118,6 +120,10 @@ public class WarcRecord extends Message {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         return parse(channel, buffer);
+    }
+
+    public static WarcRecord parse(InputStream stream) throws IOException {
+        return parse(Channels.newChannel(stream));
     }
 
     @FunctionalInterface
