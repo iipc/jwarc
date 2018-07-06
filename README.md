@@ -8,7 +8,7 @@ Not functional yet. This is just the plan.
 
 ### Parsing a record
 ```java
-WarcRecord record = WarcRecords.parse(channel);
+WarcRecord record = WarcRecord.parse(channel);
 ```
 
 TODO: WarcReader.

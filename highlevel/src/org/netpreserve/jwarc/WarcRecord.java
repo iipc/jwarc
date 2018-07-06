@@ -5,7 +5,11 @@
 
 package org.netpreserve.jwarc;
 
+import org.netpreserve.jwarc.parser.WarcParser;
+
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -14,11 +18,44 @@ import java.time.Instant;
 import java.util.*;
 
 public class WarcRecord extends Message {
+    private static final Map<String, WarcRecord.Constructor> constructors = new HashMap<>();
+
+    static {
+        constructors.put("continuation", WarcContinuation::new);
+        constructors.put("conversion", WarcConversion::new);
+        constructors.put("metadata", WarcMetadata::new);
+        constructors.put("request", WarcRequest::new);
+        constructors.put("resource", WarcResource::new);
+        constructors.put("response", WarcResponse::new);
+        constructors.put("revisit", WarcRevisit::new);
+        constructors.put("warcinfo", Warcinfo::new);
+    }
+
     private final WarcBody warcBody;
 
     WarcRecord(ProtocolVersion version, Headers headers, WarcBody body) {
         super(version, headers, body);
         this.warcBody = body;
+    }
+
+    public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        MapBuildingHandler handler = new MapBuildingHandler();
+        WarcParser parser = new WarcParser(handler);
+        parser.parse(channel, buffer);
+        Headers headers = new Headers(handler.headerMap);
+        WarcBody body = new WarcBody(headers, channel, buffer);
+        String type = headers.sole("WARC-Type").orElse("unknown");
+        return constructors.getOrDefault(type, WarcRecord::new).construct(handler.version, headers, body);
+    }
+
+    public static WarcRecord parse(ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
+        return parse(channel, buffer);
+    }
+
+    public static WarcRecord parse(InputStream stream) throws IOException {
+        return parse(Channels.newChannel(stream));
     }
 
     static URI parseURI(String uri) {
@@ -124,6 +161,7 @@ public class WarcRecord extends Message {
         public B truncated(TruncationReason truncationReason) {
             return addHeader("WARC-Truncated", truncationReason.name().toLowerCase());
         }
+
         public B segmentNumber(long segmentNumber) {
             return addHeader("WARC-Segment-Number", String.valueOf(segmentNumber));
         }
@@ -131,7 +169,7 @@ public class WarcRecord extends Message {
         @Override
         public B addHeader(String name, String value) {
             headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
-            return (B)this;
+            return (B) this;
         }
 
         @Override
@@ -139,14 +177,14 @@ public class WarcRecord extends Message {
             List list = new ArrayList();
             list.add(value);
             headerMap.put(name, list);
-            return (B)this;
+            return (B) this;
         }
 
         public B body(String contentType, byte[] contentBytes) {
             setHeader("Content-Type", contentType);
             setHeader("Content-Length", Long.toString(contentBytes.length));
             this.bodyChannel = Channels.newChannel(new ByteArrayInputStream(contentBytes));
-            return (B)this;
+            return (B) this;
         }
 
         protected R build(Constructor<R> constructor) {
