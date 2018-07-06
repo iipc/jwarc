@@ -23,6 +23,21 @@ public class WarcRecord extends Message {
         this.warcBody = body;
     }
 
+    static URI parseURI(String uri) {
+        if (uri.startsWith("<") && uri.endsWith(">")) {
+            uri = uri.substring(1, uri.length() - 1);
+        }
+        return URI.create(uri);
+    }
+
+    private static String formatId(UUID recordId) {
+        return "<urn:uuid:" + recordId + ">";
+    }
+
+    static String formatId(URI recordId) {
+        return "<" + recordId + ">";
+    }
+
     @Override
     public WarcBody body() {
         return warcBody;
@@ -39,7 +54,7 @@ public class WarcRecord extends Message {
      * The globally unique identifier for this record.
      */
     public URI id() {
-        return WarcRecords.parseURI(headers().sole("WARC-Record-ID").get());
+        return parseURI(headers().sole("WARC-Record-ID").get());
     }
 
     /**
@@ -89,11 +104,11 @@ public class WarcRecord extends Message {
         }
 
         public B recordId(UUID uuid) {
-            return setHeader("WARC-Record-ID", WarcRecords.formatId(uuid));
+            return setHeader("WARC-Record-ID", formatId(uuid));
         }
 
         public B recordId(URI recordId) {
-            return setHeader("WARC-Record-ID", WarcRecords.formatId(recordId));
+            return setHeader("WARC-Record-ID", formatId(recordId));
         }
 
         public B date(Instant date) {

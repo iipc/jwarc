@@ -65,7 +65,7 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
 
     @Override
     public Optional<URI> refersTo() {
-        return headers().sole("WARC-Refers-To").map(WarcRecords::parseURI);
+        return headers().sole("WARC-Refers-To").map(WarcRecord::parseURI);
     }
 
     public static class Builder extends WarcCaptureRecord.Builder<WarcRevisit, Builder> {
@@ -81,7 +81,7 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
         }
 
         public Builder refersTo(URI recordId) {
-            return setHeader("WARC-Refers-To", WarcRecords.formatId(recordId));
+            return setHeader("WARC-Refers-To", WarcRecord.formatId(recordId));
         }
 
         public Builder refersTo(URI recordId, URI targetURI, Instant date) {

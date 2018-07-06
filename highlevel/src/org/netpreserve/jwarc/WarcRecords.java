@@ -10,12 +10,10 @@ import org.netpreserve.jwarc.parser.WarcHeaderParser;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WarcRecords {
@@ -30,13 +28,6 @@ public class WarcRecords {
         constructors.put("response", WarcResponse::new);
         constructors.put("revisit", WarcRevisit::new);
         constructors.put("warcinfo", Warcinfo::new);
-    }
-
-    static URI parseURI(String uri) {
-        if (uri.startsWith("<") && uri.endsWith(">")) {
-            uri = uri.substring(1, uri.length() - 1);
-        }
-        return URI.create(uri);
     }
 
     public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
@@ -69,11 +60,4 @@ public class WarcRecords {
         return parse(Channels.newChannel(stream));
     }
 
-    static String formatId(UUID recordId) {
-        return "<urn:uuid:" + recordId + ">";
-    }
-
-    static String formatId(URI recordId) {
-        return "<" + recordId + ">";
-    }
 }

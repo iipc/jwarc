@@ -7,6 +7,7 @@ package org.netpreserve.jwarc;
 
 import org.netpreserve.jwarc.parser.ProtocolVersion;
 
+import java.net.URI;
 import java.util.Optional;
 
 public class WarcContinuation extends WarcTargetRecord {
@@ -17,8 +18,8 @@ public class WarcContinuation extends WarcTargetRecord {
     /**
      * The id of the first record in the series of segments this record is part of.
      */
-    public String segmentOriginId() {
-        return headers().sole("WARC-Segment-Origin-Id").get();
+    public URI segmentOriginId() {
+        return headers().sole("WARC-Segment-Origin-ID").map(WarcRecord::parseURI).get();
     }
 
     /**
@@ -28,17 +29,13 @@ public class WarcContinuation extends WarcTargetRecord {
         return headers().sole("WARC-Segment-Total-Length").map(Long::valueOf);
     }
 
-    public static Builder builder() {
-        return null;
-    }
-
     public static class Builder extends WarcTargetRecord.Builder<WarcContinuation, Builder> {
         public Builder() {
             super("continuation");
         }
 
-        public Builder segmentOriginId(String segmentOriginId) {
-            return setHeader("WARC-Segment-Origin-Id", segmentOriginId);
+        public Builder segmentOriginId(URI recordId) {
+            return setHeader("WARC-Segment-Origin-Id", WarcRecord.formatId(recordId));
         }
 
         public Builder segmentTotalLength(long segmentTotalLength) {

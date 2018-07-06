@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 class MapBuildingHandler implements WarcHeaderHandler {
-    Map<String,List<String>> headerMap = new TreeMap<>();
+    Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private String name;
     ProtocolVersion version;
 
