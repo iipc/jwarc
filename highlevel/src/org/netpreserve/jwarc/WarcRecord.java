@@ -58,7 +58,7 @@ public class WarcRecord extends Message {
         return parse(Channels.newChannel(stream));
     }
 
-    static URI parseURI(String uri) {
+    static URI parseRecordID(String uri) {
         if (uri.startsWith("<") && uri.endsWith(">")) {
             uri = uri.substring(1, uri.length() - 1);
         }
@@ -89,7 +89,7 @@ public class WarcRecord extends Message {
      * The globally unique identifier for this record.
      */
     public URI id() {
-        return parseURI(headers().sole("WARC-Record-ID").get());
+        return parseRecordID(headers().sole("WARC-Record-ID").get());
     }
 
     /**

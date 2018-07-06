@@ -5,7 +5,12 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.IOException;
+
 public class WarcResponse extends WarcCaptureRecord {
+
+    private HttpResponse http;
+
     WarcResponse(ProtocolVersion version, Headers headers, WarcBody body) {
         super(version, headers, body);
     }
@@ -15,8 +20,11 @@ public class WarcResponse extends WarcCaptureRecord {
      * <p/>
      * This is a convenience method for <code>HttpResponse.parse(response.body().channel())</code>.
      */
-    public HttpResponse http() {
-        return HttpResponse.parse(body().channel());
+    public HttpResponse http() throws IOException {
+        if (http == null) {
+            http = HttpResponse.parse(body().channel());
+        }
+        return http;
     }
 
     public static class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {

@@ -17,7 +17,7 @@ public class WarcContinuation extends WarcTargetRecord {
      * The id of the first record in the series of segments this record is part of.
      */
     public URI segmentOriginId() {
-        return headers().sole("WARC-Segment-Origin-ID").map(WarcRecord::parseURI).get();
+        return headers().sole("WARC-Segment-Origin-ID").map(WarcRecord::parseRecordID).get();
     }
 
     /**

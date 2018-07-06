@@ -44,7 +44,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
      * single records into separate WARC files.
      */
     public Optional<URI> warcinfoID() {
-        return headers().sole("WARC-Warcinfo-ID").map(URI::create);
+        return headers().sole("WARC-Warcinfo-ID").map(WarcRecord::parseRecordID);
     }
 
     public static abstract class Builder<R extends WarcTargetRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {
