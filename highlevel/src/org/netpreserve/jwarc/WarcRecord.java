@@ -18,17 +18,6 @@ import java.util.*;
 public class WarcRecord extends Message {
     private final WarcBody warcBody;
 
-    static {
-        WarcRecords.constructors.put("continuation", WarcContinuation::new);
-        WarcRecords.constructors.put("conversion", WarcConversion::new);
-        WarcRecords.constructors.put("metadata", WarcMetadata::new);
-        WarcRecords.constructors.put("request", WarcRequest::new);
-        WarcRecords.constructors.put("resource", WarcResource::new);
-        WarcRecords.constructors.put("response", WarcResponse::new);
-        WarcRecords.constructors.put("revisit", WarcRevisit::new);
-        WarcRecords.constructors.put("warcinfo", Warcinfo::new);
-    }
-
     WarcRecord(ProtocolVersion version, Headers headers, WarcBody body) {
         super(version, headers, body);
         this.warcBody = body;

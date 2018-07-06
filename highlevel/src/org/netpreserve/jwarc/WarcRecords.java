@@ -19,7 +19,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WarcRecords {
-    static final Map<String, WarcRecord.Constructor> constructors = new ConcurrentHashMap<>();
+    private static final Map<String, WarcRecord.Constructor> constructors = new ConcurrentHashMap<>();
+
+    static {
+        constructors.put("continuation", WarcContinuation::new);
+        constructors.put("conversion", WarcConversion::new);
+        constructors.put("metadata", WarcMetadata::new);
+        constructors.put("request", WarcRequest::new);
+        constructors.put("resource", WarcResource::new);
+        constructors.put("response", WarcResponse::new);
+        constructors.put("revisit", WarcRevisit::new);
+        constructors.put("warcinfo", Warcinfo::new);
+    }
 
     static URI parseURI(String uri) {
         if (uri.startsWith("<") && uri.endsWith(">")) {
