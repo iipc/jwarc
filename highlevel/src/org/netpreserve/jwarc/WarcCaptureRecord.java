@@ -34,7 +34,7 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
         return headers().all("WARC-Concurrent-To").stream().map(WarcRecord::parseRecordID).collect(toList());
     }
 
-    public abstract static class Builder<R extends WarcCaptureRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {
+    public abstract static class Builder<R extends WarcCaptureRecord, B extends Builder<R, B>> extends WarcTargetRecord.Builder<R, B> {
         protected Builder(String type) {
             super(type);
         }

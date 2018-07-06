@@ -28,7 +28,7 @@ public class WarcResponse extends WarcCaptureRecord {
     }
 
     public static class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {
-        protected Builder(String type) {
+        protected Builder() {
             super("response");
         }
 

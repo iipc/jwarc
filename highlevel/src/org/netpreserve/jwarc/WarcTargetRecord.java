@@ -60,9 +60,12 @@ public abstract class WarcTargetRecord extends WarcRecord {
             return setHeader("WARC-Identified-Payload-Type", identifiedPayloadType);
         }
 
-        public B warcinfoId(String warcinfoId) {
-            return addHeader("WARC-Warcinfo-ID", warcinfoId);
+        public B warcinfoId(URI recordId) {
+            return addHeader("WARC-Warcinfo-ID", WarcRecord.formatId(recordId));
         }
 
+        public B payloadDigest(String algorithm, String value) {
+            return payloadDigest(new Digest(algorithm, value));
+        }
     }
 }

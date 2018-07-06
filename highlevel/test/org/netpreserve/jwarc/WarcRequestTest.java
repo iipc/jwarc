@@ -46,4 +46,14 @@ public class WarcRequestTest {
         assertEquals(Optional.of("close"), request.http().headers().sole("connection"));
     }
 
+    @Test
+    public void builder() throws IOException {
+        WarcRequest request = new WarcRequest.Builder()
+                .concurrentTo(URI.create("id:1"))
+                .concurrentTo(URI.create("id:2"))
+                .build();
+        assertEquals(Arrays.asList(URI.create("id:1"), URI.create("id:2")), request.concurrentTo());
+
+    }
+
 }

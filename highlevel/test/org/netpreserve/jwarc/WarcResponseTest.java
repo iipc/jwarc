@@ -54,4 +54,16 @@ public class WarcResponseTest {
         assertEquals(Optional.of(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39")), response.warcinfoID());
     }
 
+    @Test
+    public void builder() throws IOException {
+        WarcResponse response = new WarcResponse.Builder()
+                .blockDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")
+                .payloadDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")
+                .warcinfoId(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"))
+                .identifiedPayloadType("image/jpeg")
+                .truncated(TruncationReason.DISCONNECT)
+                .build();
+        assertEquals(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2"), response.body().digests().get(0));
+        assertEquals(TruncationReason.DISCONNECT, response.truncated());
+    }
 }

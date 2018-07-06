@@ -159,6 +159,10 @@ public class WarcRecord extends Message {
         }
 
         public B truncated(TruncationReason truncationReason) {
+            if (truncationReason.equals(TruncationReason.NOT_TRUNCATED)) {
+                headerMap.remove("WARC-Truncated");
+                return (B)this;
+            }
             return addHeader("WARC-Truncated", truncationReason.name().toLowerCase());
         }
 
