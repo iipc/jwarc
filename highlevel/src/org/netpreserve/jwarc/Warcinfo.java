@@ -8,10 +8,11 @@ package org.netpreserve.jwarc;
 import org.netpreserve.jwarc.parser.ProtocolVersion;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * The warcinfo record contains information about the web crawl that generated the records following it.
@@ -56,14 +57,7 @@ public class Warcinfo extends WarcRecord {
         }
 
         public Builder fields(Map<String,List<String>> map) {
-            StringBuilder out = new StringBuilder();
-            for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-                String name = entry.getKey();
-                for (String value : entry.getValue()) {
-                    out.append(name).append(": ").append(value).append("\r\n");
-                }
-            }
-            return body("application/warc-fields", out.toString().getBytes(StandardCharsets.UTF_8));
+            return body("application/warc-fields", Headers.format(map).getBytes(UTF_8));
         }
     }
 }

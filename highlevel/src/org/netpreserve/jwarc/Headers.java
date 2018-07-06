@@ -97,4 +97,15 @@ public class Headers {
         }
         return illegal;
     }
+
+    static String format(Map<String, List<String>> map) {
+        StringBuilder out = new StringBuilder();
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            String name = entry.getKey();
+            for (String value : entry.getValue()) {
+                out.append(name).append(": ").append(value).append("\r\n");
+            }
+        }
+        return out.toString();
+    }
 }
