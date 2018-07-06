@@ -1,20 +1,24 @@
 
-// line 1 "WarcHeaderParser.rl"
-// recompile: ragel -J WarcHeaderParser.rl -o WarcHeaderParser.java
-// diagram:   ragel -Vp WarcHeaderParser.rl | dot -TPng | feh -
+// line 1 "WarcParser.rl"
+// recompile: ragel -J WarcParser.rl -o WarcParser.java
+// diagram:   ragel -Vp WarcParser.rl | dot -TPng | feh -
 
-// line 46 "WarcHeaderParser.rl"
+// line 46 "WarcParser.rl"
 
 
 package org.netpreserve.jwarc.parser;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.nio.channels.ReadableByteChannel;
+import java.util.Arrays;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-public class WarcHeaderParser {
-    private final WarcHeaderHandler handler;
+public class WarcParser {
+    private final Handler handler;
     private int cs;
     private byte[] buf = new byte[256];
     private int bufPos = 0;
@@ -22,19 +26,25 @@ public class WarcHeaderParser {
     private int major;
     private int minor;
 
-    public WarcHeaderParser(WarcHeaderHandler handler) {
+    public interface Handler {
+        void version(int major, int minor);
+        void name(String name);
+        void value(String value);
+    }
+
+    public WarcParser(Handler handler) {
         this.handler = handler;
         reset();
     }
 
     public void reset() {
         
-// line 33 "WarcHeaderParser.java"
+// line 43 "WarcParser.java"
 	{
 	cs = warc_start;
 	}
 
-// line 71 "WarcHeaderParser.rl"
+// line 81 "WarcParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
@@ -62,7 +72,7 @@ public class WarcHeaderParser {
         int pe = data.limit();
 
         
-// line 66 "WarcHeaderParser.java"
+// line 76 "WarcParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -143,42 +153,42 @@ case 1:
 			switch ( _warc_actions[_acts++] )
 			{
 	case 0:
-// line 9 "WarcHeaderParser.rl"
+// line 9 "WarcParser.rl"
 	{ push(data.get(p)); }
 	break;
 	case 1:
-// line 10 "WarcHeaderParser.rl"
+// line 10 "WarcParser.rl"
 	{ if (bufPos > 0) push((byte)' '); }
 	break;
 	case 2:
-// line 11 "WarcHeaderParser.rl"
+// line 11 "WarcParser.rl"
 	{ major = major * 10 + data.get(p) - '0'; }
 	break;
 	case 3:
-// line 12 "WarcHeaderParser.rl"
+// line 12 "WarcParser.rl"
 	{ minor = minor * 10 + data.get(p) - '0'; }
 	break;
 	case 4:
-// line 13 "WarcHeaderParser.rl"
+// line 13 "WarcParser.rl"
 	{ endOfText = bufPos; }
 	break;
 	case 5:
-// line 14 "WarcHeaderParser.rl"
-	{ handler.version(new ProtocolVersion("WARC", major, minor)); }
+// line 14 "WarcParser.rl"
+	{ handler.version(major, minor); }
 	break;
 	case 6:
-// line 15 "WarcHeaderParser.rl"
+// line 15 "WarcParser.rl"
 	{ handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
 	break;
 	case 7:
-// line 16 "WarcHeaderParser.rl"
+// line 16 "WarcParser.rl"
 	{ handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
 	break;
 	case 8:
-// line 44 "WarcHeaderParser.rl"
+// line 44 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 182 "WarcHeaderParser.java"
+// line 192 "WarcParser.java"
 			}
 		}
 	}
@@ -198,9 +208,21 @@ case 5:
 	break; }
 	}
 
-// line 98 "WarcHeaderParser.rl"
+// line 108 "WarcParser.rl"
 
         data.position(p);
+    }
+
+    public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        while (true) {
+            parse(buffer);
+            if (isFinished()) break;
+            if (isError()) throw new ParsingException("invalid WARC record");
+            buffer.compact();
+            int n = channel.read(buffer);
+            if (n < 0) throw new EOFException();
+            buffer.flip();
+        }
     }
 
     private void push(byte b) {
@@ -211,7 +233,7 @@ case 5:
     }
 
     
-// line 215 "WarcHeaderParser.java"
+// line 237 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -352,5 +374,5 @@ static final int warc_en_warc_fields = 20;
 static final int warc_en_warc_header = 1;
 
 
-// line 110 "WarcHeaderParser.rl"
+// line 132 "WarcParser.rl"
 }

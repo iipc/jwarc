@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ProtocolVersion;
-
 /**
  * A message consisting of headers and a content block. Forms the basis of protocols and formats like HTTP and WARC.
  */

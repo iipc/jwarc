@@ -1,5 +1,5 @@
-// recompile: ragel -J WarcHeaderParser.rl -o WarcHeaderParser.java
-// diagram:   ragel -Vp WarcHeaderParser.rl | dot -TPng | feh -
+// recompile: ragel -J WarcParser.rl -o WarcParser.java
+// diagram:   ragel -Vp WarcParser.rl | dot -TPng | feh -
 %%{
 
 machine warc;
@@ -11,7 +11,7 @@ action push_space   { if (bufPos > 0) push((byte)' '); }
 action add_major    { major = major * 10 + data.get(p) - '0'; }
 action add_minor    { minor = minor * 10 + data.get(p) - '0'; }
 action end_of_text  { endOfText = bufPos; }
-action handle_version { handler.version(new ProtocolVersion("WARC", major, minor)); }
+action handle_version { handler.version(major, minor); }
 action handle_name  { handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
 action handle_value { handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
 
@@ -47,13 +47,17 @@ warc_header := version named_fields @{ fbreak; };
 
 package org.netpreserve.jwarc.parser;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.nio.channels.ReadableByteChannel;
+import java.util.Arrays;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-public class WarcHeaderParser {
-    private final WarcHeaderHandler handler;
+public class WarcParser {
+    private final Handler handler;
     private int cs;
     private byte[] buf = new byte[256];
     private int bufPos = 0;
@@ -61,7 +65,13 @@ public class WarcHeaderParser {
     private int major;
     private int minor;
 
-    public WarcHeaderParser(WarcHeaderHandler handler) {
+    public interface Handler {
+        void version(int major, int minor);
+        void name(String name);
+        void value(String value);
+    }
+
+    public WarcParser(Handler handler) {
         this.handler = handler;
         reset();
     }
@@ -97,6 +107,18 @@ public class WarcHeaderParser {
         %% write exec;
 
         data.position(p);
+    }
+
+    public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        while (true) {
+            parse(buffer);
+            if (isFinished()) break;
+            if (isError()) throw new ParsingException("invalid WARC record");
+            buffer.compact();
+            int n = channel.read(buffer);
+            if (n < 0) throw new EOFException();
+            buffer.flip();
+        }
     }
 
     private void push(byte b) {

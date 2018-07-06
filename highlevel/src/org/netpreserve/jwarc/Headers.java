@@ -5,7 +5,8 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.WarcHeaderParser;
+import org.netpreserve.jwarc.parser.ParsingException;
+import org.netpreserve.jwarc.parser.WarcParser;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -68,7 +69,7 @@ public class Headers {
      */
     public static Headers parse(ReadableByteChannel channel) throws IOException {
         MapBuildingHandler handler = new MapBuildingHandler();
-        WarcHeaderParser parser = new WarcHeaderParser(handler);
+        WarcParser parser = new WarcParser(handler);
         parser.fieldsOnly();
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         while (!parser.isFinished()) {

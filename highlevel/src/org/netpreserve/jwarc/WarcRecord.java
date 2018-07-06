@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ProtocolVersion;
-
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;

@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ProtocolVersion;
-
 public abstract class HttpMessage extends Message {
     HttpMessage(ProtocolVersion version, Headers headers, Body body) {
         super(version, headers, body);

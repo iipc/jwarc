@@ -12,13 +12,13 @@ import java.util.zip.Inflater;
 public class FormatDetectingParser {
     private State state = State.START;
     private GzipHeaderParser gzipHeaderParser;
-    private WarcHeaderParser warcHeaderParser;
+    private WarcParser warcParser;
     private ByteBuffer buffer = ByteBuffer.allocate(1024);
     private Inflater inflater;
 
-    public FormatDetectingParser(WarcHeaderHandler handler) {
-        warcHeaderParser = new WarcHeaderParser(handler);
-    }
+//    public FormatDetectingParser(WarcHandler handler) {
+//        warcParser = new WarcParser(handler);
+//    }
 
     public void update(ByteBuffer data) throws DataFormatException {
         if (inflater == null) {
@@ -58,8 +58,8 @@ public class FormatDetectingParser {
                 break;
 
             case WARC_HEADER:
-                warcHeaderParser.parse(data);
-                if (warcHeaderParser.isFinished()) {
+                warcParser.parse(data);
+                if (warcParser.isFinished()) {
 
                 }
 

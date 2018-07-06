@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ProtocolVersion;
-
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.List;

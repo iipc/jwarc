@@ -5,9 +5,8 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.WarcHeaderParser;
+import org.netpreserve.jwarc.parser.WarcParser;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -32,18 +31,8 @@ public class WarcRecords {
 
     public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         MapBuildingHandler handler = new MapBuildingHandler();
-        WarcHeaderParser parser = new WarcHeaderParser(handler);
-
-        while (true) {
-            parser.parse(buffer);
-            if (parser.isFinished()) break;
-            if (parser.isError()) throw new ParsingException("invalid warc file");
-            buffer.compact();
-            int n = channel.read(buffer);
-            if (n < 0) throw new EOFException();
-            buffer.flip();
-        }
-
+        WarcParser parser = new WarcParser(handler);
+        parser.parse(channel, buffer);
         Headers headers = new Headers(handler.headerMap);
         WarcBody body = new WarcBody(headers, channel, buffer);
         String type = headers.sole("WARC-Type").orElse("unknown");

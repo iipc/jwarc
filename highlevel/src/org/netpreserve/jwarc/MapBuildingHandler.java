@@ -5,22 +5,21 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ProtocolVersion;
-import org.netpreserve.jwarc.parser.WarcHeaderHandler;
+import org.netpreserve.jwarc.parser.WarcParser;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-class MapBuildingHandler implements WarcHeaderHandler {
+class MapBuildingHandler implements WarcParser.Handler {
     Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private String name;
     ProtocolVersion version;
 
     @Override
-    public void version(ProtocolVersion version) {
-        this.version = version;
+    public void version(int major, int minor) {
+        version = new ProtocolVersion("WARC", major, minor);
     }
 
     @Override

@@ -75,6 +75,7 @@ public class WarcContinuationTest {
                 .segmentNumber(3)
                 .segmentTotalLength(1024)
                 .build();
+        assertEquals("continuation", continuation.type());
         assertEquals(id, continuation.segmentOriginId());
         assertEquals(Optional.of(3L), continuation.segmentNumber());
         assertEquals(Optional.of(1024L), continuation.segmentTotalLength());
