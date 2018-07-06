@@ -31,7 +31,7 @@ public class WarcConversionTest {
 
     @Test
     public void test() throws IOException {
-        WarcConversion conversion = (WarcConversion) WarcRecord.parse(Channels.newChannel(new ByteArrayInputStream(warc.getBytes(StandardCharsets.UTF_8))));
+        WarcConversion conversion = (WarcConversion) WarcRecords.parse(Channels.newChannel(new ByteArrayInputStream(warc.getBytes(StandardCharsets.UTF_8))));
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), conversion.refersTo().get());
         assertEquals(934, conversion.body().length());
         assertEquals("image/neoimg", conversion.body().type());

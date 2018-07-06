@@ -17,7 +17,7 @@ public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
 
     @Override
     public Optional<URI> refersTo() {
-        return headers().sole("WARC-Refers-To").map(WarcRecord::parseURI);
+        return headers().sole("WARC-Refers-To").map(WarcRecords::parseURI);
     }
 
     public static class Builder extends WarcTargetRecord.Builder<WarcConversion, Builder> {
@@ -26,7 +26,7 @@ public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
         }
 
         public Builder refersTo(URI recordId) {
-            return addHeader("WARC-Refers-To", WarcRecord.formatId(recordId));
+            return addHeader("WARC-Refers-To", WarcRecords.formatId(recordId));
         }
 
         @Override

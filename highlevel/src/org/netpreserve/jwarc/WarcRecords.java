@@ -5,55 +5,64 @@
 
 package org.netpreserve.jwarc;
 
+import org.netpreserve.jwarc.parser.WarcHeaderParser;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class WarcRecords {
-//    private static Map<String, WarcRecordConstructor> constructors = initConstructors();
-//
-//    private static Map<String, WarcRecordConstructor> initConstructors() {
-//        Map<String, WarcRecordConstructor> map = new ConcurrentHashMap<>();
-//        map.put("continuation", WarcContinuationImpl::new);
-//        map.put("conversion", WarcConversionImpl::new);
-//        map.put("metadata", WarcMetadataImpl::new);
-//        map.put("request", WarcRequestImpl::new);
-//        map.put("resource", WarcResourceImpl::new);
-//        map.put("response", WarcResponseImpl::new);
-//        map.put("revisit", WarcRevisitImpl::new);
-//        map.put("warcinfo", WarcInfoImpl::new);
-//        return map;
-//    }
-//
-//    /**
-//     * Register a constructor that produces a WarcRecord from a map of headers for use by {@link #fromHeaders(Map)}.
-//     */
-//    public static void registerConstructor(String warcType, WarcRecordConstructor constructor) {
-//        constructors.put(warcType, constructor);
-//    }
-//
-//    /**
-//     * Construct a WarcRecord from a map of headers.
-//     * <p>
-//     * Constructors for extension WARC-Type values may be registered using the
-//     * {@link #registerConstructor(String, WarcRecordConstructor)} method.
-//     *
-//     * @throws IllegalArgumentException if the WARC-Type header is unknown or missing
-//     */
-//    public static WarcRecord fromHeaders(Map<String, List<String>> headers) {
-//        /*
-//        Map<HeaderName, String> copy = new HashMap<>();
-//        copy.putAll(headers);
-//        copy = Collections.unmodifiableMap(copy);
-//
-//        String type = copy.get(WarcHeaders.WARC_TYPE);
-//        if (type == null) {
-//            throw new IllegalArgumentException(WarcHeaders.WARC_TYPE + " header is mandatory");
-//        }
-//
-//        WarcRecordConstructor constructor = constructors.get(type);
-//        if (constructor == null) {
-//            throw new IllegalArgumentException("Unknown " + WarcHeaders.WARC_TYPE + ": " + type);
-//        }
-//
-//        return constructor.construct(copy);
-//        */
-//        return null;
-//    }
+    static final Map<String, WarcRecord.Constructor> constructors = new ConcurrentHashMap<>();
+
+    static URI parseURI(String uri) {
+        if (uri.startsWith("<") && uri.endsWith(">")) {
+            uri = uri.substring(1, uri.length() - 1);
+        }
+        return URI.create(uri);
+    }
+
+    public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        MapBuildingHandler handler = new MapBuildingHandler();
+        WarcHeaderParser parser = new WarcHeaderParser(handler);
+
+        while (true) {
+            parser.parse(buffer);
+            if (parser.isFinished()) break;
+            if (parser.isError()) throw new ParsingException("invalid warc file");
+            buffer.compact();
+            int n = channel.read(buffer);
+            if (n < 0) throw new EOFException();
+            buffer.flip();
+        }
+
+        Headers headers = new Headers(handler.headerMap);
+        WarcBody body = new WarcBody(headers, channel, buffer);
+        String type = headers.sole("WARC-Type").orElse("unknown");
+        return constructors.getOrDefault(type, WarcRecord::new).construct(handler.version, headers, body);
+    }
+
+    public static WarcRecord parse(ReadableByteChannel channel) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
+        return parse(channel, buffer);
+    }
+
+    public static WarcRecord parse(InputStream stream) throws IOException {
+        return parse(Channels.newChannel(stream));
+    }
+
+    static String formatId(UUID recordId) {
+        return "<urn:uuid:" + recordId + ">";
+    }
+
+    static String formatId(URI recordId) {
+        return "<" + recordId + ">";
+    }
 }
