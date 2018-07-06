@@ -47,7 +47,6 @@ public final class ProtocolVersion {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(protocol, major, minor);
     }
 

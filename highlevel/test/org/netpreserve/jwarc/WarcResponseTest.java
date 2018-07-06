@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class WarcResponseTest {
     private static String warc = "WARC/1.1\r\n" +
@@ -57,6 +58,7 @@ public class WarcResponseTest {
     @Test
     public void builder() throws IOException {
         WarcResponse response = new WarcResponse.Builder()
+                .recordId(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"))
                 .blockDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")
                 .payloadDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")
                 .warcinfoId(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"))
@@ -65,5 +67,15 @@ public class WarcResponseTest {
                 .build();
         assertEquals(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2"), response.body().digests().get(0));
         assertEquals(TruncationReason.DISCONNECT, response.truncated());
+    }
+
+    @Test
+    public void nullTruncation() {
+        WarcResponse response = new WarcResponse.Builder()
+                .truncated(TruncationReason.DISCONNECT)
+                .truncated(TruncationReason.NOT_TRUNCATED)
+                .build();
+        assertFalse(response.headers().first("WARC-Truncated").isPresent());
+        assertEquals(TruncationReason.NOT_TRUNCATED, response.truncated());
     }
 }

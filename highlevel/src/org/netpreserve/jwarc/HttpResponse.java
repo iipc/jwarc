@@ -74,11 +74,6 @@ public class HttpResponse extends HttpMessage {
         }
 
         @Override
-        public void method(String method) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void reason(String reason) {
             this.reason = reason;
         }
@@ -90,6 +85,11 @@ public class HttpResponse extends HttpMessage {
 
         @Override
         public void target(String target) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void method(String method) {
             throw new UnsupportedOperationException();
         }
     }
