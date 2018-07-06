@@ -21,6 +21,14 @@ public class WarcResponse extends WarcCaptureRecord {
         return HttpResponse.parse(body().channel());
     }
 
-    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {
+    public static class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {
+        protected Builder(String type) {
+            super("response");
+        }
+
+        @Override
+        public WarcResponse build() {
+            return build(WarcResponse::new);
+        }
     }
 }

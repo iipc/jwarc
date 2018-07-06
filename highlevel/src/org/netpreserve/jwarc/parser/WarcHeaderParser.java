@@ -1,14 +1,9 @@
 
-/*
- * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
- */
-
 // line 1 "WarcHeaderParser.rl"
 // recompile: ragel -J WarcHeaderParser.rl -o WarcHeaderParser.java
 // diagram:   ragel -Vp WarcHeaderParser.rl | dot -TPng | feh -
 
-// line 45 "WarcHeaderParser.rl"
+// line 46 "WarcHeaderParser.rl"
 
 
 package org.netpreserve.jwarc.parser;
@@ -39,7 +34,7 @@ public class WarcHeaderParser {
 	cs = warc_start;
 	}
 
-// line 70 "WarcHeaderParser.rl"
+// line 71 "WarcHeaderParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
@@ -57,13 +52,17 @@ public class WarcHeaderParser {
         return cs == warc_error;
     }
 
+    public void fieldsOnly() {
+        cs = warc_en_warc_fields;
+    }
+
     @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
     public void parse(ByteBuffer data) {
         int p = data.position();
         int pe = data.limit();
 
         
-// line 62 "WarcHeaderParser.java"
+// line 66 "WarcHeaderParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -149,7 +148,7 @@ case 1:
 	break;
 	case 1:
 // line 10 "WarcHeaderParser.rl"
-	{ push((byte)' '); }
+	{ if (bufPos > 0) push((byte)' '); }
 	break;
 	case 2:
 // line 11 "WarcHeaderParser.rl"
@@ -176,10 +175,10 @@ case 1:
 	{ handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
 	break;
 	case 8:
-// line 43 "WarcHeaderParser.rl"
+// line 44 "WarcHeaderParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 178 "WarcHeaderParser.java"
+// line 182 "WarcHeaderParser.java"
 			}
 		}
 	}
@@ -199,7 +198,7 @@ case 5:
 	break; }
 	}
 
-// line 93 "WarcHeaderParser.rl"
+// line 98 "WarcHeaderParser.rl"
 
         data.position(p);
     }
@@ -212,7 +211,7 @@ case 5:
     }
 
     
-// line 211 "WarcHeaderParser.java"
+// line 215 "WarcHeaderParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -225,15 +224,16 @@ private static byte[] init__warc_actions_0()
 private static final byte _warc_actions[] = init__warc_actions_0();
 
 
-private static byte[] init__warc_key_offsets_0()
+private static short[] init__warc_key_offsets_0()
 {
-	return new byte [] {
+	return new short [] {
 	    0,    0,    1,    2,    3,    4,    5,    7,   10,   12,   15,   16,
-	   32,   33,   49,   55,   56,   74,   80,   86,   92
+	   32,   33,   49,   55,   56,   74,   80,   86,   92,  108,  109,  125,
+	  131,  132,  150,  156,  162,  168,  168
 	};
 }
 
-private static final byte _warc_key_offsets[] = init__warc_key_offsets_0();
+private static final short _warc_key_offsets[] = init__warc_key_offsets_0();
 
 
 private static char[] init__warc_trans_keys_0()
@@ -246,7 +246,14 @@ private static char[] init__warc_trans_keys_0()
 	  122,    9,   13,   32,  127,    0,   31,   10,    9,   13,   32,   33,
 	  124,  126,   35,   39,   42,   43,   45,   46,   48,   57,   65,   90,
 	   94,  122,    9,   13,   32,  127,    0,   31,    9,   13,   32,  127,
-	    0,   31,    9,   13,   32,  127,    0,   31,    0
+	    0,   31,    9,   13,   32,  127,    0,   31,   13,   33,  124,  126,
+	   35,   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,
+	   10,   33,   58,  124,  126,   35,   39,   42,   43,   45,   46,   48,
+	   57,   65,   90,   94,  122,    9,   13,   32,  127,    0,   31,   10,
+	    9,   13,   32,   33,  124,  126,   35,   39,   42,   43,   45,   46,
+	   48,   57,   65,   90,   94,  122,    9,   13,   32,  127,    0,   31,
+	    9,   13,   32,  127,    0,   31,    9,   13,   32,  127,    0,   31,
+	    0
 	};
 }
 
@@ -257,7 +264,8 @@ private static byte[] init__warc_single_lengths_0()
 {
 	return new byte [] {
 	    0,    1,    1,    1,    1,    1,    0,    1,    0,    1,    1,    4,
-	    1,    4,    4,    1,    6,    4,    4,    4,    0
+	    1,    4,    4,    1,    6,    4,    4,    4,    4,    1,    4,    4,
+	    1,    6,    4,    4,    4,    0,    0
 	};
 }
 
@@ -268,22 +276,24 @@ private static byte[] init__warc_range_lengths_0()
 {
 	return new byte [] {
 	    0,    0,    0,    0,    0,    0,    1,    1,    1,    1,    0,    6,
-	    0,    6,    1,    0,    6,    1,    1,    1,    0
+	    0,    6,    1,    0,    6,    1,    1,    1,    6,    0,    6,    1,
+	    0,    6,    1,    1,    1,    0,    0
 	};
 }
 
 private static final byte _warc_range_lengths[] = init__warc_range_lengths_0();
 
 
-private static byte[] init__warc_index_offsets_0()
+private static short[] init__warc_index_offsets_0()
 {
-	return new byte [] {
+	return new short [] {
 	    0,    0,    2,    4,    6,    8,   10,   12,   15,   17,   20,   22,
-	   33,   35,   46,   52,   54,   67,   73,   79,   85
+	   33,   35,   46,   52,   54,   67,   73,   79,   85,   96,   98,  109,
+	  115,  117,  130,  136,  142,  148,  149
 	};
 }
 
-private static final byte _warc_index_offsets[] = init__warc_index_offsets_0();
+private static final short _warc_index_offsets[] = init__warc_index_offsets_0();
 
 
 private static byte[] init__warc_indicies_0()
@@ -296,7 +306,12 @@ private static byte[] init__warc_indicies_0()
 	   15,    1,    1,   17,   18,    1,   19,   20,   19,   21,   21,   21,
 	   21,   21,   21,   21,   21,   21,    1,   19,   22,   19,    1,    1,
 	   23,   24,   25,   24,    1,    1,   17,   26,   16,   26,    1,    1,
-	   17,    1,    0
+	   17,   27,   28,   28,   28,   28,   28,   28,   28,   28,   28,    1,
+	   29,    1,   28,   30,   28,   28,   28,   28,   28,   28,   28,   28,
+	    1,   31,   32,   31,    1,    1,   33,   34,    1,   35,   36,   35,
+	   37,   37,   37,   37,   37,   37,   37,   37,   37,    1,   35,   38,
+	   35,    1,    1,   39,   40,   41,   40,    1,    1,   33,   42,   32,
+	   42,    1,    1,   33,    1,    1,    0
 	};
 }
 
@@ -307,8 +322,9 @@ private static byte[] init__warc_trans_targs_0()
 {
 	return new byte [] {
 	    2,    0,    3,    4,    5,    6,    7,    8,    9,   10,   11,   12,
-	   13,   20,   14,   14,   15,   18,   16,   17,   12,   13,   15,   18,
-	   19,   15,   19
+	   13,   29,   14,   14,   15,   18,   16,   17,   12,   13,   15,   18,
+	   19,   15,   19,   21,   22,   30,   23,   23,   24,   27,   25,   26,
+	   21,   22,   24,   27,   28,   24,   28
 	};
 }
 
@@ -320,7 +336,8 @@ private static byte[] init__warc_trans_actions_0()
 	return new byte [] {
 	    0,    0,    0,    0,    0,    0,    5,    0,    7,   11,    0,    0,
 	    1,   17,   13,    0,    0,    1,    0,    0,   15,   25,    3,   19,
-	   22,    9,    1
+	   22,    9,    1,    0,    1,    0,   13,    0,    0,    1,    0,    0,
+	   15,   25,    3,   19,   22,    9,    1
 	};
 }
 
@@ -328,11 +345,12 @@ private static final byte _warc_trans_actions[] = init__warc_trans_actions_0();
 
 
 static final int warc_start = 1;
-static final int warc_first_final = 20;
+static final int warc_first_final = 29;
 static final int warc_error = 0;
 
+static final int warc_en_warc_fields = 20;
 static final int warc_en_warc_header = 1;
 
 
-// line 105 "WarcHeaderParser.rl"
+// line 110 "WarcHeaderParser.rl"
 }

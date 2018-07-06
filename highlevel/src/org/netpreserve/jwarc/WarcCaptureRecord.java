@@ -33,12 +33,16 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
      * The IDs of other records created during the same capture event as this one.
      */
     public List<URI> concurrentTo() {
-        return headers().all("WARC-Concurrent-To").stream().map(URI::create).collect(toList());
+        return headers().all("WARC-Concurrent-To").stream().map(WarcRecord::parseURI).collect(toList());
     }
 
     public abstract static class Builder<R extends WarcCaptureRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {
+        protected Builder(String type) {
+            super(type);
+        }
+
         public B concurrentTo(URI recordId) {
-            return header("WARC-Concurrent-To", recordId.toString());
+            return addHeader("WARC-Concurrent-To", recordId.toString());
         }
     }
 }

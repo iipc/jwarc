@@ -32,13 +32,22 @@ public class WarcContinuation extends WarcTargetRecord {
         return null;
     }
 
-    public static abstract class Builder extends WarcTargetRecord.Builder<WarcContinuation, Builder> {
+    public static class Builder extends WarcTargetRecord.Builder<WarcContinuation, Builder> {
+        public Builder() {
+            super("continuation");
+        }
+
         public Builder segmentOriginId(String segmentOriginId) {
             return setHeader("WARC-Segment-Origin-Id", segmentOriginId);
         }
 
         public Builder segmentTotalLength(long segmentTotalLength) {
             return setHeader("WARC-Segment-Total-Length", Long.toString(segmentTotalLength));
+        }
+
+        @Override
+        public WarcContinuation build() {
+            return build(WarcContinuation::new);
         }
     }
 }

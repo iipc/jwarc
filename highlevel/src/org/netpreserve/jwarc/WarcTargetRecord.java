@@ -50,8 +50,12 @@ public abstract class WarcTargetRecord extends WarcRecord {
     }
 
     public static abstract class Builder<R extends WarcTargetRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {
+        public Builder(String type) {
+            super(type);
+        }
+
         public B payloadDigest(Digest payloadDigest) {
-            return header("WARC-Payload-Digest", payloadDigest.toPrefixedBase32());
+            return addHeader("WARC-Payload-Digest", payloadDigest.toPrefixedBase32());
         }
 
         public B identifiedPayloadType(String identifiedPayloadType) {
@@ -59,7 +63,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
         }
 
         public B warcinfoId(String warcinfoId) {
-            return header("WARC-Warcinfo-ID", warcinfoId);
+            return addHeader("WARC-Warcinfo-ID", warcinfoId);
         }
 
     }

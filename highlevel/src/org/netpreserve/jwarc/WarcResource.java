@@ -12,6 +12,14 @@ public class WarcResource extends WarcCaptureRecord {
         super(version, headers, body);
     }
 
-    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcResource, Builder> {
+    public static class Builder extends WarcCaptureRecord.Builder<WarcResource, Builder> {
+        protected Builder() {
+            super("resource");
+        }
+
+        @Override
+        public WarcResource build() {
+            return build(WarcResource::new);
+        }
     }
 }

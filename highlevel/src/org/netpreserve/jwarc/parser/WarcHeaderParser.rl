@@ -7,7 +7,7 @@ machine warc;
 getkey data.get(p);
 
 action push         { push(data.get(p)); }
-action push_space   { push((byte)' '); }
+action push_space   { if (bufPos > 0) push((byte)' '); }
 action add_major    { major = major * 10 + data.get(p) - '0'; }
 action add_minor    { minor = minor * 10 + data.get(p) - '0'; }
 action end_of_text  { endOfText = bufPos; }
@@ -39,8 +39,9 @@ field_value_first = OWS (TEXT OWS)? $push;
 field_value_folded = LWS (TEXT OWS)? >push_space $push;
 field_value = field_value_first (field_value_folded)*;
 named_field = field_name ":" field_value CRLF %handle_value;
-warc_fields = named_field* CRLF;
-warc_header := version warc_fields @{ fbreak; };
+named_fields = named_field* CRLF;
+warc_fields := named_fields;
+warc_header := version named_fields @{ fbreak; };
 
 }%%
 
@@ -82,6 +83,10 @@ public class WarcHeaderParser {
 
     public boolean isError() {
         return cs == warc_error;
+    }
+
+    public void fieldsOnly() {
+        cs = warc_en_warc_fields;
     }
 
     @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})

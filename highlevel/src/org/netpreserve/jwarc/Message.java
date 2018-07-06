@@ -45,7 +45,7 @@ public abstract class Message {
     public static abstract class Builder<R extends Message, B extends Builder<R, B>> {
         public abstract R build();
 
-        public abstract B header(String name, String value);
+        public abstract B addHeader(String name, String value);
 
         public abstract B setHeader(String name, String value);
     }

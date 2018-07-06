@@ -5,7 +5,16 @@
 
 package org.netpreserve.jwarc;
 
-import java.util.*;
+import org.netpreserve.jwarc.parser.WarcHeaderParser;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 
@@ -52,6 +61,28 @@ public class Headers {
     @Override
     public String toString() {
         return map.toString();
+    }
+
+    /**
+     * Parses application/warc-fields.
+     */
+    public static Headers parse(ReadableByteChannel channel) throws IOException {
+        MapBuildingHandler handler = new MapBuildingHandler();
+        WarcHeaderParser parser = new WarcHeaderParser(handler);
+        parser.fieldsOnly();
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        while (!parser.isFinished()) {
+            int n = channel.read(buffer);
+            if (n < 0) {
+                parser.parse(ByteBuffer.wrap("\r\n\r\n".getBytes(StandardCharsets.US_ASCII)));
+                break;
+            }
+            buffer.flip();
+            parser.parse(buffer);
+            if (parser.isError()) throw new ParsingException("invalid WARC fields");
+            buffer.compact();
+        }
+        return new Headers(handler.headerMap);
     }
 
     private static final boolean[] ILLEGAL = initIllegalLookup();

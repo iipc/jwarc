@@ -12,6 +12,14 @@ public class WarcMetadata extends WarcCaptureRecord {
         super(version, headers, body);
     }
 
-    public static abstract class Builder extends WarcCaptureRecord.Builder<WarcMetadata, Builder> {
+    public static class Builder extends WarcCaptureRecord.Builder<WarcMetadata, Builder> {
+        protected Builder() {
+            super("metadata");
+        }
+
+        @Override
+        public WarcMetadata build() {
+            return build(WarcMetadata::new);
+        }
     }
 }

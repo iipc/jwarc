@@ -33,7 +33,8 @@ Available on all WARC records.
 ### Warcinfo
 
 ```java
-  (Optional<String>) warcinfo.filename();
+            (Headers) warcinfo.fields();   // parse the body as application/warc-fields
+   (Optional<String>) warcinfo.filename(); // filename of the containing WARC
 ```
 
 ### WarcTargetRecord

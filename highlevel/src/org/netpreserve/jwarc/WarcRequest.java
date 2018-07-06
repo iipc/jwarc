@@ -20,4 +20,15 @@ public class WarcRequest extends WarcCaptureRecord {
     public HttpRequest http() {
         return HttpRequest.parse(body().channel());
     }
+
+    public static class Builder extends WarcCaptureRecord.Builder<WarcRequest, Builder> {
+        protected Builder() {
+            super("request");
+        }
+
+        @Override
+        public WarcRequest build() {
+            return build(WarcRequest::new);
+        }
+    }
 }
