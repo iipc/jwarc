@@ -1,4 +1,4 @@
-# jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc) ![Codecov](https://img.shields.io/codecov/c/github/ato/jwarc.svg)
+# jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc) [![Codecov](https://img.shields.io/codecov/c/github/ato/jwarc.svg)](https://codecov.io/gh/ato/jwarc)
 
 (Work in progress) A Java library for reading and writing WARC files.
 
