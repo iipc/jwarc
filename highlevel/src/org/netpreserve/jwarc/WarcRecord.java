@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.WarcParser;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,15 +34,14 @@ public class WarcRecord extends Message {
     }
 
     public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
-        MapBuildingHandler handler = new MapBuildingHandler();
-        WarcParser parser = new WarcParser(handler);
+        WarcParser parser = new WarcParser();
         if (!parser.parse(channel, buffer)) {
             return null;
         }
-        Headers headers = new Headers(handler.headerMap);
+        Headers headers = parser.headers();
         WarcBodyChannel body = new WarcBodyChannel(headers, channel, buffer);
-        String type = headers.sole("WARC-Type").orElse("unknown");
-        return constructors.getOrDefault(type, WarcRecord::new).construct(handler.version, headers, body);
+        String type = headers.sole("WARC-Type").orElse("default");
+        return constructors.getOrDefault(type, WarcRecord::new).construct(parser.version(), headers, body);
     }
 
     public static WarcRecord parse(ReadableByteChannel channel) throws IOException {

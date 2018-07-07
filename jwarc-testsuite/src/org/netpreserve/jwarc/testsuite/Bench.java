@@ -21,6 +21,11 @@ import java.nio.file.Paths;
 
 public class Bench {
     public static void main(String[] args) throws IOException {
+        jwat();
+        return;
+    }
+
+    private static void commons() throws IOException {
         while (true) {
             long start = System.currentTimeMillis();
             try (ArchiveReader reader = WARCReaderFactory.get(new File("/tmp/her.warc"))) {

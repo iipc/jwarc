@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 
 public class BodyChannel implements ReadableByteChannel {
     protected final Headers headers;
@@ -63,6 +64,35 @@ public class BodyChannel implements ReadableByteChannel {
             return actuallyRead;
         } finally {
             dest.limit(savedLimit);
+        }
+    }
+
+    void consume() throws IOException {
+        while (true) {
+            // if remaining body is in the buffer we only need to advance the buffer position
+            long remaining = size - position;
+            if (remaining < buffer.remaining()) {
+                buffer.position(buffer.position() + (int) remaining);
+                position = size;
+                break;
+            }
+
+            // if underlying channel is seekable discard buffer and skip directly
+            if (channel instanceof SeekableByteChannel) {
+                SeekableByteChannel seekable = (SeekableByteChannel)channel;
+                seekable.position(seekable.position() + remaining - buffer.remaining());
+                position = size;
+                buffer.position(buffer.limit());
+                break;
+            }
+
+            // otherwise move forward by discarding and refilling buffer
+            position += buffer.remaining();
+            buffer.clear();
+            if (channel.read(buffer) < 0) {
+                throw new EOFException();
+            }
+            buffer.flip();
         }
     }
 

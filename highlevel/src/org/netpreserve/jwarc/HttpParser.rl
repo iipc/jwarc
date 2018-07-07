@@ -67,7 +67,7 @@ http_response := status_line named_fields @finish;
 
 }%%
 
-package org.netpreserve.jwarc.parser;
+package org.netpreserve.jwarc;
 
 import java.io.EOFException;
 import java.io.IOException;

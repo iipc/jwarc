@@ -5,8 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import org.netpreserve.jwarc.parser.ParsingException;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -21,32 +19,31 @@ public class WarcReader {
     private final static int CRLFCRLF = 0x0d0a0d0a;
     private WarcRecord record;
 
-    public WarcReader(ReadableByteChannel channel) throws IOException, DataFormatException {
+    public WarcReader(ReadableByteChannel channel) throws IOException {
         this.channel = channel;
         buffer.flip();
     }
 
     public WarcRecord next() throws IOException {
         if (record != null) {
-            consume(record.body());
-            while (buffer.remaining() < 4) {
-                buffer.compact();
-                if (channel.read(buffer) < 0) throw new EOFException("missing trailer");
-                buffer.flip();
-            }
-            int trailer = buffer.getInt();
-            if (trailer != CRLFCRLF) { // CRLFCRLF
-                throw new ParsingException("invalid trailer: " + Integer.toHexString(trailer));
-            }
+            record.body().consume();
+            readTrailer();
         }
         record = WarcRecord.parse(channel, buffer);
         return record;
     }
 
-    private void consume(ReadableByteChannel channel) throws IOException {
-        ByteBuffer tmp = ByteBuffer.allocate(8192);
-        while (channel.read(tmp) >= 0) {
-            tmp.clear();
+    private void readTrailer() throws IOException {
+        while (buffer.remaining() < 4) {
+            buffer.compact();
+            if (channel.read(buffer) < 0) {
+                throw new EOFException("expected trailing CRLFCRLF");
+            }
+            buffer.flip();
+        }
+        int trailer = buffer.getInt();
+        if (trailer != CRLFCRLF) { // CRLFCRLF
+            throw new ParsingException("invalid trailer: " + Integer.toHexString(trailer));
         }
     }
 

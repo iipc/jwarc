@@ -1,5 +1,18 @@
 // recompile: ragel -J WarcParser.rl -o WarcParser.java
 // diagram:   ragel -Vp WarcParser.rl | dot -TPng | feh -
+
+package org.netpreserve.jwarc;
+
+import javax.annotation.Generated;
+import java.io.EOFException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 %%{
 
 machine warc;
@@ -11,14 +24,23 @@ action push_space   { if (bufPos > 0) push((byte)' '); }
 action add_major    { major = major * 10 + data.get(p) - '0'; }
 action add_minor    { minor = minor * 10 + data.get(p) - '0'; }
 action end_of_text  { endOfText = bufPos; }
-action handle_version { handler.version(major, minor); }
-action handle_name  { handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
-action handle_value { handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
+
+action handle_name  {
+    name = new String(buf, 0, bufPos, US_ASCII);
+    bufPos = 0;
+}
+
+action handle_value {
+    String value = new String(buf, 0, endOfText, UTF_8);
+    headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
+    bufPos = 0;
+    endOfText = 0;
+}
 
 CRLF = "\r\n";
 
 version_major = digit+ $add_major;
-version_minor = digit+ $add_minor %handle_version;
+version_minor = digit+ $add_minor;
 version = "WARC/" version_major "." version_minor CRLF ;
 
 CTL = cntrl | 127;
@@ -45,63 +67,44 @@ warc_header := version named_fields @{ fbreak; };
 
 }%%
 
-package org.netpreserve.jwarc.parser;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
+/**
+ * Low-level WARC record parser.
+ * <p>
+ * Unless you're doing something advanced (like non-blocking IO) you should use the higher-level {@link WarcReader}
+ * class instead.
+ */
 public class WarcParser {
-    private final Handler handler;
     private int cs;
     private long position;
     private byte[] buf = new byte[256];
-    private int bufPos = 0;
+    private int bufPos;
     private int endOfText;
     private int major;
     private int minor;
+    private String name;
+    private Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-    public interface Handler {
-        void version(int major, int minor);
-        void name(String name);
-        void value(String value);
+    public static WarcParser newWarcFieldsParser() {
+        return new WarcParser(warc_en_warc_fields);
     }
 
-    public WarcParser(Handler handler) {
-        this.handler = handler;
-        reset();
+    public WarcParser() {
+        this(warc_start);
     }
 
-    public void reset() {
-        %% write init;
-        bufPos = 0;
-        if (buf.length > 8192) {
-            buf = new byte[256]; // if our buffer grew really big release it
-        }
-        major = 0;
-        minor = 0;
-        endOfText = 0;
-        position = 0;
+    private WarcParser(int entryState) {
+        cs = entryState;
     }
 
     public boolean isFinished() {
-        return cs == warc_first_final;
+        return cs >= warc_first_final;
     }
 
     public boolean isError() {
         return cs == warc_error;
     }
 
-    public void fieldsOnly() {
-        cs = warc_en_warc_fields;
-    }
-
-    @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
+    @Generated("Ragel")
     public void parse(ByteBuffer data) {
         int p = data.position();
         int pe = data.limit();
@@ -136,6 +139,14 @@ public class WarcParser {
             buf = Arrays.copyOf(buf, buf.length * 2);
         }
         buf[bufPos++] = b;
+    }
+
+    public Headers headers() {
+        return new Headers(headerMap);
+    }
+
+    public ProtocolVersion version() {
+        return new ProtocolVersion("WARC", major, minor);
     }
 
     %% write data;

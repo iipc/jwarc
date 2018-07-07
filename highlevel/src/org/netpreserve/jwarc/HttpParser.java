@@ -6,7 +6,7 @@
 // line 68 "HttpParser.rl"
 
 
-package org.netpreserve.jwarc.parser;
+package org.netpreserve.jwarc;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class HttpParser {
     private final Handler handler;
     private int cs;
+    private long position;
     private boolean finished;
     private byte[] buf = new byte[256];
     private int bufPos = 0;
@@ -27,7 +28,6 @@ public class HttpParser {
     private int major;
     private int minor;
     private int status;
-    private long position;
 
 	public interface Handler {
 		void version(int major, int minor);

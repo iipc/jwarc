@@ -3,78 +3,66 @@
 // recompile: ragel -J WarcParser.rl -o WarcParser.java
 // diagram:   ragel -Vp WarcParser.rl | dot -TPng | feh -
 
-// line 46 "WarcParser.rl"
+package org.netpreserve.jwarc;
 
-
-package org.netpreserve.jwarc.parser;
-
+import javax.annotation.Generated;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
+
+// line 68 "WarcParser.rl"
+
+
+/**
+ * Low-level WARC record parser.
+ * <p>
+ * Unless you're doing something advanced (like non-blocking IO) you should use the higher-level {@link WarcReader}
+ * class instead.
+ */
 public class WarcParser {
-    private final Handler handler;
     private int cs;
     private long position;
     private byte[] buf = new byte[256];
-    private int bufPos = 0;
+    private int bufPos;
     private int endOfText;
     private int major;
     private int minor;
+    private String name;
+    private Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-    public interface Handler {
-        void version(int major, int minor);
-        void name(String name);
-        void value(String value);
+    public static WarcParser newWarcFieldsParser() {
+        return new WarcParser(warc_en_warc_fields);
     }
 
-    public WarcParser(Handler handler) {
-        this.handler = handler;
-        reset();
+    public WarcParser() {
+        this(warc_start);
     }
 
-    public void reset() {
-        
-// line 44 "WarcParser.java"
-	{
-	cs = warc_start;
-	}
-
-// line 82 "WarcParser.rl"
-        bufPos = 0;
-        if (buf.length > 8192) {
-            buf = new byte[256]; // if our buffer grew really big release it
-        }
-        major = 0;
-        minor = 0;
-        endOfText = 0;
-        position = 0;
+    private WarcParser(int entryState) {
+        cs = entryState;
     }
 
     public boolean isFinished() {
-        return cs == warc_first_final;
+        return cs >= warc_first_final;
     }
 
     public boolean isError() {
         return cs == warc_error;
     }
 
-    public void fieldsOnly() {
-        cs = warc_en_warc_fields;
-    }
-
-    @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
+    @Generated("Ragel")
     public void parse(ByteBuffer data) {
         int p = data.position();
         int pe = data.limit();
 
         
-// line 78 "WarcParser.java"
+// line 66 "WarcParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -155,42 +143,46 @@ case 1:
 			switch ( _warc_actions[_acts++] )
 			{
 	case 0:
-// line 9 "WarcParser.rl"
+// line 22 "WarcParser.rl"
 	{ push(data.get(p)); }
 	break;
 	case 1:
-// line 10 "WarcParser.rl"
+// line 23 "WarcParser.rl"
 	{ if (bufPos > 0) push((byte)' '); }
 	break;
 	case 2:
-// line 11 "WarcParser.rl"
+// line 24 "WarcParser.rl"
 	{ major = major * 10 + data.get(p) - '0'; }
 	break;
 	case 3:
-// line 12 "WarcParser.rl"
+// line 25 "WarcParser.rl"
 	{ minor = minor * 10 + data.get(p) - '0'; }
 	break;
 	case 4:
-// line 13 "WarcParser.rl"
+// line 26 "WarcParser.rl"
 	{ endOfText = bufPos; }
 	break;
 	case 5:
-// line 14 "WarcParser.rl"
-	{ handler.version(major, minor); }
+// line 28 "WarcParser.rl"
+	{
+    name = new String(buf, 0, bufPos, US_ASCII);
+    bufPos = 0;
+}
 	break;
 	case 6:
-// line 15 "WarcParser.rl"
-	{ handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
+// line 33 "WarcParser.rl"
+	{
+    String value = new String(buf, 0, endOfText, UTF_8);
+    headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
+    bufPos = 0;
+    endOfText = 0;
+}
 	break;
 	case 7:
-// line 16 "WarcParser.rl"
-	{ handler.value(new String(buf, 0, endOfText, UTF_8)); bufPos = 0; endOfText = 0; }
-	break;
-	case 8:
-// line 44 "WarcParser.rl"
+// line 66 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 194 "WarcParser.java"
+// line 186 "WarcParser.java"
 			}
 		}
 	}
@@ -210,7 +202,7 @@ case 5:
 	break; }
 	}
 
-// line 110 "WarcParser.rl"
+// line 113 "WarcParser.rl"
 
         position += p - data.position();
         data.position(p);
@@ -242,14 +234,22 @@ case 5:
         buf[bufPos++] = b;
     }
 
+    public Headers headers() {
+        return new Headers(headerMap);
+    }
+
+    public ProtocolVersion version() {
+        return new ProtocolVersion("WARC", major, minor);
+    }
+
     
 // line 247 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
-	    5,    1,    6,    1,    7,    1,    8,    2,    1,    0,    2,    4,
-	    0,    2,    7,    0
+	    5,    1,    6,    1,    7,    2,    1,    0,    2,    4,    0,    2,
+	    6,    0
 	};
 }
 
@@ -366,10 +366,10 @@ private static final byte _warc_trans_targs[] = init__warc_trans_targs_0();
 private static byte[] init__warc_trans_actions_0()
 {
 	return new byte [] {
-	    0,    0,    0,    0,    0,    0,    5,    0,    7,   11,    0,    0,
-	    1,   17,   13,    0,    0,    1,    0,    0,   15,   25,    3,   19,
-	   22,    9,    1,    0,    1,    0,   13,    0,    0,    1,    0,    0,
-	   15,   25,    3,   19,   22,    9,    1
+	    0,    0,    0,    0,    0,    0,    5,    0,    7,    0,    0,    0,
+	    1,   15,   11,    0,    0,    1,    0,    0,   13,   23,    3,   17,
+	   20,    9,    1,    0,    1,    0,   11,    0,    0,    1,    0,    0,
+	   13,   23,    3,   17,   20,    9,    1
 	};
 }
 
@@ -384,5 +384,5 @@ static final int warc_en_warc_fields = 20;
 static final int warc_en_warc_header = 1;
 
 
-// line 142 "WarcParser.rl"
+// line 153 "WarcParser.rl"
 }
