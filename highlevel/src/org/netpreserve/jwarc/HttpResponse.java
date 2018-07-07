@@ -19,7 +19,7 @@ public class HttpResponse extends HttpMessage {
     private final int status;
     private final String reason;
 
-    HttpResponse(int status, String reason, ProtocolVersion version, Headers headers, Body body) {
+    HttpResponse(int status, String reason, ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
         this.status = status;
         this.reason = reason;
@@ -33,7 +33,7 @@ public class HttpResponse extends HttpMessage {
         parser.responseOnly();
         parser.parse(channel, buffer);
         Headers headers = new Headers(handler.headerMap);
-        Body body = new Body(headers, channel, buffer);
+        BodyChannel body = new BodyChannel(headers, channel, buffer);
         return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
     }
 

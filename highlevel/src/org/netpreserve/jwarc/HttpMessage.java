@@ -6,7 +6,7 @@
 package org.netpreserve.jwarc;
 
 public abstract class HttpMessage extends Message {
-    HttpMessage(ProtocolVersion version, Headers headers, Body body) {
+    HttpMessage(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 }

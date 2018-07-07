@@ -13,18 +13,42 @@ WarcRecord record = WarcRecord.parse(channel);
 
 TODO: WarcReader.
 
-## Record types
+## Quick Reference
 
-    WarcRecord
-      Warcinfo            (warcinfo)
-      WarcTargetRecord
-        WarcContinuation  (continuation)
-        WarcConversion    (conversion)
-        WarcCaptureRecord
-          WarcMetadata    (metadata)
-          WarcRequest     (request)
-          WarcResource    (resource)
-          WarcResponse    (response)
+    Message
+      HttpMessage
+        HttpRequest
+        HttpResponse
+      WarcRecord
+        Warcinfo            (warcinfo)
+        WarcTargetRecord
+          WarcContinuation  (continuation)
+          WarcConversion    (conversion)
+          WarcCaptureRecord
+            WarcMetadata    (metadata)
+            WarcRequest     (request)
+            WarcResource    (resource)
+            WarcResponse    (response)
+
+### Message
+
+The basic building block of both HTTP protocol and WARC file format is a message consisting of set of named header
+fields and a body. Header field names are case-insensitvie and may have multiple values.
+
+```java
+             (BodyChannel) message.body();                     // the message body as a ReadableByteChannel
+                    (long) message.body().position();          // the next byte position to read from
+                     (int) message.body().read(byteBuffer);    // reads a sequence of bytes from the body
+                    (long) message.body().size();              // the length in bytes of the body
+             (InputStream) message.body().stream();            // views the body as an InputStream
+                  (String) message.body().type();              // the MIME type of the body
+                 (Headers) message.headers();                  // the header fields
+            (List<String>) message.headers().all("Cookie");    // all values of a header
+        (Optional<String>) message.headers().first("Cookie");  // the first value of a header
+(Map<String,List<String>>) message.headers().map();            // views the header fields as a map
+        (Optional<String>) message.headers().sole("Location"); // throws if header has multiple values
+         (ProtocolVersion) message.version();                  // the protocol version (e.g. HTTP/1.0 or WARC/1.1)
+```
 
 ### WarcRecord
 

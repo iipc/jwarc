@@ -19,7 +19,7 @@ public class Warcinfo extends WarcRecord {
 
     private Headers fields;
 
-    Warcinfo(ProtocolVersion version, Headers headers, WarcBody body) {
+    Warcinfo(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 
@@ -35,7 +35,7 @@ public class Warcinfo extends WarcRecord {
      */
     public Headers fields() throws IOException {
         if (fields == null) {
-            fields = Headers.parse(body().channel());
+            fields = Headers.parse(body());
         }
         return fields;
     }

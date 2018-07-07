@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class WarcParser {
     private final Handler handler;
     private int cs;
+    private long position;
     private byte[] buf = new byte[256];
     private int bufPos = 0;
     private int endOfText;
@@ -39,12 +40,12 @@ public class WarcParser {
 
     public void reset() {
         
-// line 43 "WarcParser.java"
+// line 44 "WarcParser.java"
 	{
 	cs = warc_start;
 	}
 
-// line 81 "WarcParser.rl"
+// line 82 "WarcParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
@@ -52,6 +53,7 @@ public class WarcParser {
         major = 0;
         minor = 0;
         endOfText = 0;
+        position = 0;
     }
 
     public boolean isFinished() {
@@ -72,7 +74,7 @@ public class WarcParser {
         int pe = data.limit();
 
         
-// line 76 "WarcParser.java"
+// line 78 "WarcParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -188,7 +190,7 @@ case 1:
 // line 44 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 192 "WarcParser.java"
+// line 194 "WarcParser.java"
 			}
 		}
 	}
@@ -208,19 +210,27 @@ case 5:
 	break; }
 	}
 
-// line 108 "WarcParser.rl"
+// line 110 "WarcParser.rl"
 
+        position += p - data.position();
         data.position(p);
     }
 
-    public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+    public boolean parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         while (true) {
             parse(buffer);
-            if (isFinished()) break;
+            if (isFinished()) {
+                return true;
+            }
             if (isError()) throw new ParsingException("invalid WARC record");
             buffer.compact();
             int n = channel.read(buffer);
-            if (n < 0) throw new EOFException();
+            if (n < 0) {
+                if (position > 0) {
+                    throw new EOFException();
+                }
+                return false;
+            }
             buffer.flip();
         }
     }
@@ -233,7 +243,7 @@ case 5:
     }
 
     
-// line 237 "WarcParser.java"
+// line 247 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -374,5 +384,5 @@ static final int warc_en_warc_fields = 20;
 static final int warc_en_warc_header = 1;
 
 
-// line 132 "WarcParser.rl"
+// line 142 "WarcParser.rl"
 }

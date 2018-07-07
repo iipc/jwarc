@@ -15,7 +15,7 @@ import java.util.Optional;
  * record types.
  */
 public abstract class WarcTargetRecord extends WarcRecord {
-    WarcTargetRecord(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcTargetRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 

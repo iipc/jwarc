@@ -34,7 +34,7 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
      */
     public static final URI SERVER_NOT_MODIFIED_1_1 = URI.create("http://netpreserve.org/warc/1.1/revisit/server-not-modified");
 
-    WarcRevisit(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcRevisit(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 

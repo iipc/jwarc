@@ -59,6 +59,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 public class WarcParser {
     private final Handler handler;
     private int cs;
+    private long position;
     private byte[] buf = new byte[256];
     private int bufPos = 0;
     private int endOfText;
@@ -85,6 +86,7 @@ public class WarcParser {
         major = 0;
         minor = 0;
         endOfText = 0;
+        position = 0;
     }
 
     public boolean isFinished() {
@@ -106,17 +108,25 @@ public class WarcParser {
 
         %% write exec;
 
+        position += p - data.position();
         data.position(p);
     }
 
-    public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+    public boolean parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         while (true) {
             parse(buffer);
-            if (isFinished()) break;
+            if (isFinished()) {
+                return true;
+            }
             if (isError()) throw new ParsingException("invalid WARC record");
             buffer.compact();
             int n = channel.read(buffer);
-            if (n < 0) throw new EOFException();
+            if (n < 0) {
+                if (position > 0) {
+                    throw new EOFException();
+                }
+                return false;
+            }
             buffer.flip();
         }
     }

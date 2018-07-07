@@ -6,7 +6,7 @@
 package org.netpreserve.jwarc;
 
 public class WarcResource extends WarcCaptureRecord {
-    WarcResource(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcResource(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 

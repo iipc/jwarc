@@ -33,7 +33,7 @@ public class WarcConversionTest {
     public void test() throws IOException {
         WarcConversion conversion = (WarcConversion) WarcRecord.parse(Channels.newChannel(new ByteArrayInputStream(warc.getBytes(StandardCharsets.UTF_8))));
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), conversion.refersTo().get());
-        assertEquals(934, conversion.body().length());
+        assertEquals(934, conversion.body().size());
         assertEquals("image/neoimg", conversion.body().type());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), conversion.targetURI());
     }

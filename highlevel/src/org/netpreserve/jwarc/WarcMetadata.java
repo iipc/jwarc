@@ -14,18 +14,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class WarcMetadata extends WarcCaptureRecord {
     private Headers fields;
 
-    WarcMetadata(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcMetadata(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 
     /**
      * Parses the body as application/warc-fields.
      * <p>
-     * This is a convenience method for <code>Headers.parse(metadata.body().channel())</code>.
+     * This is a convenience method for <code>Headers.parse(metadata.body())</code>.
      */
     public Headers fields() throws IOException {
         if (fields == null) {
-            fields = Headers.parse(body().channel());
+            fields = Headers.parse(body());
         }
         return fields;
     }

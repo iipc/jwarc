@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.Optional;
 
 public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
-    WarcConversion(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcConversion(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 

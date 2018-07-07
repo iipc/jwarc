@@ -47,7 +47,7 @@ public class WarcinfoTest {
         assertEquals(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"), warcinfo.id());
         assertEquals(Instant.parse("2006-09-19T17:20:14Z"), warcinfo.date());
         assertEquals("hello.warc", warcinfo.filename().get());
-        assertEquals(399, warcinfo.body().length());
+        assertEquals(399, warcinfo.body().size());
         assertEquals("application/warc-fields", warcinfo.body().type());
         Headers fields = warcinfo.fields();
         assertEquals("207.241.227.234", fields.sole("ip").get());

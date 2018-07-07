@@ -10,8 +10,8 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class WarcBody extends Body {
-    WarcBody(Headers headers, ReadableByteChannel channel, ByteBuffer buffer) {
+public class WarcBodyChannel extends BodyChannel {
+    WarcBodyChannel(Headers headers, ReadableByteChannel channel, ByteBuffer buffer) {
         super(headers, channel, buffer);
     }
 

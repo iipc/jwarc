@@ -31,19 +31,18 @@ public class WarcRecord extends Message {
         constructors.put("warcinfo", Warcinfo::new);
     }
 
-    private final WarcBody warcBody;
-
-    WarcRecord(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
-        this.warcBody = body;
     }
 
     public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         MapBuildingHandler handler = new MapBuildingHandler();
         WarcParser parser = new WarcParser(handler);
-        parser.parse(channel, buffer);
+        if (!parser.parse(channel, buffer)) {
+            return null;
+        }
         Headers headers = new Headers(handler.headerMap);
-        WarcBody body = new WarcBody(headers, channel, buffer);
+        WarcBodyChannel body = new WarcBodyChannel(headers, channel, buffer);
         String type = headers.sole("WARC-Type").orElse("unknown");
         return constructors.getOrDefault(type, WarcRecord::new).construct(handler.version, headers, body);
     }
@@ -74,8 +73,8 @@ public class WarcRecord extends Message {
     }
 
     @Override
-    public WarcBody body() {
-        return warcBody;
+    public WarcBodyChannel body() {
+        return (WarcBodyChannel) super.body();
     }
 
     /**
@@ -122,7 +121,7 @@ public class WarcRecord extends Message {
 
     @FunctionalInterface
     public interface Constructor<R extends WarcRecord> {
-        R construct(ProtocolVersion version, Headers headers, WarcBody body);
+        R construct(ProtocolVersion version, Headers headers, WarcBodyChannel body);
     }
 
     public abstract static class Builder<R extends WarcRecord, B extends Builder<R, B>> extends Message.Builder<R, B> {
@@ -193,7 +192,7 @@ public class WarcRecord extends Message {
 
         protected R build(Constructor<R> constructor) {
             Headers headers = new Headers(headerMap);
-            return constructor.construct(version, headers, new WarcBody(headers, bodyChannel, ByteBuffer.allocate(0)));
+            return constructor.construct(version, headers, new WarcBodyChannel(headers, bodyChannel, ByteBuffer.allocate(0)));
         }
     }
 }

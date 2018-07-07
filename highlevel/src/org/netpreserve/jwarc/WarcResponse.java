@@ -11,7 +11,7 @@ public class WarcResponse extends WarcCaptureRecord {
 
     private HttpResponse http;
 
-    WarcResponse(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcResponse(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 
@@ -22,7 +22,7 @@ public class WarcResponse extends WarcCaptureRecord {
      */
     public HttpResponse http() throws IOException {
         if (http == null) {
-            http = HttpResponse.parse(body().channel());
+            http = HttpResponse.parse(body());
         }
         return http;
     }

@@ -19,7 +19,7 @@ public class HttpRequest extends HttpMessage {
     private final String method;
     private final String target;
 
-    HttpRequest(String method, String target, ProtocolVersion version, Headers headers, Body body) {
+    HttpRequest(String method, String target, ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
         this.method = method;
         this.target = target;
@@ -33,7 +33,7 @@ public class HttpRequest extends HttpMessage {
         parser.requestOnly();
         parser.parse(channel, buffer);
         Headers headers = new Headers(handler.headerMap);
-        Body body = new Body(headers, channel, buffer);
+        BodyChannel body = new BodyChannel(headers, channel, buffer);
         return new HttpRequest(handler.method, handler.target, handler.version, headers, body);
     }
 

@@ -11,9 +11,9 @@ package org.netpreserve.jwarc;
 public abstract class Message {
     private final ProtocolVersion version;
     private final Headers headers;
-    private final Body body;
+    private final BodyChannel body;
 
-    Message(ProtocolVersion version, Headers headers, Body body) {
+    Message(ProtocolVersion version, Headers headers, BodyChannel body) {
         this.version = version;
         this.headers = headers;
         this.body = body;
@@ -29,7 +29,7 @@ public abstract class Message {
     /**
      * The content body of this message.
      */
-    public Body body() {
+    public BodyChannel body() {
         return body;
     }
 

@@ -11,18 +11,18 @@ public class WarcRequest extends WarcCaptureRecord {
 
     private HttpRequest http;
 
-    WarcRequest(ProtocolVersion version, Headers headers, WarcBody body) {
+    WarcRequest(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 
     /**
      * Parses the content body of this record as HTTP request.
      * <p/>
-     * This is a convenience method for <code>HttpRequest.parse(request.body().channel())</code>.
+     * This is a convenience method for <code>HttpRequest.parse(request.body())</code>.
      */
     public HttpRequest http() throws IOException {
         if (http == null) {
-            http = HttpRequest.parse(body().channel());
+            http = HttpRequest.parse(body());
         }
         return http;
     }
