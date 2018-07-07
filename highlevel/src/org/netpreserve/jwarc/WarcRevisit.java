@@ -13,7 +13,7 @@ import java.util.Optional;
  * A WARC record describing a subsequent visitation of content previously archived. Typically used to indicate the
  * content had not changed and therefore a duplicate copy of it was not recorded.
  */
-public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
+public class WarcRevisit extends WarcCaptureRecord {
     /**
      * WARC 1.0 revisit profile for when the payload content was the same as determined by a strong digest function.
      */
@@ -61,7 +61,9 @@ public class WarcRevisit extends WarcCaptureRecord implements HasRefersTo {
         return headers().sole("WARC-Profile").map(URI::create).get();
     }
 
-    @Override
+    /**
+     * The record id of the original response or resource that was revisited.
+     */
     public Optional<URI> refersTo() {
         return headers().sole("WARC-Refers-To").map(WarcRecord::parseRecordID);
     }

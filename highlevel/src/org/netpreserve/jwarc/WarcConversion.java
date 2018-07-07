@@ -8,12 +8,14 @@ package org.netpreserve.jwarc;
 import java.net.URI;
 import java.util.Optional;
 
-public class WarcConversion extends WarcTargetRecord implements HasRefersTo {
+public class WarcConversion extends WarcTargetRecord {
     WarcConversion(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
     }
 
-    @Override
+    /**
+     * The record id of the source of the conversion.
+     */
     public Optional<URI> refersTo() {
         return headers().sole("WARC-Refers-To").map(WarcRecord::parseRecordID);
     }
