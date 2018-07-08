@@ -58,10 +58,10 @@ public class WarcContinuationTest {
 
     @Test
     public void test() throws IOException {
-        WarcResponse response = (WarcResponse) WarcRecord.parse(new ByteArrayInputStream(continuation1.getBytes(UTF_8)));
+        WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(continuation1.getBytes(UTF_8))).next();
         assertEquals(Optional.of(1L), response.segmentNumber());
 
-        WarcContinuation continuation = (WarcContinuation) WarcRecord.parse(new ByteArrayInputStream(continuation2.getBytes(UTF_8)));
+        WarcContinuation continuation = (WarcContinuation) new WarcReader(new ByteArrayInputStream(continuation2.getBytes(UTF_8))).next();
         assertEquals(response.id(), continuation.segmentOriginId());
         assertEquals(Optional.of(2L), continuation.segmentNumber());
         assertEquals(Optional.of(1902L), continuation.segmentTotalLength());

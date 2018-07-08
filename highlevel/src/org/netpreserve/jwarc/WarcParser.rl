@@ -74,6 +74,7 @@ warc_header := version named_fields @{ fbreak; };
  * class instead.
  */
 public class WarcParser {
+    private int entryState;
     private int cs;
     private long position;
     private byte[] buf = new byte[256];
@@ -82,7 +83,7 @@ public class WarcParser {
     private int major;
     private int minor;
     private String name;
-    private Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private Map<String,List<String>> headerMap;
 
     public static WarcParser newWarcFieldsParser() {
         return new WarcParser(warc_en_warc_fields);
@@ -93,7 +94,22 @@ public class WarcParser {
     }
 
     private WarcParser(int entryState) {
+        this.entryState = entryState;
+        reset();
+    }
+
+    public void reset() {
         cs = entryState;
+        position = 0;
+        bufPos = 0;
+        endOfText = 0;
+        major = 0;
+        minor = 0;
+        name = null;
+        headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        if (buf.length > 4096) {
+            buf = new byte[4096];
+        }
     }
 
     public boolean isFinished() {
@@ -147,6 +163,10 @@ public class WarcParser {
 
     public ProtocolVersion version() {
         return new ProtocolVersion("WARC", major, minor);
+    }
+
+    public long position() {
+        return position;
     }
 
     %% write data;

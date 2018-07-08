@@ -10,10 +10,9 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.channels.Channels;
-import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 
 public class WarcConversionTest {
 
@@ -31,7 +30,7 @@ public class WarcConversionTest {
 
     @Test
     public void test() throws IOException {
-        WarcConversion conversion = (WarcConversion) WarcRecord.parse(Channels.newChannel(new ByteArrayInputStream(warc.getBytes(StandardCharsets.UTF_8))));
+        WarcConversion conversion = (WarcConversion) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next();
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), conversion.refersTo().get());
         assertEquals(934, conversion.body().size());
         assertEquals("image/neoimg", conversion.body().type());

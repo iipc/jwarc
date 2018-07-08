@@ -26,6 +26,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * class instead.
  */
 public class WarcParser {
+    private int entryState;
     private int cs;
     private long position;
     private byte[] buf = new byte[256];
@@ -34,7 +35,7 @@ public class WarcParser {
     private int major;
     private int minor;
     private String name;
-    private Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private Map<String,List<String>> headerMap;
 
     public static WarcParser newWarcFieldsParser() {
         return new WarcParser(warc_en_warc_fields);
@@ -45,7 +46,22 @@ public class WarcParser {
     }
 
     private WarcParser(int entryState) {
+        this.entryState = entryState;
+        reset();
+    }
+
+    public void reset() {
         cs = entryState;
+        position = 0;
+        bufPos = 0;
+        endOfText = 0;
+        major = 0;
+        minor = 0;
+        name = null;
+        headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        if (buf.length > 4096) {
+            buf = new byte[4096];
+        }
     }
 
     public boolean isFinished() {
@@ -62,7 +78,7 @@ public class WarcParser {
         int pe = data.limit();
 
         
-// line 66 "WarcParser.java"
+// line 82 "WarcParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -182,7 +198,7 @@ case 1:
 // line 66 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 186 "WarcParser.java"
+// line 202 "WarcParser.java"
 			}
 		}
 	}
@@ -202,7 +218,7 @@ case 5:
 	break; }
 	}
 
-// line 113 "WarcParser.rl"
+// line 129 "WarcParser.rl"
 
         position += p - data.position();
         data.position(p);
@@ -242,8 +258,12 @@ case 5:
         return new ProtocolVersion("WARC", major, minor);
     }
 
+    public long position() {
+        return position;
+    }
+
     
-// line 247 "WarcParser.java"
+// line 267 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -384,5 +404,5 @@ static final int warc_en_warc_fields = 20;
 static final int warc_en_warc_header = 1;
 
 
-// line 153 "WarcParser.rl"
+// line 173 "WarcParser.rl"
 }

@@ -6,8 +6,6 @@
 package org.netpreserve.jwarc;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -16,42 +14,8 @@ import java.time.Instant;
 import java.util.*;
 
 public class WarcRecord extends Message {
-    private static final Map<String, WarcRecord.Constructor> constructors = new HashMap<>();
-
-    static {
-        constructors.put("continuation", WarcContinuation::new);
-        constructors.put("conversion", WarcConversion::new);
-        constructors.put("metadata", WarcMetadata::new);
-        constructors.put("request", WarcRequest::new);
-        constructors.put("resource", WarcResource::new);
-        constructors.put("response", WarcResponse::new);
-        constructors.put("revisit", WarcRevisit::new);
-        constructors.put("warcinfo", Warcinfo::new);
-    }
-
     WarcRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
         super(version, headers, body);
-    }
-
-    public static WarcRecord parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
-        WarcParser parser = new WarcParser();
-        if (!parser.parse(channel, buffer)) {
-            return null;
-        }
-        Headers headers = parser.headers();
-        WarcBodyChannel body = new WarcBodyChannel(headers, channel, buffer);
-        String type = headers.sole("WARC-Type").orElse("default");
-        return constructors.getOrDefault(type, WarcRecord::new).construct(parser.version(), headers, body);
-    }
-
-    public static WarcRecord parse(ReadableByteChannel channel) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8192);
-        buffer.flip();
-        return parse(channel, buffer);
-    }
-
-    public static WarcRecord parse(InputStream stream) throws IOException {
-        return parse(Channels.newChannel(stream));
     }
 
     static URI parseRecordID(String uri) {
@@ -116,6 +80,11 @@ public class WarcRecord extends Message {
         return headers().sole("WARC-Segment-Number").map(Long::valueOf);
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + id() + "]";
+    }
+
     @FunctionalInterface
     public interface Constructor<R extends WarcRecord> {
         R construct(ProtocolVersion version, Headers headers, WarcBodyChannel body);
@@ -157,7 +126,7 @@ public class WarcRecord extends Message {
         public B truncated(TruncationReason truncationReason) {
             if (truncationReason.equals(TruncationReason.NOT_TRUNCATED)) {
                 headerMap.remove("WARC-Truncated");
-                return (B)this;
+                return (B) this;
             }
             return addHeader("WARC-Truncated", truncationReason.name().toLowerCase());
         }

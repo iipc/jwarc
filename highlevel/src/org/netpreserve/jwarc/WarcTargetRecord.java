@@ -20,6 +20,13 @@ public abstract class WarcTargetRecord extends WarcRecord {
     }
 
     /**
+     * The URI of the original target resource this record holds information about as an unparsed string.
+     */
+    public String target() {
+        return headers().sole("WARC-Target-URI").get();
+    }
+
+    /**
      * The URI of the original target resource this record holds information about.
      */
     public URI targetURI() {
@@ -45,6 +52,11 @@ public abstract class WarcTargetRecord extends WarcRecord {
      */
     public Optional<URI> warcinfoID() {
         return headers().sole("WARC-Warcinfo-ID").map(WarcRecord::parseRecordID);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "<" + date() + " " + target() + ">";
     }
 
     public static abstract class Builder<R extends WarcTargetRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {

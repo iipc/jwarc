@@ -12,7 +12,6 @@ import org.jwat.warc.WarcReader;
 import org.jwat.warc.WarcReaderFactory;
 import org.jwat.warc.WarcRecord;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,14 +20,15 @@ import java.nio.file.Paths;
 
 public class Bench {
     public static void main(String[] args) throws IOException {
-        jwat();
+//        jwat();
+//        commons();
         return;
     }
 
     private static void commons() throws IOException {
         while (true) {
             long start = System.currentTimeMillis();
-            try (ArchiveReader reader = WARCReaderFactory.get(new File("/tmp/her.warc"))) {
+            try (ArchiveReader reader = WARCReaderFactory.get(new File("/tmp/her.warc.gz"))) {
                 for (ArchiveRecord record: reader) {
                     if (record == null) break;
 //                    System.out.println(record + " " + record.body().length());
@@ -41,8 +41,8 @@ public class Bench {
     private static void jwat() throws IOException {
         while (true) {
             long start = System.currentTimeMillis();
-            try (InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get("/tmp/her.warc")), 8192)) {
-                WarcReader reader = WarcReaderFactory.getReaderUncompressed(in);
+            try (InputStream in = Files.newInputStream(Paths.get("/tmp/her.warc.gz"))) {
+                WarcReader reader = WarcReaderFactory.getReader(in);
                 while (true) {
                     WarcRecord record = reader.getNextRecord();
                     if (record == null) break;

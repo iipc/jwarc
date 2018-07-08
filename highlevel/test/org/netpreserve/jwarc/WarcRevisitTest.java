@@ -36,7 +36,7 @@ public class WarcRevisitTest {
 
     @Test
     public void test() throws IOException {
-        WarcRevisit revisit = (WarcRevisit) WarcRecord.parse(new ByteArrayInputStream(warc.getBytes(UTF_8)));
+        WarcRevisit revisit = (WarcRevisit) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next();
         assertEquals(WarcRevisit.SERVER_NOT_MODIFIED_1_1, revisit.profile());
         assertEquals(Instant.parse("2016-09-19T17:20:24Z"), revisit.refersToDate().get());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), revisit.refersToTargetURI().get());
