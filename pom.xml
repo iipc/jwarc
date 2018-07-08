@@ -8,14 +8,8 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.netpreserve</groupId>
-    <artifactId>jwarc-parent</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>jwarc</artifactId>
     <version>0.1.0</version>
-
-    <modules>
-        <module>highlevel</module>
-        <module>jwarc-testsuite</module>
-    </modules>
 
     <build>
         <sourceDirectory>${basedir}/src</sourceDirectory>
@@ -30,22 +24,41 @@
                 <directory>${basedir}/test-resources</directory>
             </testResource>
         </testResources>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.12</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
 </project>
