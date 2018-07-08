@@ -9,6 +9,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 
@@ -29,6 +30,9 @@ public class BodyChannel implements ReadableByteChannel {
 
     @Override
     public int read(ByteBuffer dest) throws IOException {
+        if (!open) {
+            throw new ClosedChannelException();
+        }
         if (position >= size) {
             return -1;
         }
@@ -159,6 +163,9 @@ public class BodyChannel implements ReadableByteChannel {
 
         @Override
         public int read() throws IOException {
+            if (!open) {
+                throw new ClosedChannelException();
+            }
             if (position >= size) {
                 return -1;
             }

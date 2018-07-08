@@ -44,7 +44,7 @@ public class WarcResponseTest {
 
     @Test
     public void test() throws IOException {
-        WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next();
+        WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(200, response.http().status());
         assertEquals("OK", response.http().reason());
         assertEquals("image/jpeg", response.http().body().type());

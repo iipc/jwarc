@@ -34,7 +34,7 @@ public class WarcMetadataTest {
 
     @Test
     public void test() throws IOException {
-        WarcMetadata metadata = (WarcMetadata) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next();
+        WarcMetadata metadata = (WarcMetadata) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals("http://www.archive.org/", metadata.fields().sole("via").get());
     }
 

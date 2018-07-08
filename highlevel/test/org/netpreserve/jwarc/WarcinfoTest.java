@@ -42,7 +42,7 @@ public class WarcinfoTest {
 
     @Test
     public void test() throws IOException {
-        Warcinfo warcinfo = (Warcinfo) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next();
+        Warcinfo warcinfo = (Warcinfo) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"), warcinfo.id());
         assertEquals(Instant.parse("2006-09-19T17:20:14Z"), warcinfo.date());
         assertEquals("hello.warc", warcinfo.filename().get());

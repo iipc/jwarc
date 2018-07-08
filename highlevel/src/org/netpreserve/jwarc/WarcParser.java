@@ -230,16 +230,20 @@ case 5:
             if (isFinished()) {
                 return true;
             }
-            if (isError()) throw new ParsingException("invalid WARC record");
-            buffer.compact();
-            int n = channel.read(buffer);
-            if (n < 0) {
-                if (position > 0) {
-                    throw new EOFException();
-                }
-                return false;
+            if (isError()) {
+                throw new ParsingException("invalid WARC record");
             }
-            buffer.flip();
+            if (!buffer.hasRemaining()) {
+                buffer.clear();
+                int n = channel.read(buffer);
+                if (n < 0) {
+                    if (position > 0) {
+                        throw new EOFException();
+                    }
+                    return false;
+                }
+                buffer.flip();
+            }
         }
     }
 
