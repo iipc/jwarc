@@ -11,7 +11,7 @@ public class WarcResponse extends WarcCaptureRecord {
 
     private HttpResponse http;
 
-    WarcResponse(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcResponse(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

@@ -14,7 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class WarcMetadata extends WarcCaptureRecord {
     private Headers fields;
 
-    WarcMetadata(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcMetadata(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

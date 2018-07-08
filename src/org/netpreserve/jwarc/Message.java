@@ -40,6 +40,16 @@ public abstract class Message {
         return version;
     }
 
+    /**
+     * The content type of the body.
+     * <p>
+     * Returns "application/octet-stream" if the Content-Type header is missing.
+     */
+    public String contentType() {
+        return headers.sole("Content-Type").orElse("application/octet-stream");
+    }
+
+
     public static abstract class Builder<R extends Message, B extends Builder<R, B>> {
         public abstract R build();
 

@@ -47,7 +47,7 @@ public class WarcinfoTest {
         assertEquals(Instant.parse("2006-09-19T17:20:14Z"), warcinfo.date());
         assertEquals("hello.warc", warcinfo.filename().get());
         assertEquals(399, warcinfo.body().size());
-        assertEquals("application/warc-fields", warcinfo.body().type());
+        assertEquals("application/warc-fields", warcinfo.contentType());
         Headers fields = warcinfo.fields();
         assertEquals("207.241.227.234", fields.sole("ip").get());
         assertEquals("http://www.archive.org/documents/WarcFileFormat-1.0.html", fields.sole("conformsTo").get());
@@ -65,7 +65,7 @@ public class WarcinfoTest {
         assertEquals("hello.warc", warcinfo.filename().get());
         assertEquals("one", warcinfo.fields().first("hello").get());
         assertEquals(Arrays.asList("one", "two"), warcinfo.fields().all("hello"));
-        assertEquals("application/warc-fields", warcinfo.body().type());
+        assertEquals("application/warc-fields", warcinfo.contentType());
     }
 
 }

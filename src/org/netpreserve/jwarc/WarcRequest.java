@@ -11,7 +11,7 @@ public class WarcRequest extends WarcCaptureRecord {
 
     private HttpRequest http;
 
-    WarcRequest(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcRequest(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

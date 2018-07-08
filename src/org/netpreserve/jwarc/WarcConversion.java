@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.Optional;
 
 public class WarcConversion extends WarcTargetRecord {
-    WarcConversion(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcConversion(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

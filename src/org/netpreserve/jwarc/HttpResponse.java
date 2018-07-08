@@ -31,7 +31,8 @@ public class HttpResponse extends HttpMessage {
         parser.responseOnly();
         parser.parse(channel, buffer);
         Headers headers = new Headers(handler.headerMap);
-        BodyChannel body = new BodyChannel(headers, channel, buffer);
+        long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+        BodyChannel body = new BodyChannel(channel, buffer, contentLength);
         return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
     }
 

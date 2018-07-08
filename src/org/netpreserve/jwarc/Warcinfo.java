@@ -19,7 +19,7 @@ public class Warcinfo extends WarcRecord {
 
     private Headers fields;
 
-    Warcinfo(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    Warcinfo(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

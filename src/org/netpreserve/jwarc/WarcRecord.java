@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.*;
 
 public class WarcRecord extends Message {
-    WarcRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 
@@ -31,11 +31,6 @@ public class WarcRecord extends Message {
 
     static String formatId(URI recordId) {
         return "<" + recordId + ">";
-    }
-
-    @Override
-    public WarcBodyChannel body() {
-        return (WarcBodyChannel) super.body();
     }
 
     /**
@@ -77,6 +72,13 @@ public class WarcRecord extends Message {
         return headers().sole("WARC-Segment-Number").map(Long::valueOf);
     }
 
+    /**
+     * Digest values that were calculated by applying hash functions to this content body.
+     */
+    public Optional<Digest> blockDigest() {
+        return headers().sole("WARC-Block-Digest").map(Digest::new);
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + id() + "]";
@@ -84,7 +86,7 @@ public class WarcRecord extends Message {
 
     @FunctionalInterface
     public interface Constructor<R extends WarcRecord> {
-        R construct(ProtocolVersion version, Headers headers, WarcBodyChannel body);
+        R construct(ProtocolVersion version, Headers headers, BodyChannel body);
     }
 
     public abstract static class Builder<R extends WarcRecord, B extends Builder<R, B>> extends Message.Builder<R, B> {
@@ -155,7 +157,8 @@ public class WarcRecord extends Message {
 
         protected R build(Constructor<R> constructor) {
             Headers headers = new Headers(headerMap);
-            return constructor.construct(version, headers, new WarcBodyChannel(headers, bodyChannel, ByteBuffer.allocate(0)));
+            long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+            return constructor.construct(version, headers, new BodyChannel(bodyChannel, ByteBuffer.allocate(0), contentLength));
         }
     }
 }

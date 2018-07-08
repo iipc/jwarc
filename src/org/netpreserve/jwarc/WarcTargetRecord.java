@@ -15,7 +15,7 @@ import java.util.Optional;
  * record types.
  */
 public abstract class WarcTargetRecord extends WarcRecord {
-    WarcTargetRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcTargetRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 
@@ -34,21 +34,21 @@ public abstract class WarcTargetRecord extends WarcRecord {
     }
 
     /**
-     * The payload object contained by this record or an empty payload if none is present or defined.
-     * <p>
-     * In a {@link WarcResource} or a {@link WarcResponse} this is the captured content identified by
-     * {@link #targetURI()}. In a {@link WarcConversion} it is a converted version of the captured content. When present
-     * in a {@link WarcRequest} it is the content body of the captured request (such as form data sent via HTTP POST).
+     * Digest values that were calculated by applying hash functions to payload.
      */
-    public WarcPayload payload() {
-        return new WarcPayload(this);
+    public Optional<Digest> payloadDigest() {
+        return headers().sole("WARC-Payload-Digest").map(Digest::new);
+    }
+
+    /**
+     * A content-type that was identified by an independent check (not just what the server said).
+     */
+    public Optional<String> identifiedPayloadType() {
+        return headers().sole("WARC-Identified-Payload-Type");
     }
 
     /**
      * The ID of a {@link Warcinfo} record associated with this record.
-     * <p>
-     * Typically this is present only when the warcinfo is not available from context such as after distributing
-     * single records into separate WARC files.
      */
     public Optional<URI> warcinfoID() {
         return headers().sole("WARC-Warcinfo-ID").map(WarcRecord::parseRecordID);

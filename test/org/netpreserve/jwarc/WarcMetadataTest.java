@@ -45,7 +45,7 @@ public class WarcMetadataTest {
         WarcMetadata metadata = new WarcMetadata.Builder()
                 .fields(fields)
                 .build();
-        assertEquals("application/warc-fields", metadata.body().type());
+        assertEquals("application/warc-fields", metadata.contentType());
         assertEquals("one", metadata.fields().first("hello").get());
         assertEquals(Arrays.asList("one", "two"), metadata.fields().all("hello"));
     }

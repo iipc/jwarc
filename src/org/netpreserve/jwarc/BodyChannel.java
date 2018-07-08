@@ -14,18 +14,16 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 
 public class BodyChannel implements ReadableByteChannel {
-    protected final Headers headers;
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;
     private final long size;
     private long position = 0;
     private boolean open = true;
 
-    BodyChannel(Headers headers, ReadableByteChannel channel, ByteBuffer buffer) {
-        this.headers = headers;
+    BodyChannel(ReadableByteChannel channel, ByteBuffer buffer, long size) {
         this.channel = channel;
         this.buffer = buffer;
-        this.size = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+        this.size = size;
     }
 
     @Override
@@ -122,15 +120,6 @@ public class BodyChannel implements ReadableByteChannel {
      */
     public long position() {
         return position;
-    }
-
-    /**
-     * The content type of the body.
-     * <p>
-     * Returns "application/octet-stream" if the Content-Type header is missing.
-     */
-    public String type() {
-        return headers.sole("Content-Type").orElse("application/octet-stream");
     }
 
     /**

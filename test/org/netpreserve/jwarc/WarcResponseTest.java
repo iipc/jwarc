@@ -47,11 +47,11 @@ public class WarcResponseTest {
         WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(200, response.http().status());
         assertEquals("OK", response.http().reason());
-        assertEquals("image/jpeg", response.http().body().type());
-        assertEquals(Optional.of("image/jpeg"), response.payload().identifiedType());
+        assertEquals("image/jpeg", response.http().contentType());
+        assertEquals(Optional.of("image/jpeg"), response.identifiedPayloadType());
         assertEquals(Optional.of(InetAddresses.forString("207.241.233.58")), response.ipAddress());
-        assertEquals(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2"), response.body().digests().get(0));
-        assertEquals(new Digest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2"), response.payload().digests().get(0));
+        assertEquals(Optional.of(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
+        assertEquals(Optional.of(new Digest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());
         assertEquals(Optional.of(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39")), response.warcinfoID());
     }
 
@@ -65,7 +65,7 @@ public class WarcResponseTest {
                 .identifiedPayloadType("image/jpeg")
                 .truncated(TruncationReason.DISCONNECT)
                 .build();
-        assertEquals(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2"), response.body().digests().get(0));
+        assertEquals(Optional.of(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
         assertEquals(TruncationReason.DISCONNECT, response.truncated());
     }
 

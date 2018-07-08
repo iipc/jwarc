@@ -108,12 +108,13 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         }
         headerLength = parser.position();
         Headers headers = parser.headers();
-        WarcBodyChannel body = new WarcBodyChannel(headers, channel, buffer);
+        long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+        BodyChannel body = new BodyChannel(channel, buffer, contentLength);
         record = construct(parser.version(), headers, body);
         return Optional.of(record);
     }
 
-    private WarcRecord construct(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    private WarcRecord construct(ProtocolVersion version, Headers headers, BodyChannel body) {
         String type = headers.sole("WARC-Type").orElse("default");
         WarcRecord.Constructor constructor = types.get(type);
         if (constructor == null) {

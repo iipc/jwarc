@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.toList;
  * A type of WARC record created as part of a web capture event.
  */
 public abstract class WarcCaptureRecord extends WarcTargetRecord {
-    WarcCaptureRecord(ProtocolVersion version, Headers headers, WarcBodyChannel body) {
+    WarcCaptureRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
     }
 

@@ -40,7 +40,7 @@ public class WarcRequestTest {
     public void test() throws IOException {
         WarcRequest request = (WarcRequest) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(Arrays.asList(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0")), request.concurrentTo());
-        assertEquals("application/http;msgtype=request", request.body().type());
+        assertEquals("application/http;msgtype=request", request.contentType());
         assertEquals(ProtocolVersion.WARC_1_1, request.version());
         assertEquals(ProtocolVersion.HTTP_1_0, request.http().version());
         assertEquals(Optional.of("close"), request.http().headers().sole("connection"));
