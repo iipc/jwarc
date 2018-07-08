@@ -71,10 +71,7 @@ public class WarcRecord extends Message {
     /**
      * The current record's relative ordering in a sequence of segmented records.
      * <p>
-     * In the first segment of any record that is completed in one or more later {@link WarcContinuation} records, this
-     * parameter is mandatory. Its value there is "1". In a {@link WarcContinuation} record, this parameter is also
-     * mandatory. Its value is the sequence number of the current segment in the logical whole record, increasing by
-     * 1 in each next segment.
+     * Mandatory for all records in the sequence starting from 1.
      */
     public Optional<Long> segmentNumber() {
         return headers().sole("WARC-Segment-Number").map(Long::valueOf);
