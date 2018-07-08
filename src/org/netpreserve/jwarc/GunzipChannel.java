@@ -27,7 +27,6 @@ class GunzipChannel implements ReadableByteChannel {
     private final ByteBuffer buffer;
     private final Inflater inflater = new Inflater(true);
     private long inputPosition;
-    private long outputPosition;
     private boolean seenHeader;
     private CRC32 crc = new CRC32();
 
@@ -55,7 +54,6 @@ class GunzipChannel implements ReadableByteChannel {
             int n = inflater.inflate(dest.array(), dest.arrayOffset() + dest.position(), dest.remaining());
             crc.update(dest.array(), dest.arrayOffset() + dest.position(), n);
             dest.position(dest.position() + n);
-            outputPosition += n;
 
             int newBufferPosition = buffer.limit() - inflater.getRemaining();
             inputPosition += newBufferPosition - buffer.position();
@@ -170,9 +168,5 @@ class GunzipChannel implements ReadableByteChannel {
 
     public long inputPosition() {
         return inputPosition;
-    }
-
-    public long outputPosition() {
-        return outputPosition;
     }
 }
