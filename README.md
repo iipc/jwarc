@@ -6,14 +6,18 @@ API modeling the standard record types as individual classes with concise conven
 ```java
 try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.warc")))) {
     for (WarcRecord record : reader) {
+        
         if (record instanceof Warcinfo) {
             Warcinfo warcinfo = (Warcinfo) record;
             out.println("File format: " + warcinfo.version());
             out.println("Crawler: " + warcinfo.fields().first("software").orElse("unknown crawler"));
-        } else if (record instanceof WarcResponse && record.contentType().startsWith("application/http")) {
+        }
+        
+        if (record instanceof WarcResponse && record.contentType().startsWith("application/http")) {
             WarcResponse response = (WarcResponse) record;
             out.println(response.http().status() + " " + response.target());
         }
+        
     }
 }
 ```
