@@ -1,5 +1,5 @@
 // recompile: ragel -J WarcParser.rl -o WarcParser.java
-// diagram:   ragel -Vp WarcParser.rl | dot -TPng | feh -
+// diagram:   ragel -Vp WarcParser.rl | dot -Tpng | feh -
 
 package org.netpreserve.jwarc;
 
@@ -8,8 +8,13 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -25,6 +30,7 @@ action add_major    { major = major * 10 + data.get(p) - '0'; }
 action add_minor    { minor = minor * 10 + data.get(p) - '0'; }
 action end_of_text  { endOfText = bufPos; }
 
+
 action handle_name  {
     name = new String(buf, 0, bufPos, US_ASCII);
     bufPos = 0;
@@ -37,12 +43,59 @@ action handle_value {
     endOfText = 0;
 }
 
+action handle_arc_url {
+    String url = new String(buf, 0, bufPos, ISO_8859_1);
+    if (url.startsWith("filedesc://")) {
+        setHeader("WARC-Type", "warcinfo");
+        setHeader("WARC-Filename", url.substring("filedesc://".length()));
+        setHeader("Content-Type", "text/plain");
+    } else if (url.startsWith("dns:")) {
+        setHeader("WARC-Type", "response");
+        setHeader("Content-Type", "text/dns");
+        setHeader("WARC-Target-URI", url);
+     } else {
+        setHeader("WARC-Type", "response");
+        setHeader("Content-Type", "application/http;msgtype=response");
+        setHeader("WARC-Target-URI", url);
+    }
+    bufPos = 0;
+}
+
+action handle_arc_ip {
+    setHeader("WARC-IP-Address", new String(buf, 0, bufPos, US_ASCII));
+    bufPos = 0;
+}
+
+action handle_arc_date {
+    String arcDate = new String(buf, 0, bufPos, US_ASCII);
+    Instant instant = LocalDateTime.parse(arcDate, arcTimeFormat).toInstant(ZoneOffset.UTC);
+    setHeader("WARC-Date", instant.toString());
+    bufPos = 0;
+}
+
+action handle_arc_mime {
+    // TODO
+    bufPos = 0;
+}
+
+action handle_arc_length {
+    setHeader("Content-Length", new String(buf, 0, bufPos, US_ASCII));
+    bufPos = 0;
+}
+
+action handle_arc {
+    protocol = "ARC";
+    major = 1;
+    minor = 1;
+}
+
 CRLF = "\r\n";
 
 version_major = digit+ $add_major;
 version_minor = digit+ $add_minor;
 version = "WARC/" version_major "." version_minor CRLF ;
 
+CHAR = 0..0x7f | 0x80..0xbf | 0xc2..0xf4;
 CTL = cntrl | 127;
 WS = " " | "\t";
 RWS = WS+;
@@ -56,14 +109,34 @@ separators = "(" | ")" | "<" | ">" | "@"
            | "/" | "[" | "]" | "?" | "="
            | "{" | "}" | " " | "\t";
 
+url_byte = alpha | digit | "!" | "$" | "&" | "'" | "(" | "("
+         | "*" | "+" | "," | "-" | "." | "/" | ":" | ";"
+         | "=" | "?" | "@" | "_" | "~" | 0x80..0xff;
+
 field_name = ((ascii - CTL - separators)+) $push %handle_name;
 field_value_first = OWS (TEXT OWS)? $push;
 field_value_folded = LWS (TEXT OWS)? >push_space $push;
 field_value = field_value_first (field_value_folded)*;
 named_field = field_name ":" field_value CRLF %handle_value;
 named_fields = named_field* CRLF;
+warc_header = version named_fields;
+
+token = (ascii - CTL - separators)+;
+obs_text = 0x80..0xff;
+qdtext = "\t" | " " | 0x21 | 0x23..0x5b | 0x5d..0x7e | obs_text;
+quoted_pair = "\\" CHAR;
+quoted_string = '"' (qdtext | quoted_pair)* '"';
+parameter = token "=" (token | quoted_string );
+
+arc_url = (lower+ ":" url_byte*) $push %handle_arc_url;
+arc_ip = (digit{1,3} "." digit{1,3} "." digit{1,3} "." digit{1,3}) $push %handle_arc_ip;
+arc_date = digit{14} $push %handle_arc_date;
+arc_mime = (token "/" token ( OWS ";" OWS parameter )*) $push %handle_arc_mime;
+arc_length = digit+ $push %handle_arc_length %handle_arc;
+arc_header = arc_url " " arc_ip " " arc_date " " arc_mime " " arc_length "\n";
+
 warc_fields := named_fields;
-warc_header := version named_fields @{ fbreak; };
+any_header := (arc_header | warc_header) @{ fbreak; };
 
 }%%
 
@@ -83,7 +156,9 @@ public class WarcParser {
     private int major;
     private int minor;
     private String name;
+    private String protocol = "WARC";
     private Map<String,List<String>> headerMap;
+    private static final DateTimeFormatter arcTimeFormat = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     public static WarcParser newWarcFieldsParser() {
         return new WarcParser(warc_en_warc_fields);
@@ -137,7 +212,9 @@ public class WarcParser {
             if (isFinished()) {
                 return true;
             }
-            if (isError()) throw new ParsingException("invalid WARC record");
+            if (isError()) {
+                throw new ParsingException("invalid WARC record at position " + position);
+            }
             buffer.compact();
             int n = channel.read(buffer);
             if (n < 0) {
@@ -162,11 +239,17 @@ public class WarcParser {
     }
 
     public ProtocolVersion version() {
-        return new ProtocolVersion("WARC", major, minor);
+        return new ProtocolVersion(protocol, major, minor);
     }
 
     public long position() {
         return position;
+    }
+
+    private void setHeader(String name, String value) {
+        List<String> list = new ArrayList<>();
+        list.add(value);
+        headerMap.put(name, list);
     }
 
     %% write data;

@@ -1,10 +1,24 @@
 # jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc) [![Codecov](https://img.shields.io/codecov/c/github/ato/jwarc.svg)](https://codecov.io/gh/ato/jwarc)
 
-(Work in progress) A Java library for reading and writing WARC files.
+(Work in progress) A Java library for reading and writing WARC files. This library includes a high level type-safe
+API modeling the standard record types as individual classes with concise convenient accessors.
+ 
+It uses a finite state machine parser generated from a strict [grammar](https://github.com/ato/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
+using [Ragel](http://www.colm.net/open-source/ragel/). You can use parser directly in a push fashion for advanced use
+cases like non-blocking I/O.
+
+Gzipped records are automatically decompressed. The parser interprets ARC/1.1 record as if they are a WARC dialect and
+populates the appropriate WARC headers.
+
+All I/O is performed using NIO and an an effort is made to minimize data copies and share buffers whenever feasible.
+Direct buffers and even memory-mapped files can be used, but only with uncompressed WARCS until they're supported by
+Inflater (coming in JDK 11).
+
+**Limitations:** This library has not been battle tested yet. The HTTP parser in particular is lacking a robust
+parsing mode and is probably too strict for real world data. The API for writing of records is incomplete. The
+documentation is still being written.
 
 ## Usage
-
-Not functional yet. This is just the plan.
 
 ### Parsing a record
 ```java
@@ -126,9 +140,9 @@ Use `http()` on a `WarcRequest` or `WarcResponse` to parse the HTTP headers.
 (Map<String,List<String>>) record.headers().map();
 ```
 
-
-
 ## Other WARC libraries
 
-* [JWAT](https://sbforge.org/display/JWAT/JWAT)
-* [webarchive-commons](https://github.com/iipc/webarchive-commons)
+* [JWAT](https://sbforge.org/display/JWAT/JWAT) (Java)
+* [warc](https://github.com/internetarchive/warc) (Python)
+* [warcio](https://github.com/webrecorder/warcio/) (Python)
+* [webarchive-commons](https://github.com/iipc/webarchive-commons) (Java)

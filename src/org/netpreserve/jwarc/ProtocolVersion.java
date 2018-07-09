@@ -12,6 +12,7 @@ public final class ProtocolVersion {
     public static final ProtocolVersion HTTP_1_1 = new ProtocolVersion("HTTP", 1, 1);
     public static final ProtocolVersion WARC_1_0 = new ProtocolVersion("WARC", 1, 0);
     public static final ProtocolVersion WARC_1_1 = new ProtocolVersion("WARC", 1, 1);
+    public static final ProtocolVersion ARC_1_1 = new ProtocolVersion("ARC", 1, 1);
 
     private final String protocol;
     private final int major;

@@ -124,16 +124,30 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     }
 
     private void consumeTrailer() throws IOException {
-        while (buffer.remaining() < 4) {
-            buffer.compact();
-            if (channel.read(buffer) < 0) {
-                throw new EOFException("expected trailing CRLFCRLF");
+        if (record.version().getProtocol().equals("ARC")) {
+            while (buffer.remaining() < 1) {
+                buffer.compact();
+                if (channel.read(buffer) < 0) {
+                    throw new EOFException("expected trailing LF");
+                }
+                buffer.flip();
             }
-            buffer.flip();
-        }
-        int trailer = buffer.getInt();
-        if (trailer != CRLFCRLF) { // CRLFCRLF
-            throw new ParsingException("invalid trailer: " + Integer.toHexString(trailer));
+            int trailer = buffer.get();
+            if (trailer != '\n') {
+                throw new ParsingException("invalid ARC trailer: " + Integer.toHexString(trailer));
+            }
+        } else {
+            while (buffer.remaining() < 4) {
+                buffer.compact();
+                if (channel.read(buffer) < 0) {
+                    throw new EOFException("expected trailing CRLFCRLF");
+                }
+                buffer.flip();
+            }
+            int trailer = buffer.getInt();
+            if (trailer != CRLFCRLF) { // CRLFCRLF
+                throw new ParsingException("invalid WARC trailer: " + Integer.toHexString(trailer));
+            }
         }
     }
 

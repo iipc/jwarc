@@ -149,8 +149,12 @@ public class HttpParser {
     public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         while (true) {
             parse(buffer);
-            if (isFinished()) break;
-            if (isError()) throw new ParsingException("invalid HTTP message at byte position " + position);
+            if (isFinished()) {
+                break;
+            }
+            if (isError()) {
+                throw new ParsingException("invalid HTTP message at byte position " + position);
+            }
             buffer.compact();
             int n = channel.read(buffer);
             if (n < 0) throw new EOFException("state=" + cs);
