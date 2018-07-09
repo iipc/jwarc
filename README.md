@@ -2,9 +2,24 @@
 
 (Work in progress) A Java library for reading and writing WARC files. This library includes a high level type-safe
 API modeling the standard record types as individual classes with concise convenient accessors.
- 
+
+```java
+try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.warc")))) {
+    for (WarcRecord record : reader) {
+        if (record instanceof Warcinfo) {
+            Warcinfo warcinfo = (Warcinfo) record;
+            out.println("File format: " + warcinfo.version());
+            out.println("Crawler: " + warcinfo.fields().first("software").orElse("unknown crawler"));
+        } else if (record instanceof WarcResponse && record.contentType().startsWith("application/http")) {
+            WarcResponse response = (WarcResponse) record;
+            out.println(response.http().status() + " " + response.target());
+        }
+    }
+}
+```
+
 It uses a finite state machine parser generated from a strict [grammar](https://github.com/ato/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
-using [Ragel](http://www.colm.net/open-source/ragel/). You can use parser directly in a push fashion for advanced use
+using [Ragel](http://www.colm.net/open-source/ragel/). You can use the parser directly in a push fashion for advanced use
 cases like non-blocking I/O.
 
 Gzipped records are automatically decompressed. The parser interprets ARC/1.1 record as if they are a WARC dialect and
