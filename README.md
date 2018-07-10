@@ -176,7 +176,9 @@ No methods are specific to resource records. See WarcRecord, WarcTargetRecord, W
 | Record type classes | ✔           | ✘               | ✘             |
 | Typed accessors     | ✔           | ✔               | Some          |
 | GZIP detection      | ✔           | ✔               | Filename only |
-| ARC support         | Auto        | Separate API    | Factory       |
+| WARC writer         | TODO        | ✔               | ✔             |
+| ARC reader          | Auto        | Separate API    | Factory       |
+| ARC writer          | ✘           | ✔               | ✔             |
 | Speed * (.warc)     | 1x          | ~5x slower      | ~13x slower   |
 | Speed * (.warc.gz)  | 1x          | ~1.4x slower    | ~2.8x slower  |
 
