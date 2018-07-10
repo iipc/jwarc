@@ -33,7 +33,7 @@ public class WarcConversionTest {
         WarcConversion conversion = (WarcConversion) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), conversion.refersTo().get());
         assertEquals(934, conversion.body().size());
-        assertEquals("image/neoimg", conversion.contentType());
+        assertEquals(MediaType.parse("image/neoimg"), conversion.contentType());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), conversion.targetURI());
     }
 

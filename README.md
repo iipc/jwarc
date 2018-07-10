@@ -14,8 +14,7 @@ try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.war
             out.println("Crawler: " + warcinfo.fields().first("software").orElse("unknown crawler"));
         }
         
-        // FIXME: startsWith() here is of course wrong, media type parsing is still to be implemented
-        if (record instanceof WarcResponse && record.contentType().startsWith("application/http")) {
+        if (record instanceof WarcResponse && record.contentType().base().equals(MediaType.HTTP)) {
             WarcResponse response = (WarcResponse) record;
             out.println(response.http().status() + " " + response.target());
         }

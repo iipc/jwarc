@@ -45,10 +45,9 @@ public abstract class Message {
      * <p>
      * Returns "application/octet-stream" if the Content-Type header is missing.
      */
-    public String contentType() {
-        return headers.sole("Content-Type").orElse("application/octet-stream");
+    public MediaType contentType() {
+        return headers.sole("Content-Type").map(MediaType::parse).orElse(MediaType.OCTET_STREAM);
     }
-
 
     public static abstract class Builder<R extends Message, B extends Builder<R, B>> {
         public abstract R build();

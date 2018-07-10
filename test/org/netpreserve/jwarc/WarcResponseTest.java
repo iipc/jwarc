@@ -47,8 +47,8 @@ public class WarcResponseTest {
         WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(200, response.http().status());
         assertEquals("OK", response.http().reason());
-        assertEquals("image/jpeg", response.http().contentType());
-        assertEquals(Optional.of("image/jpeg"), response.identifiedPayloadType());
+        assertEquals(MediaType.parse("image/jpeg"), response.http().contentType());
+        assertEquals(Optional.of(MediaType.parse("image/jpeg")), response.identifiedPayloadType());
         assertEquals(Optional.of(InetAddresses.forString("207.241.233.58")), response.ipAddress());
         assertEquals(Optional.of(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
         assertEquals(Optional.of(new Digest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());

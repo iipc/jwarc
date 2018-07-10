@@ -70,23 +70,23 @@ public class ArcTest {
         assertEquals(Optional.of("example.arc"), filedesc.filename());
         assertEquals(Instant.parse("2005-06-14T07:01:44Z"), filedesc.date());
         assertEquals(1338, filedesc.body().size());
-        assertEquals("text/plain", filedesc.contentType());
+        assertEquals(MediaType.parse("text/plain"), filedesc.contentType());
         assertEquals(ProtocolVersion.ARC_1_1, filedesc.version());
 
         WarcResponse dns = (WarcResponse) reader.next().get();
         assertEquals("dns:www.law.gov.au", dns.target());
         assertEquals(Optional.of(InetAddresses.forString("207.241.224.11")), dns.ipAddress());
-        assertEquals("text/dns", dns.contentType());
+        assertEquals(MediaType.parse("text/dns"), dns.contentType());
         assertEquals(Instant.parse("2005-06-14T07:01:44Z"), dns.date());
 
         WarcResponse response = (WarcResponse) reader.next().get();
         assertEquals("http://www.uq.edu.au/robots.txt", response.target());
         assertEquals(Optional.of(InetAddresses.forString("130.102.5.51")), response.ipAddress());
-        assertEquals("application/http;msgtype=response", response.contentType());
+        assertEquals(MediaType.HTTP_RESPONSE, response.contentType());
         assertEquals(Instant.parse("2005-06-14T07:01:51Z"), response.date());
         assertEquals(302, response.http().status());
         assertEquals("Found", response.http().reason());
-        assertEquals("text/html; charset=iso-8859-1", response.http().contentType());
+        assertEquals(MediaType.parse("text/html;charset=iso-8859-1"), response.http().contentType());
 
         assertFalse(reader.next().isPresent());
     }
