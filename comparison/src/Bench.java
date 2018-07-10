@@ -48,16 +48,16 @@ public class Bench {
                 System.out.println("webarchive-commons " + count + " in " + (System.currentTimeMillis() - start) + "ms");
             }
 
-            {
-                long start = System.currentTimeMillis();
-                long count = 0;
-                try (WarcReader reader = WarcReaderFactory.getReader(new FileInputStream(filename))) {
-                    for (WarcRecord record : reader) {
-                        count++;
-                    }
-                }
-                System.out.println("jwat " + count + " in " + (System.currentTimeMillis() - start) + "ms");
-            }
+//            {
+//                long start = System.currentTimeMillis();
+//                long count = 0;
+//                try (WarcReader reader = WarcReaderFactory.getReader(new FileInputStream(filename))) {
+//                    for (WarcRecord record : reader) {
+//                        count++;
+//                    }
+//                }
+//                System.out.println("jwat " + count + " in " + (System.currentTimeMillis() - start) + "ms");
+//            }
 
             {
                 long start = System.currentTimeMillis();

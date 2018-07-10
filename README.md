@@ -37,16 +37,9 @@ Inflater (coming in JDK 11).
 parsing mode and is probably too strict for real world data. The API for writing of records is incomplete. The
 documentation is still being written.
 
-## Usage
-
-### Parsing a record
-```java
-WarcRecord record = WarcRecord.parse(channel);
-```
-
-TODO: WarcReader.
-
 ## Quick Reference
+
+Record type hierarchy:
 
     Message
       HttpMessage
@@ -74,7 +67,7 @@ fields and a body. Header field names are case-insensitvie and may have multiple
                      (int) message.body().read(byteBuffer);    // reads a sequence of bytes from the body
                     (long) message.body().size();              // the length in bytes of the body
              (InputStream) message.body().stream();            // views the body as an InputStream
-                  (String) message.body().type();              // the MIME type of the body
+                  (String) message.contentType();              // the media type of the body
                  (Headers) message.headers();                  // the header fields
             (List<String>) message.headers().all("Cookie");    // all values of a header
         (Optional<String>) message.headers().first("Cookie");  // the first value of a header
@@ -85,25 +78,34 @@ fields and a body. Header field names are case-insensitvie and may have multiple
 
 ### WarcRecord
 
-Available on all WARC records.
+Methods available on all WARC records:
+
+```java
+  (Optional<Digest>) record.blockDigest();   // value of hash function applied to bytes of body
+           (Instant) record.date();          // instant that data capture began
+               (URI) record.id();            // globally unique record identifier
+    (Optional<Long>) record.segmentNumber(); // position of this record in segmentated series
+   (TuncationReason) record.truncated();     // reason record was truncated; or else NOT_TRUNCATED
+            (String) record.type();          // "warcinfo", "request", "response" etc
+```
 
 ### Warcinfo
 
 ```java
-            (Headers) warcinfo.fields();   // parse the body as application/warc-fields
+            (Headers) warcinfo.fields();   // parses the body as application/warc-fields
    (Optional<String>) warcinfo.filename(); // filename of the containing WARC
 ```
 
 ### WarcTargetRecord
 
-Available on all WARC records except Warcinfo:
+Methods available on all WARC records except Warcinfo:
 
 ```java
-                (URI) record.targetURI();         // captured URI
-               (long) record.payload().length();  // length of payload in bytes
-             (String) record.payload().type();    // content-type of payload
-        (ByteChannel) record.payload().channel(); // channel for reading the payload
-      (Optional<URI>) record.warcinfoID();        // ID of warcinfo record when stored separately
+   (Optional<String>) record.identifiedPayloadType(); // media type of payload identified by an independent check
+             (String) record.target();                // captured URI as an unparsed string
+                (URI) record.targetURI();             // captured URI
+   (Optional<Digest>) record.payloadDigest();         // value of hash function applied to bytes of the payload
+      (Optional<URI>) record.warcinfoID();            // ID of warcinfo record when stored separately
 ```
 
 ### WarcContinuation
@@ -116,48 +118,44 @@ Available on all WARC records except Warcinfo:
 ### WarcConversion
 
 ```java
-      (Optional<URI>) conversion.refersTo(); // ID of record this one was converted from
+      (Optional<URI>) conversion.refersTo();    // ID of record this one was converted from
 ```
 
 ### WarcCaptureRecord
 
+Methods available on metadata, request, resource and response records:
+
 ```java
-          (List<URI>) capture.concurrentTo(); // other record IDs from the same capture event
- (Optional<InetAddr>) capture.ipAddress();    // IP address of the server
+          (List<URI>) capture.concurrentTo();   // other record IDs from the same capture event
+ (Optional<InetAddr>) capture.ipAddress();      // IP address of the server
 ```
 
 ### WarcMetadata
 
 ```java
-// nothing specific yet. maybe .fields() for WARC fields?
+            (Headers) metadata.fields();        // parses the body as application/warc-fields
 ```
 
 ### WarcRequest
 
 ```java
-(HttpRequest) request.http(); //
+        (HttpRequest) request.http();           // parses the body as a HTTP request
+        (BodyChannel) request.http().body();    // HTTP request body
+            (Headers) request.http().headers(); // HTTP request headers
 ```
 
-### HTTP headers
- 
-Use `http()` on a `WarcRequest` or `WarcResponse` to parse the HTTP headers.
+### WarcResource
+
+No methods are specific to resource records. See WarcRecord, WarcTargetRecord, WarcCaptureRecord above.
+
+### WarcResponse
 
 ```java
-        (Optional<String>) response.http().headers().sole("Location");    // throws if multi valued
-        (Optional<String>) response.http().headers().first("Set-Cookie"); // first matching header
-            (List<String>) response.http().headers().all("Set-Cookie");   // all matching headers
-(Map<String,List<String>>) response.http().headers().map();               // multimap of every headers
-
+       (HttpResponse) response.http();           // parses the body as a HTTP response
+        (BodyChannel) response.http().body();    // HTTP response body
+            (Headers) response.http().headers(); // HTTP response headers
 ```
 
-### WARC headers
-
-```java
-        (Optional<String>) record.headers().sole("WARC-Target-URI");
-        (Optional<String>) record.headers().first("WARC-Concurrent-To");
-            (List<String>) record.headers().all("WARC-Concurrent-To");
-(Map<String,List<String>>) record.headers().map();
-```
 
 ## Comparison
 
