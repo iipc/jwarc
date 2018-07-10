@@ -1,7 +1,8 @@
 # jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc) [![Codecov](https://img.shields.io/codecov/c/github/ato/jwarc.svg)](https://codecov.io/gh/ato/jwarc)
 
-(Work in progress) A Java library for reading and writing WARC files. This library includes a high level type-safe
-API modeling the standard record types as individual classes with concise convenient accessors.
+(Work in progress) A Java library for reading and writing WARC files. This library includes a high level API modeling
+the standard record types as individual classes with typed accessors. The API is exensible and you can register
+extension record types and accessors for extension header fields.
 
 ```java
 try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.warc")))) {
@@ -23,8 +24,8 @@ try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.war
 ```
 
 It uses a finite state machine parser generated from a strict [grammar](https://github.com/ato/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
-using [Ragel](http://www.colm.net/open-source/ragel/). You can use the parser directly in a push fashion for advanced use
-cases like non-blocking I/O.
+using [Ragel](http://www.colm.net/open-source/ragel/). You can use the parser directly in a push fashion for advanced
+use cases like non-blocking I/O.
 
 Gzipped records are automatically decompressed. The parser interprets ARC/1.1 record as if they are a WARC dialect and
 populates the appropriate WARC headers.
@@ -33,9 +34,42 @@ All I/O is performed using NIO and an an effort is made to minimize data copies 
 Direct buffers and even memory-mapped files can be used, but only with uncompressed WARCS until they're supported by
 Inflater (coming in JDK 11).
 
-**Limitations:** This library has not been battle tested yet. The HTTP parser in particular is lacking a robust
-parsing mode and is probably too strict for real world data. The API for writing of records is incomplete. The
-documentation is still being written.
+**Limitations:** This library has not been battle tested yet. The HTTP parser in lacking a robust parsing mode and is 
+probably too strict for real world data. The API for writing of records is incomplete. The documentation is still being
+written.
+
+Once implemented the API for writing records will probably look something like this:
+
+```java
+// write a warcinfo record
+// date and record id will be populated automatically if unset
+writer.write(new Warcinfo.Builder()
+    .fields("software", "my-cool-crawler/1.0",
+            "robots", "obey")
+    .build());
+
+// we can also supply a specific date
+Instant captureDate = Instant.now();
+
+// write a request but keep a copy of it to reference later
+WarcRequest request = new WarcRequest.Builder()
+    .date(captureDate)
+    .target(uri)
+    .contentType("application/http")
+    .body(bodyStream, bodyLength)
+    .build();
+writer.write(request);
+
+// write a response referencing the request
+WarcResponse response = new WarcResponse.Builder()
+    .date(captureDate)
+    .target(uri)
+    .contentType("application/http")
+    .body("HTTP/1.0 200 OK\r\n...".getBytes())
+    .concurrentTo(request.id())
+    .build();
+writer.write(response);
+```
 
 ## Quick Reference
 
