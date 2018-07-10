@@ -27,6 +27,9 @@ public class WarcinfoTest {
             "WARC-Filename:hello.warc\r\n" +
             "Content-Type: application/warc-fields\r\n" +
             "Content-Length: 399\r\n" +
+            "Folded:  a   \r\n" +
+            "     b\t  \r\n" +
+            "\t\tc  \r\n" +
             "\r\n" +
             "software: Heritrix 1.12.0 http://crawler.archive.org\r\n" +
             "hostname: crawling017.archive.org\r\n" +
@@ -51,6 +54,7 @@ public class WarcinfoTest {
         Headers fields = warcinfo.fields();
         assertEquals("207.241.227.234", fields.sole("ip").get());
         assertEquals("http://www.archive.org/documents/WarcFileFormat-1.0.html", fields.sole("conformsTo").get());
+        assertEquals("a b c", warcinfo.headers().sole("Folded").get());
     }
 
     @Test

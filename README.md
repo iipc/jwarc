@@ -159,9 +159,53 @@ Use `http()` on a `WarcRequest` or `WarcResponse` to parse the HTTP headers.
 (Map<String,List<String>>) record.headers().map();
 ```
 
-## Other WARC libraries
+## Comparison
 
-* [JWAT](https://sbforge.org/display/JWAT/JWAT) (Java)
+| Criteria            | jwarc       | [JWAT]          | [webarchive-commons]  |
+|---------------------|-------------|-----------------|---------------|
+| Battle tested       | ✘           | ✔               | ✔             |
+| License             | Apache 2    | Apache 2        | Apache 2      |
+| Size                | 71 KB       | 143 KB          | 681 KB + deps |
+| Parser based on     | Ragel FSM   | Hand-rolled FSM | Apache HTTP   |
+| Push parsing        | Low level   | ✘               | ✘             |
+| Folded headers †    | ✔           | ✔               | ✔             | 
+| [Encoded words] †   | ✘           | ✘ (disabled)    | ✘             |
+| Validation          | ✘           | ✔               | ✘             |
+| Strict parsing  ‡   | ✔           | ✘               | ✘             |
+| Lenient parsing     | ✘           | ✔               | ✔             |
+| Multi-value headers | ✔           | ✔               | ✘             |
+| I/O Framework       | NIO         | IO              | IO            |
+| Record type classes | ✔           | ✘               | ✘             |
+| Typed accessors     | ✔           | ✔               | Some          |
+| GZIP detection      | ✔           | ✔               | Filename only |
+| ARC support         | Auto        | Separate API    | Factory       |
+| Speed * (.warc)     | 1x          | ~5x slower      | ~13x slower   |
+| Speed * (.warc.gz)  | 1x          | ~1.4x slower    | ~2.8x slower  |
+
+(†) WARC features copied from HTTP that have since been deprecated in HTTP. I'm not aware of any software that writes
+WARCs using these features and usage of them should probably be avoided. JWAT behaves differently from jwarc and
+webarchive-commons as it does not trim whitespace on folded lines.
+
+(‡) JWAT and webarchive-commons both accept arbitrary UTF-8 characters in field names. jwarc strictly enforces the
+grammar rules from the WARC specification, although it does not currently enforce the rules for the values of specific
+individual fields.
+
+(*) Relative time to scan records after JIT steady state. Only indicative. Need to redo this with a better
+benchmark. JWAT was configured with a 8192 byte buffer as with default options it is 27x slower. For comparison
+merely decompressing the .warc.gz file with GZIPInputStream is about 0.95x.
+
+[JWAT]: https://sbforge.org/display/JWAT/JWAT
+[webarchive-commons]: https://github.com/iipc/webarchive-commons
+[Encoded words]: https://www.ietf.org/rfc/rfc2047.txt
+
+### Other WARC libraries
+
+* [go-warc](https://github.com/wolfgangmeyers/go-warc) (Go)
+* [warc](https://github.com/datatogether/warc) (Go)
 * [warc](https://github.com/internetarchive/warc) (Python)
-* [warcio](https://github.com/webrecorder/warcio/) (Python)
-* [webarchive-commons](https://github.com/iipc/webarchive-commons) (Java)
+* [warc-clojure](https://github.com/shriphani/warc-clojure) (Clojure) - JWAT wrapper
+* [warc-hadoop](https://github.com/ept/warc-hadoop) (Java)
+* [warcat](https://github.com/chfoo/warcat) (Python)
+* [warcio](https://github.com/webrecorder/warcio) (Python)
+* [warctools](https://github.com/internetarchive/warctools) (Python)
+* [webarchive](https://github.com/richardlehane/webarchive) (Go)

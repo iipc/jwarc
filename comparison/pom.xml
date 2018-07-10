@@ -1,0 +1,42 @@
+<!--
+  ~ SPDX-License-Identifier: Apache-2.0
+  ~ Copyright (C) 2018 National Library of Australia and the jwarc contributors
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.netpreserve</groupId>
+    <artifactId>jwarc-comparison</artifactId>
+    <version>0.1.0</version>
+
+    <build>
+        <sourceDirectory>${basedir}/src</sourceDirectory>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jwat</groupId>
+            <artifactId>jwat-warc</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netpreserve.commons</groupId>
+            <artifactId>webarchive-commons</artifactId>
+            <version>1.1.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netpreserve</groupId>
+            <artifactId>jwarc</artifactId>
+            <version>0.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+</project>

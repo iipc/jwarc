@@ -28,7 +28,7 @@ class GunzipChannel implements ReadableByteChannel {
     private final Inflater inflater = new Inflater(true);
     private long inputPosition;
     private boolean seenHeader;
-    private CRC32 crc = new CRC32();
+    private CRC32 crc; //= new CRC32();
 
     public GunzipChannel(ReadableByteChannel channel, ByteBuffer buffer) {
         this.channel = channel;
@@ -52,7 +52,9 @@ class GunzipChannel implements ReadableByteChannel {
 
         try {
             int n = inflater.inflate(dest.array(), dest.arrayOffset() + dest.position(), dest.remaining());
-            crc.update(dest.array(), dest.arrayOffset() + dest.position(), n);
+            if (crc != null) {
+                crc.update(dest.array(), dest.arrayOffset() + dest.position(), n);
+            }
             dest.position(dest.position() + n);
 
             int newBufferPosition = buffer.limit() - inflater.getRemaining();
@@ -62,7 +64,9 @@ class GunzipChannel implements ReadableByteChannel {
             if (inflater.finished()) {
                 readTrailer();
                 inflater.reset();
-                crc.reset();
+                if (crc != null) {
+                    crc.reset();
+                }
                 seenHeader = false;
             }
             return n;
@@ -78,10 +82,11 @@ class GunzipChannel implements ReadableByteChannel {
         long expectedCrc = buffer.getInt() & 0xffffffffL;
         int isize = buffer.getInt();
         inputPosition += 8;
+
         if ((isize & 0xfffffffffL) != (inflater.getBytesWritten() & 0xfffffffffL)) {
             throw new ZipException("gzip uncompressed size mismatch");
         }
-        if (expectedCrc != crc.getValue()) {
+        if (crc != null && expectedCrc != crc.getValue()) {
             throw new ZipException("bad gzip crc32: expected " + Long.toHexString(expectedCrc) + " actual " +
                     Long.toHexString(crc.getValue()));
         }

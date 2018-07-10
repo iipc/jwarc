@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 
-// line 141 "WarcParser.rl"
+// line 146 "WarcParser.rl"
 
 
 /**
@@ -171,29 +171,34 @@ case 1:
 	break;
 	case 1:
 // line 28 "WarcParser.rl"
-	{ if (bufPos > 0) push((byte)' '); }
+	{ major = major * 10 + data.get(p) - '0'; }
 	break;
 	case 2:
 // line 29 "WarcParser.rl"
-	{ major = major * 10 + data.get(p) - '0'; }
+	{ minor = minor * 10 + data.get(p) - '0'; }
 	break;
 	case 3:
 // line 30 "WarcParser.rl"
-	{ minor = minor * 10 + data.get(p) - '0'; }
-	break;
-	case 4:
-// line 31 "WarcParser.rl"
 	{ endOfText = bufPos; }
 	break;
+	case 4:
+// line 32 "WarcParser.rl"
+	{
+    if (bufPos > 0) {
+        bufPos = endOfText;
+        push((byte)' ');
+    }
+}
+	break;
 	case 5:
-// line 34 "WarcParser.rl"
+// line 39 "WarcParser.rl"
 	{
     name = new String(buf, 0, bufPos, US_ASCII);
     bufPos = 0;
 }
 	break;
 	case 6:
-// line 39 "WarcParser.rl"
+// line 44 "WarcParser.rl"
 	{
     String value = new String(buf, 0, endOfText, UTF_8);
     headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
@@ -202,7 +207,7 @@ case 1:
 }
 	break;
 	case 7:
-// line 46 "WarcParser.rl"
+// line 51 "WarcParser.rl"
 	{
     String url = new String(buf, 0, bufPos, ISO_8859_1);
     if (url.startsWith("filedesc://")) {
@@ -222,14 +227,14 @@ case 1:
 }
 	break;
 	case 8:
-// line 64 "WarcParser.rl"
+// line 69 "WarcParser.rl"
 	{
     setHeader("WARC-IP-Address", new String(buf, 0, bufPos, US_ASCII));
     bufPos = 0;
 }
 	break;
 	case 9:
-// line 69 "WarcParser.rl"
+// line 74 "WarcParser.rl"
 	{
     String arcDate = new String(buf, 0, bufPos, US_ASCII);
     Instant instant = LocalDateTime.parse(arcDate, arcTimeFormat).toInstant(ZoneOffset.UTC);
@@ -238,21 +243,21 @@ case 1:
 }
 	break;
 	case 10:
-// line 76 "WarcParser.rl"
+// line 81 "WarcParser.rl"
 	{
     // TODO
     bufPos = 0;
 }
 	break;
 	case 11:
-// line 81 "WarcParser.rl"
+// line 86 "WarcParser.rl"
 	{
     setHeader("Content-Length", new String(buf, 0, bufPos, US_ASCII));
     bufPos = 0;
 }
 	break;
 	case 12:
-// line 86 "WarcParser.rl"
+// line 91 "WarcParser.rl"
 	{
     protocol = "ARC";
     major = 1;
@@ -260,10 +265,10 @@ case 1:
 }
 	break;
 	case 13:
-// line 139 "WarcParser.rl"
+// line 144 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 267 "WarcParser.java"
+// line 272 "WarcParser.java"
 			}
 		}
 	}
@@ -283,7 +288,7 @@ case 5:
 	break; }
 	}
 
-// line 204 "WarcParser.rl"
+// line 209 "WarcParser.rl"
 
         position += p - data.position();
         data.position(p);
@@ -336,13 +341,13 @@ case 5:
     }
 
     
-// line 340 "WarcParser.java"
+// line 345 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
 	    5,    1,    6,    1,    7,    1,    8,    1,    9,    1,   13,    2,
-	    0,   10,    2,    1,    0,    2,    4,    0,    2,    6,    0,    3,
+	    0,   10,    2,    3,    0,    2,    4,    0,    2,    6,    0,    3,
 	   11,   12,   13
 	};
 }
@@ -514,14 +519,14 @@ private static final byte _warc_trans_targs[] = init__warc_trans_targs_0();
 private static byte[] init__warc_trans_actions_0()
 {
 	return new byte [] {
-	    0,    0,    1,    0,    0,    0,    0,    5,    0,    7,    0,    0,
-	    0,    1,   21,   11,    0,    0,    1,    0,    0,   13,   32,    3,
-	   26,   29,    9,    1,    1,   15,    1,    1,    1,    1,    1,    1,
+	    0,    0,    1,    0,    0,    0,    0,    3,    0,    5,    0,    0,
+	    0,    1,   21,   11,    0,    0,    1,    0,    0,   13,   32,    9,
+	   29,   26,    7,    1,    1,   15,    1,    1,    1,    1,    1,    1,
 	    1,    1,    1,    1,   17,    1,    1,    1,    1,    1,    1,    1,
 	    1,    1,    1,    1,    1,    1,    1,    1,   19,    1,    1,    1,
 	    1,   23,    1,    1,    1,    1,    1,    1,    1,   35,    1,    1,
 	    1,    1,    0,    1,    0,   11,    0,    0,    1,    0,    0,   13,
-	   32,    3,   26,   29,    9,    1
+	   32,    9,   29,   26,    7,    1
 	};
 }
 
@@ -536,5 +541,5 @@ static final int warc_en_warc_fields = 66;
 static final int warc_en_any_header = 1;
 
 
-// line 256 "WarcParser.rl"
+// line 261 "WarcParser.rl"
 }
