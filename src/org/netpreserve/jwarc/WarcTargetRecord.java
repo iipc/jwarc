@@ -5,6 +5,7 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 
@@ -46,6 +47,15 @@ public abstract class WarcTargetRecord extends WarcRecord {
     public Optional<MediaType> identifiedPayloadType() {
         return headers().sole("WARC-Identified-Payload-Type").map(MediaType::parse);
     }
+
+    /**
+     * Returns the payload of this record if one is present.
+     * <p>
+     * This method returns an empty optional when the payload is undefined for this record type or if this library does
+     * not know how to parse the body in order to extract the payload. If the payload is well defined but
+     * happens to be zero bytes in length this method still returns a WarcPayload object.
+     */
+    public abstract Optional<WarcPayload> payload() throws IOException;
 
     /**
      * The ID of a {@link Warcinfo} record associated with this record.

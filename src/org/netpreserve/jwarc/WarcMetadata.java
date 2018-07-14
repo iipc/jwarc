@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -16,6 +17,14 @@ public class WarcMetadata extends WarcCaptureRecord {
 
     WarcMetadata(ProtocolVersion version, Headers headers, BodyChannel body) {
         super(version, headers, body);
+    }
+
+    /**
+     * Metadata records do not have a payload so this method always returns empty.
+     */
+    @Override
+    public Optional<WarcPayload> payload() throws IOException {
+        return Optional.empty();
     }
 
     /**

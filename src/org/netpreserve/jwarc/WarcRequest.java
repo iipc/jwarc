@@ -6,6 +6,7 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class WarcRequest extends WarcCaptureRecord {
 
@@ -36,5 +37,28 @@ public class WarcRequest extends WarcCaptureRecord {
         public WarcRequest build() {
             return build(WarcRequest::new);
         }
+    }
+
+    public Optional<WarcPayload> payload() throws IOException {
+        if (contentType().base().equals(MediaType.HTTP)) {
+            return Optional.of(new WarcPayload(http().body()) {
+
+                @Override
+                MediaType type() {
+                    return http.contentType();
+                }
+
+                @Override
+                Optional<MediaType> identifiedType() {
+                    return identifiedPayloadType();
+                }
+
+                @Override
+                Optional<Digest> digest() {
+                    return payloadDigest();
+                }
+            });
+        }
+        return Optional.empty();
     }
 }

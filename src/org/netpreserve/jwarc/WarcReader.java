@@ -8,7 +8,10 @@ package org.netpreserve.jwarc;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Path;
 import java.util.*;
 
 public class WarcReader implements Iterable<WarcRecord>, Closeable {
@@ -20,11 +23,20 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private final ByteBuffer buffer;
     private final WarcCompression compression;
     private WarcRecord record;
+    private final long startPosition;
     private long position;
     private long headerLength;
 
     public WarcReader(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         this.types = new HashMap<>(defaultTypes);
+
+        if (channel instanceof SeekableByteChannel) {
+            startPosition = ((SeekableByteChannel) channel).position();
+        } else {
+            startPosition = 0;
+        }
+
+        position = startPosition;
 
         while (buffer.remaining() < 2) {
             buffer.compact();
@@ -62,6 +74,10 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         this(Channels.newChannel(stream));
     }
 
+    public WarcReader(Path path) throws IOException {
+        this(FileChannel.open(path));
+    }
+
     private static Map<String, WarcRecord.Constructor> initDefaultTypes() {
         Map<String, WarcRecord.Constructor> types = new HashMap<>();
         types.put("default", WarcRecord::new);
@@ -96,7 +112,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             consumeTrailer();
 
             if (channel instanceof GunzipChannel) {
-                position = ((GunzipChannel) channel).inputPosition();
+                position = startPosition + ((GunzipChannel) channel).inputPosition();
             } else {
                 position += headerLength + record.body().size() + 4;
             }
