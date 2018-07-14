@@ -55,7 +55,25 @@ public abstract class WarcTargetRecord extends WarcRecord {
      * not know how to parse the body in order to extract the payload. If the payload is well defined but
      * happens to be zero bytes in length this method still returns a WarcPayload object.
      */
-    public abstract Optional<WarcPayload> payload() throws IOException;
+    public Optional<WarcPayload> payload() throws IOException {
+        return Optional.of(new WarcPayload(body()) {
+            @Override
+            MediaType type() {
+                return contentType();
+            }
+
+            @Override
+            Optional<MediaType> identifiedType() {
+                return Optional.empty();
+            }
+
+            @Override
+            Optional<Digest> digest() {
+                Optional<Digest> payloadDigest = payloadDigest();
+                return payloadDigest.isPresent() ? payloadDigest : blockDigest();
+            }
+        });
+    }
 
     /**
      * The ID of a {@link Warcinfo} record associated with this record.
