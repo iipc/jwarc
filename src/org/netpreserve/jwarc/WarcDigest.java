@@ -9,12 +9,12 @@ import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.Objects;
 
-public class Digest {
+public class WarcDigest {
 
     private final String algorithm;
     private final String value;
 
-    public Digest(String digest) {
+    public WarcDigest(String digest) {
         int i = digest.indexOf(':');
         if (i == -1) {
             throw new IllegalArgumentException("Invalid WARC-Digest");
@@ -23,16 +23,16 @@ public class Digest {
         this.value = digest.substring(i + 1);
     }
 
-    public Digest(String algorithm, String value) {
+    public WarcDigest(String algorithm, String value) {
         this.algorithm = algorithm;
         this.value = value;
     }
 
-    public Digest(String algorithm, byte[] value) {
+    public WarcDigest(String algorithm, byte[] value) {
         this(algorithm, base32Encode(value));
     }
 
-    public Digest(MessageDigest messageDigest) {
+    public WarcDigest(MessageDigest messageDigest) {
         algorithm = messageDigest.getAlgorithm().replace("-", "").toLowerCase(Locale.US);
         value = base32Encode(messageDigest.digest());
     }
@@ -92,7 +92,7 @@ public class Digest {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Digest digest = (Digest) o;
+        WarcDigest digest = (WarcDigest) o;
         return Objects.equals(algorithm, digest.algorithm) &&
                 Objects.equals(value, digest.value);
     }

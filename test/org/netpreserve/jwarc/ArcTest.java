@@ -71,7 +71,7 @@ public class ArcTest {
         assertEquals(Instant.parse("2005-06-14T07:01:44Z"), filedesc.date());
         assertEquals(1338, filedesc.body().size());
         assertEquals(MediaType.parse("text/plain"), filedesc.contentType());
-        assertEquals(ProtocolVersion.ARC_1_1, filedesc.version());
+        assertEquals(MessageVersion.ARC_1_1, filedesc.version());
 
         WarcResponse dns = (WarcResponse) reader.next().get();
         assertEquals("dns:www.law.gov.au", dns.target());

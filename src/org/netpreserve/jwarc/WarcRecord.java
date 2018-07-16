@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.*;
 
 public class WarcRecord extends Message {
-    WarcRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -55,12 +55,12 @@ public class WarcRecord extends Message {
     }
 
     /**
-     * The reason why this record was truncated or {@link TruncationReason#NOT_TRUNCATED}.
+     * The reason why this record was truncated or {@link WarcTruncationReason#NOT_TRUNCATED}.
      */
-    public TruncationReason truncated() {
+    public WarcTruncationReason truncated() {
         return headers().sole("WARC-Truncated")
-                .map(value -> TruncationReason.valueOf(value.toUpperCase()))
-                .orElse(TruncationReason.NOT_TRUNCATED);
+                .map(value -> WarcTruncationReason.valueOf(value.toUpperCase()))
+                .orElse(WarcTruncationReason.NOT_TRUNCATED);
     }
 
     /**
@@ -75,8 +75,8 @@ public class WarcRecord extends Message {
     /**
      * Digest values that were calculated by applying hash functions to this content body.
      */
-    public Optional<Digest> blockDigest() {
-        return headers().sole("WARC-Block-Digest").map(Digest::new);
+    public Optional<WarcDigest> blockDigest() {
+        return headers().sole("WARC-Block-Digest").map(WarcDigest::new);
     }
 
     @Override
@@ -86,16 +86,14 @@ public class WarcRecord extends Message {
 
     @FunctionalInterface
     public interface Constructor<R extends WarcRecord> {
-        R construct(ProtocolVersion version, Headers headers, BodyChannel body);
+        R construct(MessageVersion version, MessageHeaders headers, MessageBody body);
     }
 
-    public abstract static class Builder<R extends WarcRecord, B extends Builder<R, B>> extends Message.Builder<R, B> {
-        private Map<String, List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private ProtocolVersion version = ProtocolVersion.WARC_1_0;
+    public abstract static class AbstractBuilder<R extends WarcRecord, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
         private ReadableByteChannel bodyChannel;
 
-        public Builder(String type) {
-            super();
+        public AbstractBuilder(String type) {
+            super(MessageVersion.WARC_1_1);
             setHeader("WARC-Type", type);
             setHeader("Content-Length", "0");
             date(Instant.now());
@@ -115,15 +113,15 @@ public class WarcRecord extends Message {
         }
 
         public B blockDigest(String algorithm, String value) {
-            return blockDigest(new Digest(algorithm, value));
+            return blockDigest(new WarcDigest(algorithm, value));
         }
 
-        public B blockDigest(Digest digest) {
+        public B blockDigest(WarcDigest digest) {
             return addHeader("WARC-Block-Digest", digest.toPrefixedBase32());
         }
 
-        public B truncated(TruncationReason truncationReason) {
-            if (truncationReason.equals(TruncationReason.NOT_TRUNCATED)) {
+        public B truncated(WarcTruncationReason truncationReason) {
+            if (truncationReason.equals(WarcTruncationReason.NOT_TRUNCATED)) {
                 headerMap.remove("WARC-Truncated");
                 return (B) this;
             }
@@ -134,31 +132,21 @@ public class WarcRecord extends Message {
             return addHeader("WARC-Segment-Number", String.valueOf(segmentNumber));
         }
 
-        @Override
-        public B addHeader(String name, String value) {
-            headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
-            return (B) this;
+        public B body(MediaType contentType, byte[] contentBytes) {
+            return body(contentType, Channels.newChannel(new ByteArrayInputStream(contentBytes)), contentBytes.length);
         }
 
-        @Override
-        public B setHeader(String name, String value) {
-            List list = new ArrayList();
-            list.add(value);
-            headerMap.put(name, list);
-            return (B) this;
-        }
-
-        public B body(String contentType, byte[] contentBytes) {
-            setHeader("Content-Type", contentType);
-            setHeader("Content-Length", Long.toString(contentBytes.length));
-            this.bodyChannel = Channels.newChannel(new ByteArrayInputStream(contentBytes));
+        public B body(MediaType contentType, ReadableByteChannel channel, long length) {
+            setHeader("Content-Type", contentType.toString());
+            setHeader("Content-Length", Long.toString(length));
+            this.bodyChannel = channel;
             return (B) this;
         }
 
         protected R build(Constructor<R> constructor) {
-            Headers headers = new Headers(headerMap);
+            MessageHeaders headers = new MessageHeaders(headerMap);
             long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
-            return constructor.construct(version, headers, new BodyChannel(bodyChannel, ByteBuffer.allocate(0), contentLength));
+            return constructor.construct(version, headers, new MessageBody(bodyChannel, ByteBuffer.allocate(0), contentLength));
         }
     }
 }

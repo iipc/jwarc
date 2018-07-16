@@ -5,7 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-public enum TruncationReason {
+public enum WarcTruncationReason {
     /**
      * no truncation occurred
      */

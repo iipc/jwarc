@@ -5,22 +5,24 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 
-public class BodyChannel implements ReadableByteChannel {
+public class MessageBody implements ReadableByteChannel {
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;
     private final long size;
     private long position = 0;
     private boolean open = true;
 
-    BodyChannel(ReadableByteChannel channel, ByteBuffer buffer, long size) {
+    MessageBody(ReadableByteChannel channel, ByteBuffer buffer, long size) {
         this.channel = channel;
         this.buffer = buffer;
         this.size = size;
@@ -35,20 +37,8 @@ public class BodyChannel implements ReadableByteChannel {
             return -1;
         }
 
-        int bytesToRead = (int) Math.min(dest.remaining(), size - position);
         if (buffer.hasRemaining()) {
-            if (buffer.remaining() < bytesToRead) {
-                bytesToRead = buffer.remaining();
-            }
-            int savedLimit = buffer.limit();
-            try {
-                buffer.limit(buffer.position() + bytesToRead);
-                dest.put(buffer);
-            } finally {
-                buffer.limit(savedLimit);
-            }
-            position += bytesToRead;
-            return bytesToRead;
+            return IOUtils.transfer(buffer, dest, size - position);
         }
 
         /*
@@ -57,7 +47,7 @@ public class BodyChannel implements ReadableByteChannel {
 
         int savedLimit = dest.limit();
         try {
-            dest.limit(dest.position() + bytesToRead);
+            dest.limit(dest.position() + (int) Math.min(dest.remaining(), size - position));
             int actuallyRead = channel.read(dest);
             if (actuallyRead < 0) {
                 throw new EOFException();
@@ -132,12 +122,12 @@ public class BodyChannel implements ReadableByteChannel {
     private class Stream extends InputStream {
         @Override
         public int read(byte[] b) throws IOException {
-            return BodyChannel.this.read(ByteBuffer.wrap(b));
+            return MessageBody.this.read(ByteBuffer.wrap(b));
         }
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            return BodyChannel.this.read(ByteBuffer.wrap(b, off, len));
+            return MessageBody.this.read(ByteBuffer.wrap(b, off, len));
         }
 
         @Override
@@ -147,7 +137,7 @@ public class BodyChannel implements ReadableByteChannel {
 
         @Override
         public void close() throws IOException {
-            BodyChannel.this.close();
+            MessageBody.this.close();
         }
 
         @Override
@@ -168,5 +158,10 @@ public class BodyChannel implements ReadableByteChannel {
             position++;
             return buffer.get();
         }
+    }
+
+    public static MessageBody empty() {
+        return new MessageBody(Channels.newChannel(new ByteArrayInputStream(new byte[0])),
+                ByteBuffer.allocate(0), 0);
     }
 }

@@ -7,6 +7,8 @@ package org.netpreserve.jwarc;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +18,7 @@ import static java.util.stream.Collectors.toList;
  * A type of WARC record created as part of a web capture event.
  */
 public abstract class WarcCaptureRecord extends WarcTargetRecord {
-    WarcCaptureRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcCaptureRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -34,9 +36,15 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
         return headers().all("WARC-Concurrent-To").stream().map(WarcRecord::parseRecordID).collect(toList());
     }
 
-    public abstract static class Builder<R extends WarcCaptureRecord, B extends Builder<R, B>> extends WarcTargetRecord.Builder<R, B> {
-        protected Builder(String type) {
+    public abstract static class AbstractBuilder<R extends WarcCaptureRecord, B extends AbstractBuilder<R, B>> extends WarcTargetRecord.Builder<R, B> {
+        protected AbstractBuilder(String type) {
             super(type);
+        }
+
+        public B body(MediaType type, Message message) {
+            ByteBuffer header = ByteBuffer.wrap(message.serializeHeader());
+            ReadableByteChannel channel = IOUtils.prefixChannel(header, message.body());
+            return body(type, channel, message.body().size() + header.remaining());
         }
 
         public B concurrentTo(URI recordId) {

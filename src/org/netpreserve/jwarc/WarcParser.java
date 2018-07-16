@@ -322,12 +322,12 @@ case 5:
         buf[bufPos++] = b;
     }
 
-    public Headers headers() {
-        return new Headers(headerMap);
+    public MessageHeaders headers() {
+        return new MessageHeaders(headerMap);
     }
 
-    public ProtocolVersion version() {
-        return new ProtocolVersion(protocol, major, minor);
+    public MessageVersion version() {
+        return new MessageVersion(protocol, major, minor);
     }
 
     public long position() {

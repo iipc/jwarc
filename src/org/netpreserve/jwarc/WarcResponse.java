@@ -6,13 +6,14 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Optional;
 
 public class WarcResponse extends WarcCaptureRecord {
 
     private HttpResponse http;
 
-    WarcResponse(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcResponse(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -43,7 +44,7 @@ public class WarcResponse extends WarcCaptureRecord {
                 }
 
                 @Override
-                Optional<Digest> digest() {
+                Optional<WarcDigest> digest() {
                     return payloadDigest();
                 }
             });
@@ -51,9 +52,14 @@ public class WarcResponse extends WarcCaptureRecord {
         return Optional.empty();
     }
 
-    public static class Builder extends WarcCaptureRecord.Builder<WarcResponse, Builder> {
-        protected Builder() {
+    public static class Builder extends AbstractBuilder<WarcResponse, Builder> {
+        public Builder(URI targetURI) {
             super("response");
+            setHeader("WARC-Target-URI", targetURI.toString());
+        }
+
+        public Builder body(HttpResponse httpResponse) {
+            return body(MediaType.HTTP_RESPONSE, httpResponse);
         }
 
         @Override

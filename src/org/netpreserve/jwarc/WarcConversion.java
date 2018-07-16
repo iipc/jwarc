@@ -10,7 +10,7 @@ import java.net.URI;
 import java.util.Optional;
 
 public class WarcConversion extends WarcTargetRecord {
-    WarcConversion(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcConversion(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -27,8 +27,8 @@ public class WarcConversion extends WarcTargetRecord {
             }
 
             @Override
-            Optional<Digest> digest() {
-                Optional<Digest> payloadDigest = payloadDigest();
+            Optional<WarcDigest> digest() {
+                Optional<WarcDigest> payloadDigest = payloadDigest();
                 return payloadDigest.isPresent() ? payloadDigest : blockDigest();
             }
         });

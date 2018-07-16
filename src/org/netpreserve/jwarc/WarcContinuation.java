@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.Optional;
 
 public class WarcContinuation extends WarcTargetRecord {
-    WarcContinuation(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcContinuation(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 

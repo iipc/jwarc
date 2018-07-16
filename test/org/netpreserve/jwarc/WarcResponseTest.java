@@ -50,32 +50,32 @@ public class WarcResponseTest {
         assertEquals(MediaType.parse("image/jpeg"), response.http().contentType());
         assertEquals(Optional.of(MediaType.parse("image/jpeg")), response.identifiedPayloadType());
         assertEquals(Optional.of(InetAddresses.forString("207.241.233.58")), response.ipAddress());
-        assertEquals(Optional.of(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
-        assertEquals(Optional.of(new Digest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());
+        assertEquals(Optional.of(new WarcDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
+        assertEquals(Optional.of(new WarcDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());
         assertEquals(Optional.of(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39")), response.warcinfoID());
     }
 
     @Test
     public void builder() throws IOException {
-        WarcResponse response = new WarcResponse.Builder()
+        WarcResponse response = new WarcResponse.Builder(URI.create("http://example.org/"))
                 .recordId(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"))
                 .blockDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")
                 .payloadDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")
                 .warcinfoId(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39"))
                 .identifiedPayloadType("image/jpeg")
-                .truncated(TruncationReason.DISCONNECT)
+                .truncated(WarcTruncationReason.DISCONNECT)
                 .build();
-        assertEquals(Optional.of(new Digest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
-        assertEquals(TruncationReason.DISCONNECT, response.truncated());
+        assertEquals(Optional.of(new WarcDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
+        assertEquals(WarcTruncationReason.DISCONNECT, response.truncated());
     }
 
     @Test
     public void nullTruncation() {
-        WarcResponse response = new WarcResponse.Builder()
-                .truncated(TruncationReason.DISCONNECT)
-                .truncated(TruncationReason.NOT_TRUNCATED)
+        WarcResponse response = new WarcResponse.Builder(URI.create("http://example.org/"))
+                .truncated(WarcTruncationReason.DISCONNECT)
+                .truncated(WarcTruncationReason.NOT_TRUNCATED)
                 .build();
         assertFalse(response.headers().first("WARC-Truncated").isPresent());
-        assertEquals(TruncationReason.NOT_TRUNCATED, response.truncated());
+        assertEquals(WarcTruncationReason.NOT_TRUNCATED, response.truncated());
     }
 }

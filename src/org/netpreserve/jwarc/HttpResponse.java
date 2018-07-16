@@ -17,10 +17,22 @@ public class HttpResponse extends HttpMessage {
     private final int status;
     private final String reason;
 
-    HttpResponse(int status, String reason, ProtocolVersion version, Headers headers, BodyChannel body) {
+    HttpResponse(int status, String reason, MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
         this.status = status;
         this.reason = reason;
+    }
+
+    @Override
+    void serializeHeaderTo(Appendable output) throws IOException {
+        output.append(version().toString());
+        output.append(' ');
+        output.append(Integer.toString(status));
+        output.append(' ');
+        output.append(reason);
+        output.append("\r\n");
+        headers().appendTo(output);
+        output.append("\r\n");
     }
 
     public static HttpResponse parse(ReadableByteChannel channel) throws IOException {
@@ -30,9 +42,9 @@ public class HttpResponse extends HttpMessage {
         HttpParser parser = new HttpParser(handler);
         parser.responseOnly();
         parser.parse(channel, buffer);
-        Headers headers = new Headers(handler.headerMap);
+        MessageHeaders headers = new MessageHeaders(handler.headerMap);
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
-        BodyChannel body = new BodyChannel(channel, buffer, contentLength);
+        MessageBody body = new MessageBody(channel, buffer, contentLength);
         return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
     }
 
@@ -52,14 +64,14 @@ public class HttpResponse extends HttpMessage {
 
     private static class ParseHandler implements HttpParser.Handler {
         Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private ProtocolVersion version;
+        private MessageVersion version;
         private String name;
         private int status;
         private String reason;
 
         @Override
         public void version(int major, int minor) {
-            version = new ProtocolVersion("HTTP", major, minor);
+            version = new MessageVersion("HTTP", major, minor);
         }
 
         @Override
@@ -90,6 +102,22 @@ public class HttpResponse extends HttpMessage {
         @Override
         public void method(String method) {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public static class Builder extends HttpMessage.AbstractBuilder<HttpResponse, Builder> {
+        private final int status;
+        private final String reasonPhrase;
+
+        public Builder(int status, String reasonPhrase) {
+            super();
+            this.status = status;
+            this.reasonPhrase = reasonPhrase;
+        }
+
+        @Override
+        public HttpResponse build() {
+            return new HttpResponse(status, reasonPhrase, version, new MessageHeaders(headerMap), body);
         }
     }
 }

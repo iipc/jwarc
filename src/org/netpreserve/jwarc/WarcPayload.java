@@ -8,13 +8,13 @@ package org.netpreserve.jwarc;
 import java.util.Optional;
 
 public abstract class WarcPayload {
-    private final BodyChannel body;
+    private final MessageBody body;
 
-    WarcPayload(BodyChannel body) {
+    WarcPayload(MessageBody body) {
         this.body = body;
     }
 
-    public BodyChannel body() {
+    public MessageBody body() {
         return body;
     }
 
@@ -22,5 +22,5 @@ public abstract class WarcPayload {
 
     abstract Optional<MediaType> identifiedType();
 
-    abstract Optional<Digest> digest();
+    abstract Optional<WarcDigest> digest();
 }

@@ -13,9 +13,9 @@ import java.util.Optional;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class WarcMetadata extends WarcCaptureRecord {
-    private Headers fields;
+    private MessageHeaders fields;
 
-    WarcMetadata(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcMetadata(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -32,14 +32,14 @@ public class WarcMetadata extends WarcCaptureRecord {
      * <p>
      * This is a convenience method for <code>Headers.parse(metadata.body())</code>.
      */
-    public Headers fields() throws IOException {
+    public MessageHeaders fields() throws IOException {
         if (fields == null) {
-            fields = Headers.parse(body());
+            fields = MessageHeaders.parse(body());
         }
         return fields;
     }
 
-    public static class Builder extends WarcCaptureRecord.Builder<WarcMetadata, Builder> {
+    public static class Builder extends AbstractBuilder<WarcMetadata, Builder> {
         protected Builder() {
             super("metadata");
         }
@@ -50,7 +50,7 @@ public class WarcMetadata extends WarcCaptureRecord {
         }
 
         public Builder fields(Map<String, List<String>> map) {
-            return body("application/warc-fields", Headers.format(map).getBytes(UTF_8));
+            return body(MediaType.WARC_FIELDS, MessageHeaders.format(map).getBytes(UTF_8));
         }
     }
 }

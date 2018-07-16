@@ -5,15 +5,12 @@
 
 package org.netpreserve.jwarc;
 
-import java.io.IOException;
-import java.util.Optional;
-
 public class WarcResource extends WarcCaptureRecord {
-    WarcResource(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcResource(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
-    public static class Builder extends WarcCaptureRecord.Builder<WarcResource, Builder> {
+    public static class Builder extends AbstractBuilder<WarcResource, Builder> {
         protected Builder() {
             super("resource");
         }

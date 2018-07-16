@@ -16,7 +16,7 @@ import java.util.Optional;
  * record types.
  */
 public abstract class WarcTargetRecord extends WarcRecord {
-    WarcTargetRecord(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcTargetRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -37,8 +37,8 @@ public abstract class WarcTargetRecord extends WarcRecord {
     /**
      * Digest values that were calculated by applying hash functions to payload.
      */
-    public Optional<Digest> payloadDigest() {
-        return headers().sole("WARC-Payload-Digest").map(Digest::new);
+    public Optional<WarcDigest> payloadDigest() {
+        return headers().sole("WARC-Payload-Digest").map(WarcDigest::new);
     }
 
     /**
@@ -68,8 +68,8 @@ public abstract class WarcTargetRecord extends WarcRecord {
             }
 
             @Override
-            Optional<Digest> digest() {
-                Optional<Digest> payloadDigest = payloadDigest();
+            Optional<WarcDigest> digest() {
+                Optional<WarcDigest> payloadDigest = payloadDigest();
                 return payloadDigest.isPresent() ? payloadDigest : blockDigest();
             }
         });
@@ -87,12 +87,12 @@ public abstract class WarcTargetRecord extends WarcRecord {
         return getClass().getSimpleName() + "<" + date() + " " + target() + ">";
     }
 
-    public static abstract class Builder<R extends WarcTargetRecord, B extends Builder<R, B>> extends WarcRecord.Builder<R, B> {
+    public static abstract class Builder<R extends WarcTargetRecord, B extends Builder<R, B>> extends AbstractBuilder<R, B> {
         public Builder(String type) {
             super(type);
         }
 
-        public B payloadDigest(Digest payloadDigest) {
+        public B payloadDigest(WarcDigest payloadDigest) {
             return addHeader("WARC-Payload-Digest", payloadDigest.toPrefixedBase32());
         }
 
@@ -105,7 +105,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
         }
 
         public B payloadDigest(String algorithm, String value) {
-            return payloadDigest(new Digest(algorithm, value));
+            return payloadDigest(new WarcDigest(algorithm, value));
         }
     }
 }

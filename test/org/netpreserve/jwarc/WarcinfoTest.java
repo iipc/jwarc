@@ -51,7 +51,7 @@ public class WarcinfoTest {
         assertEquals("hello.warc", warcinfo.filename().get());
         assertEquals(399, warcinfo.body().size());
         assertEquals(MediaType.WARC_FIELDS, warcinfo.contentType());
-        Headers fields = warcinfo.fields();
+        MessageHeaders fields = warcinfo.fields();
         assertEquals("207.241.227.234", fields.sole("ip").get());
         assertEquals("http://www.archive.org/documents/WarcFileFormat-1.0.html", fields.sole("conformsTo").get());
         assertEquals("a b c", warcinfo.headers().sole("Folded").get());

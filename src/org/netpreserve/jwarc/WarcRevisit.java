@@ -34,7 +34,7 @@ public class WarcRevisit extends WarcCaptureRecord {
      */
     public static final URI SERVER_NOT_MODIFIED_1_1 = URI.create("http://netpreserve.org/warc/1.1/revisit/server-not-modified");
 
-    WarcRevisit(ProtocolVersion version, Headers headers, BodyChannel body) {
+    WarcRevisit(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
@@ -68,7 +68,7 @@ public class WarcRevisit extends WarcCaptureRecord {
         return headers().sole("WARC-Refers-To").map(WarcRecord::parseRecordID);
     }
 
-    public static class Builder extends WarcCaptureRecord.Builder<WarcRevisit, Builder> {
+    public static class Builder extends AbstractBuilder<WarcRevisit, Builder> {
 
         public Builder(URI profile) {
             super("revisit");

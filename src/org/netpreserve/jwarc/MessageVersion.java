@@ -7,18 +7,18 @@ package org.netpreserve.jwarc;
 
 import java.util.Objects;
 
-public final class ProtocolVersion {
-    public static final ProtocolVersion HTTP_1_0 = new ProtocolVersion("HTTP", 1, 0);
-    public static final ProtocolVersion HTTP_1_1 = new ProtocolVersion("HTTP", 1, 1);
-    public static final ProtocolVersion WARC_1_0 = new ProtocolVersion("WARC", 1, 0);
-    public static final ProtocolVersion WARC_1_1 = new ProtocolVersion("WARC", 1, 1);
-    public static final ProtocolVersion ARC_1_1 = new ProtocolVersion("ARC", 1, 1);
+public final class MessageVersion {
+    public static final MessageVersion HTTP_1_0 = new MessageVersion("HTTP", 1, 0);
+    public static final MessageVersion HTTP_1_1 = new MessageVersion("HTTP", 1, 1);
+    public static final MessageVersion WARC_1_0 = new MessageVersion("WARC", 1, 0);
+    public static final MessageVersion WARC_1_1 = new MessageVersion("WARC", 1, 1);
+    public static final MessageVersion ARC_1_1 = new MessageVersion("ARC", 1, 1);
 
     private final String protocol;
     private final int major;
     private final int minor;
 
-    public ProtocolVersion(String protocol, int major, int minor) {
+    public MessageVersion(String protocol, int major, int minor) {
         this.protocol = protocol;
         this.major = major;
         this.minor = minor;
@@ -40,7 +40,7 @@ public final class ProtocolVersion {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ProtocolVersion that = (ProtocolVersion) o;
+        MessageVersion that = (MessageVersion) o;
         return major == that.major &&
                 minor == that.minor &&
                 Objects.equals(protocol, that.protocol);

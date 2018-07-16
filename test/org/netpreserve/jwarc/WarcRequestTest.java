@@ -41,14 +41,14 @@ public class WarcRequestTest {
         WarcRequest request = (WarcRequest) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(Arrays.asList(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0")), request.concurrentTo());
         assertEquals(MediaType.HTTP_REQUEST, request.contentType());
-        assertEquals(ProtocolVersion.WARC_1_1, request.version());
-        assertEquals(ProtocolVersion.HTTP_1_0, request.http().version());
+        assertEquals(MessageVersion.WARC_1_1, request.version());
+        assertEquals(MessageVersion.HTTP_1_0, request.http().version());
         assertEquals(Optional.of("close"), request.http().headers().sole("connection"));
     }
 
     @Test
     public void builder() throws IOException {
-        WarcRequest request = new WarcRequest.Builder()
+        WarcRequest request = new WarcRequest.Builder(URI.create("http://example.org/"))
                 .concurrentTo(URI.create("id:1"))
                 .concurrentTo(URI.create("id:2"))
                 .build();

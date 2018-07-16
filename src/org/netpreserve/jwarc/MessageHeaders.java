@@ -16,10 +16,10 @@ import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 
-public class Headers {
+public class MessageHeaders {
     private Map<String,List<String>> map;
 
-    Headers(Map<String, List<String>> map) {
+    MessageHeaders(Map<String, List<String>> map) {
         map.replaceAll((name, values) -> Collections.unmodifiableList(values));
         this.map = Collections.unmodifiableMap(map);
     }
@@ -64,7 +64,7 @@ public class Headers {
     /**
      * Parses application/warc-fields.
      */
-    public static Headers parse(ReadableByteChannel channel) throws IOException {
+    public static MessageHeaders parse(ReadableByteChannel channel) throws IOException {
         WarcParser parser = WarcParser.newWarcFieldsParser();
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         while (!parser.isFinished()) {
@@ -103,5 +103,14 @@ public class Headers {
             }
         }
         return out.toString();
+    }
+
+    public void appendTo(Appendable appendable) throws IOException {
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            String name = entry.getKey();
+            for (String value : entry.getValue()) {
+                appendable.append(name).append(": ").append(value).append("\r\n");
+            }
+        }
     }
 }
