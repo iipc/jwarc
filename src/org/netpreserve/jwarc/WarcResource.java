@@ -5,12 +5,19 @@
 
 package org.netpreserve.jwarc;
 
+import java.net.URI;
+
 public class WarcResource extends WarcCaptureRecord {
     WarcResource(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }
 
     public static class Builder extends AbstractBuilder<WarcResource, Builder> {
+        public Builder(URI targetURI) {
+            super("resource");
+            setHeader("WARC-Target-URI", targetURI.toString());
+        }
+
         protected Builder() {
             super("resource");
         }
