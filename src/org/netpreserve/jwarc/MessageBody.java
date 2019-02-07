@@ -38,7 +38,9 @@ public class MessageBody implements ReadableByteChannel {
         }
 
         if (buffer.hasRemaining()) {
-            return IOUtils.transfer(buffer, dest, size - position);
+            int n = IOUtils.transfer(buffer, dest, size - position);
+            position += n;
+            return n;
         }
 
         /*
@@ -50,7 +52,7 @@ public class MessageBody implements ReadableByteChannel {
             dest.limit(dest.position() + (int) Math.min(dest.remaining(), size - position));
             int actuallyRead = channel.read(dest);
             if (actuallyRead < 0) {
-                throw new EOFException();
+                throw new EOFException("expected " + (size - position) + " more bytes in file");
             }
             position += actuallyRead;
             return actuallyRead;
