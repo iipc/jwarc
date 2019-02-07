@@ -1,4 +1,4 @@
-# jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc) [![Codecov](https://img.shields.io/codecov/c/github/ato/jwarc.svg)](https://codecov.io/gh/ato/jwarc)
+# jwarc [![Build Status](https://travis-ci.com/ato/jwarc.svg?branch=master)](https://travis-ci.com/ato/jwarc)
 
 (Work in progress) A Java library for reading and writing WARC files. This library includes a high level API modeling
 the standard record types as individual classes with typed accessors. The API is exensible and you can register
