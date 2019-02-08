@@ -34,8 +34,7 @@ Direct buffers and even memory-mapped files can be used, but only with uncompres
 Inflater (coming in JDK 11).
 
 **Limitations:** This library has not been battle tested yet. The HTTP parser in lacking a robust parsing mode and is 
-probably too strict for real world data. The API for writing of records is incomplete. The documentation is still being
-written.
+probably too strict for real world data. The API for writing of records is incomplete.
 
 Once implemented the API for writing records will probably look something like this:
 
@@ -70,7 +69,9 @@ WarcResponse response = new WarcResponse.Builder()
 writer.write(response);
 ```
 
-## Quick Reference
+## API Overview
+
+See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more details.
 
 Record type hierarchy:
 
@@ -89,7 +90,7 @@ Record type hierarchy:
             WarcResource    (resource)
             WarcResponse    (response)
 
-### Message
+### [Message](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Message.html)
 
 The basic building block of both HTTP protocol and WARC file format is a message consisting of set of named header
 fields and a body. Header field names are case-insensitvie and may have multiple values.
@@ -109,7 +110,7 @@ fields and a body. Header field names are case-insensitvie and may have multiple
          (ProtocolVersion) message.version();                  // the protocol version (e.g. HTTP/1.0 or WARC/1.1)
 ```
 
-### WarcRecord
+### [WarcRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRecord.html)
 
 Methods available on all WARC records:
 
@@ -122,14 +123,14 @@ Methods available on all WARC records:
             (String) record.type();          // "warcinfo", "request", "response" etc
 ```
 
-### Warcinfo
+### [Warcinfo](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Warcinfo.html)
 
 ```java
             (Headers) warcinfo.fields();   // parses the body as application/warc-fields
    (Optional<String>) warcinfo.filename(); // filename of the containing WARC
 ```
 
-### WarcTargetRecord
+### [WarcTargetRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcTargetRecord.html)
 
 Methods available on all WARC records except Warcinfo:
 
@@ -141,20 +142,20 @@ Methods available on all WARC records except Warcinfo:
       (Optional<URI>) record.warcinfoID();            // ID of warcinfo record when stored separately
 ```
 
-### WarcContinuation
+### [WarcContinuation](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcContinuation.html)
 
 ```java
              (String) continuation.segmentOriginId();    // record ID of first segment
    (Optional<String>) continuation.segmentTotalLength(); // (last only) total length of all segments
 ```
 
-### WarcConversion
+### [WarcConversion](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcConversion.html)
 
 ```java
       (Optional<URI>) conversion.refersTo();    // ID of record this one was converted from
 ```
 
-### WarcCaptureRecord
+### [WarcCaptureRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcCaptureRecord.html)
 
 Methods available on metadata, request, resource and response records:
 
@@ -163,13 +164,13 @@ Methods available on metadata, request, resource and response records:
  (Optional<InetAddr>) capture.ipAddress();      // IP address of the server
 ```
 
-### WarcMetadata
+### [WarcMetadata](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcMetadata.html)
 
 ```java
             (Headers) metadata.fields();        // parses the body as application/warc-fields
 ```
 
-### WarcRequest
+### [WarcRequest](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRequest.html)
 
 ```java
         (HttpRequest) request.http();           // parses the body as a HTTP request
@@ -177,11 +178,11 @@ Methods available on metadata, request, resource and response records:
             (Headers) request.http().headers(); // HTTP request headers
 ```
 
-### WarcResource
+### [WarcResource](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResource.html)
 
 No methods are specific to resource records. See WarcRecord, WarcTargetRecord, WarcCaptureRecord above.
 
-### WarcResponse
+### [WarcResponse](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResponse.html)
 
 ```java
        (HttpResponse) response.http();           // parses the body as a HTTP response
