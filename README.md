@@ -76,7 +76,7 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
 ### [WarcReader](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcReader.html)
 
 ```java
-                  new WarcReader(stream|path|channel);            // opens a WARC file for reading
+              new WarcReader(stream|path|channel);                // opens a WARC file for reading
                   reader.close();                                 // closes the underlying channel
 (WarcCompression) reader.compression();                           // type of compression: NONE or GZIP
        (Iterator) reader.iterator();                              // an iterator over the records
@@ -87,7 +87,7 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
 ### [WarcWriter](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcWriter.html)
 
 ```java
-                   new WarcReader(channel, NONE|GZIP); // opens a WARC file for writing
+                new WarcWriter(channel, NONE|GZIP);    // opens a WARC file for writing
              (long) writer.position();                 // byte position the next record will be written to
                     writer.write(record);              // adds a record to the WARC file
 ```
