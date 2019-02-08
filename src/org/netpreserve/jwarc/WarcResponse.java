@@ -19,7 +19,7 @@ public class WarcResponse extends WarcCaptureRecord {
 
     /**
      * Parses the HTTP response captured by this record.
-     * <p/>
+     * <p>
      * This is a convenience method for <code>HttpResponse.parse(response.body().channel())</code>.
      */
     public HttpResponse http() throws IOException {

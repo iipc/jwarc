@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Writes records to a WARC file.
- * <p/>
+ * <p>
  * Compression is not yet implemented.
  */
 public class WarcWriter {
