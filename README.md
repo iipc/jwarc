@@ -4,20 +4,12 @@ the standard record types as individual classes with typed accessors. The API is
 extension record types and accessors for extension header fields.
 
 ```java
-try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("/tmp/her.warc")))) {
+try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("example.warc")))) {
     for (WarcRecord record : reader) {
-        
-        if (record instanceof Warcinfo) {
-            Warcinfo warcinfo = (Warcinfo) record;
-            out.println("File format: " + warcinfo.version());
-            out.println("Crawler: " + warcinfo.fields().first("software").orElse("unknown crawler"));
-        }
-        
         if (record instanceof WarcResponse && record.contentType().base().equals(MediaType.HTTP)) {
             WarcResponse response = (WarcResponse) record;
-            out.println(response.http().status() + " " + response.target());
+            System.out.println(response.http().status() + " " + response.target());
         }
-        
     }
 }
 ```
@@ -34,9 +26,11 @@ Direct buffers and even memory-mapped files can be used, but only with uncompres
 Inflater (coming in JDK 11).
 
 **Limitations:** This library has not been battle tested yet. The HTTP parser in lacking a robust parsing mode and is 
-probably too strict for real world data. The API for writing of records is incomplete.
+probably too strict for real world data. The writing API is still incomplete in places and doesn't support gzip yet.
 
-Once implemented the API for writing records will probably look something like this:
+## Examples
+
+### Writing records
 
 ```java
 // write a warcinfo record
