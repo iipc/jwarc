@@ -69,11 +69,28 @@ WarcResponse response = new WarcResponse.Builder()
 writer.write(response);
 ```
 
-## API Overview
+## API Quick Reference
 
 See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more details.
 
-Record type hierarchy:
+### [WarcReader](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcReader.html)
+
+```java
+                  reader.close();                                 // closes the underlying channel
+(WarcCompression) reader.compression();                           // type of compression: NONE or GZIP
+   (Iterator<WR>) reader.iterator();                              // iterates over the records
+     (WarcReader) reader.next();                                  // reads the next record
+                  reader.registerType("myrecord", MyRecord::new); // registers a new record type
+```
+
+### [WarcWriter](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcWriter.html)
+
+```java
+             (long) writer.position();               // byte position the next record will be written to
+                    writer.write(record);            // adds a record to the WARC file
+```
+        
+### Record types
 
     Message
       HttpMessage
@@ -90,7 +107,7 @@ Record type hierarchy:
             WarcResource    (resource)
             WarcResponse    (response)
 
-### [Message](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Message.html)
+#### [Message](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Message.html)
 
 The basic building block of both HTTP protocol and WARC file format is a message consisting of set of named header
 fields and a body. Header field names are case-insensitvie and may have multiple values.
@@ -110,7 +127,7 @@ fields and a body. Header field names are case-insensitvie and may have multiple
          (ProtocolVersion) message.version();                  // the protocol version (e.g. HTTP/1.0 or WARC/1.1)
 ```
 
-### [WarcRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRecord.html)
+#### [WarcRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRecord.html)
 
 Methods available on all WARC records:
 
@@ -123,14 +140,14 @@ Methods available on all WARC records:
             (String) record.type();          // "warcinfo", "request", "response" etc
 ```
 
-### [Warcinfo](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Warcinfo.html)
+#### [Warcinfo](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Warcinfo.html)
 
 ```java
             (Headers) warcinfo.fields();   // parses the body as application/warc-fields
    (Optional<String>) warcinfo.filename(); // filename of the containing WARC
 ```
 
-### [WarcTargetRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcTargetRecord.html)
+#### [WarcTargetRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcTargetRecord.html) (abstract)
 
 Methods available on all WARC records except Warcinfo:
 
@@ -142,20 +159,20 @@ Methods available on all WARC records except Warcinfo:
       (Optional<URI>) record.warcinfoID();            // ID of warcinfo record when stored separately
 ```
 
-### [WarcContinuation](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcContinuation.html)
+#### [WarcContinuation](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcContinuation.html)
 
 ```java
              (String) continuation.segmentOriginId();    // record ID of first segment
    (Optional<String>) continuation.segmentTotalLength(); // (last only) total length of all segments
 ```
 
-### [WarcConversion](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcConversion.html)
+#### [WarcConversion](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcConversion.html)
 
 ```java
       (Optional<URI>) conversion.refersTo();    // ID of record this one was converted from
 ```
 
-### [WarcCaptureRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcCaptureRecord.html)
+#### [WarcCaptureRecord](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcCaptureRecord.html) (abstract)
 
 Methods available on metadata, request, resource and response records:
 
@@ -164,13 +181,13 @@ Methods available on metadata, request, resource and response records:
  (Optional<InetAddr>) capture.ipAddress();      // IP address of the server
 ```
 
-### [WarcMetadata](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcMetadata.html)
+#### [WarcMetadata](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcMetadata.html)
 
 ```java
             (Headers) metadata.fields();        // parses the body as application/warc-fields
 ```
 
-### [WarcRequest](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRequest.html)
+#### [WarcRequest](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcRequest.html)
 
 ```java
         (HttpRequest) request.http();           // parses the body as a HTTP request
@@ -178,11 +195,11 @@ Methods available on metadata, request, resource and response records:
             (Headers) request.http().headers(); // HTTP request headers
 ```
 
-### [WarcResource](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResource.html)
+#### [WarcResource](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResource.html)
 
 No methods are specific to resource records. See WarcRecord, WarcTargetRecord, WarcCaptureRecord above.
 
-### [WarcResponse](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResponse.html)
+#### [WarcResponse](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResponse.html)
 
 ```java
        (HttpResponse) response.http();           // parses the body as a HTTP response
