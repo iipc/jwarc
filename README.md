@@ -76,18 +76,20 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
 ### [WarcReader](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcReader.html)
 
 ```java
+                  new WarcReader(stream|path|channel);            // opens a WARC file for reading
                   reader.close();                                 // closes the underlying channel
 (WarcCompression) reader.compression();                           // type of compression: NONE or GZIP
-   (Iterator<WR>) reader.iterator();                              // iterates over the records
-     (WarcReader) reader.next();                                  // reads the next record
+       (Iterator) reader.iterator();                              // an iterator over the records
+     (WarcRecord) reader.next();                                  // reads the next record
                   reader.registerType("myrecord", MyRecord::new); // registers a new record type
 ```
 
 ### [WarcWriter](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcWriter.html)
 
 ```java
-             (long) writer.position();               // byte position the next record will be written to
-                    writer.write(record);            // adds a record to the WARC file
+                   new WarcReader(channel, NONE|GZIP); // opens a WARC file for writing
+             (long) writer.position();                 // byte position the next record will be written to
+                    writer.write(record);              // adds a record to the WARC file
 ```
         
 ### Record types
