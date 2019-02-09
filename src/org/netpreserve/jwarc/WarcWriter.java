@@ -30,10 +30,10 @@ import static java.nio.file.StandardOpenOption.*;
  * Compression is not yet implemented.
  */
 public class WarcWriter implements Closeable {
+    private static final byte[] TRAILER = new byte[]{'\r', '\n', '\r', '\n'};
     private final WritableByteChannel channel;
     private final WarcCompression compression;
     private final ByteBuffer buffer = ByteBuffer.allocate(8192);
-    ByteBuffer recordSeperator = ByteBuffer.allocate(2);
 
     private AtomicLong position = new AtomicLong(0);
 
@@ -43,8 +43,6 @@ public class WarcWriter implements Closeable {
         }
         this.channel = channel;
         this.compression = compression;
-
-        recordSeperator.put(new byte[]{'\n', '\n'});
 
         if (channel instanceof SeekableByteChannel) {
             position.set(((SeekableByteChannel) channel).position());
@@ -64,8 +62,7 @@ public class WarcWriter implements Closeable {
             position.addAndGet(channel.write(buffer));
             buffer.compact();
         }
-        recordSeperator.rewind();
-        position.addAndGet(channel.write(recordSeperator));
+        position.addAndGet(channel.write(ByteBuffer.wrap(TRAILER)));
     }
 
     /**
