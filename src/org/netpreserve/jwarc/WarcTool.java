@@ -1,8 +1,8 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
-import java.net.*;
-import java.nio.channels.Channels;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
@@ -13,7 +13,7 @@ public class WarcTool {
             return;
         }
         Command cmd = Command.valueOf(args[0]);
-        cmd.exec(Arrays.copyOfRange(args, 1, args.length));        ;
+        cmd.exec(Arrays.copyOfRange(args, 1, args.length));
     }
 
     private static void usage() {
@@ -37,7 +37,7 @@ public class WarcTool {
         },
         fetch("Download a URL recording the request and response") {
             void exec(String[] args) throws IOException, URISyntaxException {
-                try (WarcWriter writer = new WarcWriter(Channels.newChannel(System.out))) {
+                try (WarcWriter writer = new WarcWriter(System.out)) {
                     for (String arg : args) {
                         writer.fetch(new URI(arg));
                     }

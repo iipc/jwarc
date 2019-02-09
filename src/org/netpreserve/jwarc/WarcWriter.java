@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -51,6 +52,10 @@ public class WarcWriter implements Closeable {
 
     public WarcWriter(WritableByteChannel channel) throws IOException {
         this(channel, WarcCompression.NONE);
+    }
+
+    public WarcWriter(OutputStream stream) throws IOException {
+        this(Channels.newChannel(stream));
     }
 
     public synchronized void write(WarcRecord record) throws IOException {

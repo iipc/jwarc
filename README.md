@@ -30,6 +30,22 @@ probably too strict for real world data. The writing API is still incomplete in 
 
 ## Examples
 
+### Saving a remote resource
+
+Programmatically:
+
+```java
+try (WarcWriter writer = new WarcWriter(System.out)) {
+    writer.fetch(URI.create("http://example.org/"));
+}
+```
+
+From the command-line:
+
+```bash
+java -jar jwarc.jar fetch http://example.org/
+```
+
 ### Writing records
 
 ```java
@@ -82,6 +98,7 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
 
 ```java
                 new WarcWriter(channel, NONE|GZIP);    // opens a WARC file for writing
+                    writer.fetch(uri);                 // downloads a resource recording the request and response
              (long) writer.position();                 // byte position the next record will be written to
                     writer.write(record);              // adds a record to the WARC file
 ```
