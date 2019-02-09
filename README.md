@@ -227,7 +227,6 @@ No methods are specific to resource records. See WarcRecord, WarcTargetRecord, W
 |---------------------|-------------|-----------------|---------------|
 | Battle tested       | ✘           | ✔               | ✔             |
 | License             | Apache 2    | Apache 2        | Apache 2      |
-| Size                | 71 KB       | 143 KB          | 681 KB + deps |
 | Parser based on     | Ragel FSM   | Hand-rolled FSM | Apache HTTP   |
 | Push parsing        | Low level   | ✘               | ✘             |
 | Folded headers †    | ✔           | ✔               | ✔             | 
