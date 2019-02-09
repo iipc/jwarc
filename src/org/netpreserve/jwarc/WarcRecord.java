@@ -90,8 +90,6 @@ public class WarcRecord extends Message {
     }
 
     public abstract static class AbstractBuilder<R extends WarcRecord, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
-        private ReadableByteChannel bodyChannel;
-
         public AbstractBuilder(String type) {
             super(MessageVersion.WARC_1_1);
             setHeader("WARC-Type", type);
@@ -130,17 +128,6 @@ public class WarcRecord extends Message {
 
         public B segmentNumber(long segmentNumber) {
             return addHeader("WARC-Segment-Number", String.valueOf(segmentNumber));
-        }
-
-        public B body(MediaType contentType, byte[] contentBytes) {
-            return body(contentType, Channels.newChannel(new ByteArrayInputStream(contentBytes)), contentBytes.length);
-        }
-
-        public B body(MediaType contentType, ReadableByteChannel channel, long length) {
-            setHeader("Content-Type", contentType.toString());
-            setHeader("Content-Length", Long.toString(length));
-            this.bodyChannel = channel;
-            return (B) this;
         }
 
         protected R build(Constructor<R> constructor) {

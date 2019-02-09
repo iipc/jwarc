@@ -6,6 +6,8 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
@@ -66,5 +68,14 @@ class IOUtils {
                 channel.close();
             }
         };
+    }
+
+    static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
+        byte[] buffer = new byte[8192];
+        while (true) {
+            int n = inputStream.read(buffer);
+            if (n < 0) break;
+            outputStream.write(buffer, 0, n);
+        }
     }
 }

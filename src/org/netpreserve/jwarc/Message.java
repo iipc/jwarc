@@ -5,8 +5,11 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -85,6 +88,7 @@ public abstract class Message {
     public static abstract class AbstractBuilder<R extends Message, B extends AbstractBuilder<R, B>> {
         protected Map<String, List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         protected MessageVersion version;
+        protected ReadableByteChannel bodyChannel;
 
         public AbstractBuilder(MessageVersion defaultVersion) {
             this.version = defaultVersion;
@@ -107,6 +111,17 @@ public abstract class Message {
         public B version(MessageVersion version) {
             this.version = version;
             return (B)this;
+        }
+
+        public B body(MediaType contentType, byte[] contentBytes) {
+            return body(contentType, Channels.newChannel(new ByteArrayInputStream(contentBytes)), contentBytes.length);
+        }
+
+        public B body(MediaType contentType, ReadableByteChannel channel, long length) {
+            setHeader("Content-Type", contentType.toString());
+            setHeader("Content-Length", Long.toString(length));
+            this.bodyChannel = channel;
+            return (B) this;
         }
     }
 }
