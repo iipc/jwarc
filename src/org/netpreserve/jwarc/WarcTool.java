@@ -1,6 +1,7 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -42,6 +43,24 @@ public class WarcTool {
                         writer.fetch(new URI(arg));
                     }
                 }
+            }
+        },
+        serve("Serve WARC files with a basic replay server/proxy") {
+            @Override
+            void exec(String[] args) throws Exception {
+                if (args.length == 0) {
+                    System.err.println("Usage: WarcTool serve <warc-files>");
+                    System.err.println("Obeys environment variable PORT.");
+                    System.exit(1);
+                }
+                int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+                ReplayServer server = new ReplayServer(new InetSocketAddress(port));
+                for (String arg : args) {
+                    System.err.println("Indexing " + arg);
+                    server.index(Paths.get(arg));
+                }
+                System.err.println("Listening on port " + port);
+                server.serve();
             }
         };
 

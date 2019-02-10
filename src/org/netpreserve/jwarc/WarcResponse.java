@@ -29,6 +29,11 @@ public class WarcResponse extends WarcCaptureRecord {
         return http;
     }
 
+    @Override
+    public MediaType payloadType() throws IOException {
+        return http().contentType();
+    }
+
     public Optional<WarcPayload> payload() throws IOException {
         if (contentType().base().equals(MediaType.HTTP)) {
             return Optional.of(new WarcPayload(http().body()) {

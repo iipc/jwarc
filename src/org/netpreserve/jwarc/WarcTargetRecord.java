@@ -31,7 +31,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
      * The URI of the original target resource this record holds information about.
      */
     public URI targetURI() {
-        return headers().sole("WARC-Target-URI").map(URI::create).get();
+        return headers().sole("WARC-Target-URI").map(URIs::parseLeniently).get();
     }
 
     /**

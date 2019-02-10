@@ -132,8 +132,7 @@ public class WarcRecord extends Message {
 
         protected R build(Constructor<R> constructor) {
             MessageHeaders headers = new MessageHeaders(headerMap);
-            long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
-            return constructor.construct(version, headers, new MessageBody(bodyChannel, ByteBuffer.allocate(0), contentLength));
+            return constructor.construct(version, headers, makeBody());
         }
     }
 }

@@ -20,11 +20,8 @@ public abstract class HttpMessage extends Message {
     }
 
     public abstract static class AbstractBuilder<R extends HttpMessage, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
-        protected MessageBody body;
-
         public AbstractBuilder() {
             super(MessageVersion.HTTP_1_1);
-            this.body = MessageBody.empty();
         }
     }
 }

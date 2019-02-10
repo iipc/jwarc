@@ -5,6 +5,7 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -34,6 +35,13 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
      */
     public List<URI> concurrentTo() {
         return headers().all("WARC-Concurrent-To").stream().map(WarcRecord::parseRecordID).collect(toList());
+    }
+
+    /**
+     * Content-Type of the payload.
+     */
+    public MediaType payloadType() throws IOException {
+        return contentType();
     }
 
     public abstract static class AbstractBuilder<R extends WarcCaptureRecord, B extends AbstractBuilder<R, B>> extends WarcTargetRecord.Builder<R, B> {

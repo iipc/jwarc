@@ -117,7 +117,7 @@ public class HttpResponse extends HttpMessage {
 
         @Override
         public HttpResponse build() {
-            return new HttpResponse(status, reasonPhrase, version, new MessageHeaders(headerMap), body);
+            return new HttpResponse(status, reasonPhrase, version, new MessageHeaders(headerMap), makeBody());
         }
     }
 }

@@ -23,6 +23,14 @@ public class HttpRequest extends HttpMessage {
         this.target = target;
     }
 
+    public String target() {
+        return target;
+    }
+
+    public String method() {
+        return method;
+    }
+
     @Override
     void serializeHeaderTo(Appendable output) throws IOException {
         output.append(method);
@@ -103,7 +111,7 @@ public class HttpRequest extends HttpMessage {
         }
 
         public HttpRequest build() {
-            return new HttpRequest(method, target, version, new MessageHeaders(headerMap), body);
+            return new HttpRequest(method, target, version, new MessageHeaders(headerMap), makeBody());
         }
     }
 }

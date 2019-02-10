@@ -29,6 +29,11 @@ public class WarcRequest extends WarcCaptureRecord {
         return http;
     }
 
+    @Override
+    public MediaType payloadType() throws IOException {
+        return http().contentType();
+    }
+
     public static class Builder extends AbstractBuilder<WarcRequest, Builder> {
         public Builder(URI targetURI) {
             super("request");

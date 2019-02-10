@@ -65,7 +65,7 @@ public class MessageBody implements ReadableByteChannel {
         while (true) {
             // if remaining body is in the buffer we only need to advance the buffer position
             long remaining = size - position;
-            if (remaining < buffer.remaining()) {
+            if (remaining <= buffer.remaining()) {
                 buffer.position(buffer.position() + (int) remaining);
                 position = size;
                 break;

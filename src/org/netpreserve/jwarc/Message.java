@@ -8,14 +8,12 @@ package org.netpreserve.jwarc;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * A message consisting of headers and a content block. Forms the basis of protocols and formats like HTTP and WARC.
@@ -122,6 +120,15 @@ public abstract class Message {
             setHeader("Content-Length", Long.toString(length));
             this.bodyChannel = channel;
             return (B) this;
+        }
+
+        MessageBody makeBody() {
+            long contentLength = 0;
+            List<String> values = headerMap.get("Content-Length");
+            if (values != null && !values.isEmpty()) {
+                contentLength = Long.parseLong(values.get(0));
+            }
+            return new MessageBody(bodyChannel, ByteBuffer.allocate(0), contentLength);
         }
     }
 }
