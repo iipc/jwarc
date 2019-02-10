@@ -26,7 +26,7 @@ class IOUtils {
      * @return the number of bytes transferred.
      */
     static int transfer(ByteBuffer src, ByteBuffer dst, long limit) {
-        return transferExactly(src, dst, (int)Math.min(Math.min(dst.remaining(), dst.remaining()), limit));
+        return transferExactly(src, dst, (int)Math.min(Math.min(src.remaining(), dst.remaining()), limit));
     }
 
     private static int transferExactly(ByteBuffer src, ByteBuffer dst, int n) {
