@@ -42,6 +42,7 @@ class ReplayServer {
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private final InetSocketAddress address;
     private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>".getBytes(US_ASCII);
+    private KeyStore keyStore;
 
     ReplayServer(InetSocketAddress address) {
         this.address = address;
@@ -125,9 +126,16 @@ class ReplayServer {
     }
 
     private void upgradeToTls(Socket socket, String target) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        keyStore.load(null, null);
-        generateCertificate(target.replaceFirst(":[0-9]+$", ""), keyStore);
+        synchronized (this) {
+            if (keyStore == null) {
+                keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                keyStore.load(null, null);
+            }
+            String host = target.replaceFirst(":[0-9]+$", "");
+            if (keyStore.getCertificate(host) == null) {
+                generateCertificate(host, keyStore);
+            }
+        }
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, null);
         SSLContext sslContext = SSLContext.getInstance("TLS");
