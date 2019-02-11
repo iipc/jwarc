@@ -1,21 +1,29 @@
 package org.netpreserve.jwarc;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -61,10 +69,10 @@ class ReplayServer {
      * Listens and accepts new connections.
      */
     void serve() throws IOException {
-        try (ServerSocketChannel listener = ServerSocketChannel.open()) {
+        try (ServerSocket listener = new ServerSocket()) {
             listener.bind(address);
-            while (listener.isOpen()) {
-                SocketChannel socket = listener.accept();
+            while (!listener.isClosed()) {
+                Socket socket = listener.accept();
                 threadPool.execute(() -> interact(socket));
             }
         }
@@ -72,12 +80,16 @@ class ReplayServer {
 
     /**
      * Handles a connection from a client.
+     * @param socket
      */
-    private void interact(SocketChannel socket) {
+    private void interact(Socket socket) {
         try {
-            HttpRequest request = HttpRequest.parse(socket);
+            HttpRequest request = HttpRequest.parse(Channels.newChannel(socket.getInputStream()));
             String target = request.target();
-            if (target.equals("/")) {
+            if (request.method().equals("CONNECT")) {
+                send(socket, new HttpResponse.Builder(200, "OK").build());
+                upgradeToTls(socket, target.replaceFirst(":[0-9]+$", ""));
+            } else if (target.equals("/")) {
                 send(socket, new HttpResponse.Builder(307, "Redirect")
                         .addHeader("Connection", "close")
                         .addHeader("Location", "/replay/12345678901234/" + firstUrl)
@@ -112,7 +124,39 @@ class ReplayServer {
         }
     }
 
-    private void replay(SocketChannel socket, String target) throws IOException {
+    private void upgradeToTls(Socket socket, String host) throws Exception {
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(null, null);
+        generateCertificate(host, keyStore);
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(keyStore, null);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+        SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, null, true);
+        sslSocket.setUseClientMode(false);
+        sslSocket.startHandshake();
+        interact(sslSocket);
+    }
+
+    /**
+     * Generate a self-signed certificate.
+     *
+     * We're naughtily using sun.security so that we don't have to add a dependency on Bouncy Castle.
+     * Therefore load the classes using reflection so that only TLS mode breaks if run on a JVM without it.
+     */
+    private void generateCertificate(String host, KeyStore keyStore) throws Exception {
+        Class<?> certGenClass = Class.forName("sun.security.tools.keytool.CertAndKeyGen");
+        Class<?> x500NameClass = Class.forName("sun.security.x509.X500Name");
+        Object x500Name = x500NameClass.getConstructor(String.class).newInstance("cn=" + host);
+        Object certGen = certGenClass.getConstructor(String.class, String.class).newInstance("EC", "SHA256withECDSA");
+        certGenClass.getMethod("generate", int.class).invoke(certGen, 256);
+        X509Certificate cert = (X509Certificate)certGenClass.getMethod("getSelfCertificate", x500NameClass, long.class)
+                .invoke(certGen, x500Name, TimeUnit.DAYS.toSeconds(365));
+        PrivateKey key = (PrivateKey) certGenClass.getMethod("getPrivateKey").invoke(certGen);
+        keyStore.setKeyEntry(host, key, null, new Certificate[]{cert});
+    }
+
+    private void replay(Socket socket, String target) throws IOException {
         IndexEntry entry = index.get(target);
         if (entry != null) {
             try (FileChannel channel = FileChannel.open(entry.file, READ)) {
@@ -141,7 +185,7 @@ class ReplayServer {
         }
     }
 
-    private void serve(SocketChannel socket, String resource) throws IOException {
+    private void serve(Socket socket, String resource) throws IOException {
         URLConnection conn = getClass().getResource(resource).openConnection();
         try (InputStream stream = conn.getInputStream()) {
             send(socket, new HttpResponse.Builder(200, "OK")
@@ -152,8 +196,8 @@ class ReplayServer {
         }
     }
 
-    private void send(SocketChannel socket, HttpResponse response) throws IOException {
-        OutputStream outputStream = socket.socket().getOutputStream();
+    private void send(Socket socket, HttpResponse response) throws IOException {
+        OutputStream outputStream = socket.getOutputStream();
         outputStream.write(response.serializeHeader());
         IOUtils.copy(response.body().stream(), outputStream);
     }
