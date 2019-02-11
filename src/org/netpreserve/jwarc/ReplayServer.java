@@ -3,6 +3,7 @@ package org.netpreserve.jwarc;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,15 +16,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -42,7 +40,7 @@ class ReplayServer {
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private final InetSocketAddress address;
     private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>".getBytes(US_ASCII);
-    private KeyStore keyStore;
+    private CertificateAuthority ca;
 
     ReplayServer(InetSocketAddress address) {
         this.address = address;
@@ -81,6 +79,7 @@ class ReplayServer {
 
     /**
      * Handles a connection from a client.
+     *
      * @param socket
      */
     private void interact(Socket socket, String prefix) {
@@ -127,15 +126,17 @@ class ReplayServer {
 
     private void upgradeToTls(Socket socket, String target) throws Exception {
         synchronized (this) {
-            if (keyStore == null) {
-                keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                keyStore.load(null, null);
-            }
-            String host = target.replaceFirst(":[0-9]+$", "");
-            if (keyStore.getCertificate(host) == null) {
-                generateCertificate(host, keyStore);
+            if (ca == null) {
+                ca = new CertificateAuthority(new X500Principal("cn=Dummy CA"));
             }
         }
+        String host = target.replaceFirst(":[0-9]+$", "");
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(null, null);
+        keyStore.setKeyEntry(host, ca.subKeyPair.getPrivate(), null, new Certificate[]{
+                ca.generateCertificate(new X500Principal("cn=" + host)),
+                ca.caCert,
+        });
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, null);
         SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -144,24 +145,6 @@ class ReplayServer {
         sslSocket.setUseClientMode(false);
         sslSocket.startHandshake();
         interact(sslSocket, "https://" + target.replaceFirst(":443$", ""));
-    }
-
-    /**
-     * Generate a self-signed certificate.
-     *
-     * We're naughtily using sun.security so that we don't have to add a dependency on Bouncy Castle.
-     * Therefore load the classes using reflection so that only TLS mode breaks if run on a JVM without it.
-     */
-    private void generateCertificate(String host, KeyStore keyStore) throws Exception {
-        Class<?> certGenClass = Class.forName("sun.security.tools.keytool.CertAndKeyGen");
-        Class<?> x500NameClass = Class.forName("sun.security.x509.X500Name");
-        Object x500Name = x500NameClass.getConstructor(String.class).newInstance("cn=" + host);
-        Object certGen = certGenClass.getConstructor(String.class, String.class).newInstance("EC", "SHA256withECDSA");
-        certGenClass.getMethod("generate", int.class).invoke(certGen, 256);
-        X509Certificate cert = (X509Certificate)certGenClass.getMethod("getSelfCertificate", x500NameClass, long.class)
-                .invoke(certGen, x500Name, TimeUnit.DAYS.toSeconds(365));
-        PrivateKey key = (PrivateKey) certGenClass.getMethod("getPrivateKey").invoke(certGen);
-        keyStore.setKeyEntry(host, key, null, new Certificate[]{cert});
     }
 
     private void replay(Socket socket, String target) throws IOException {
