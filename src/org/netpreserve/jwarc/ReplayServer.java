@@ -73,7 +73,7 @@ class ReplayServer {
             listener.bind(address);
             while (!listener.isClosed()) {
                 Socket socket = listener.accept();
-                threadPool.execute(() -> interact(socket));
+                threadPool.execute(() -> interact(socket, ""));
             }
         }
     }
@@ -82,13 +82,13 @@ class ReplayServer {
      * Handles a connection from a client.
      * @param socket
      */
-    private void interact(Socket socket) {
+    private void interact(Socket socket, String prefix) {
         try {
             HttpRequest request = HttpRequest.parse(Channels.newChannel(socket.getInputStream()));
-            String target = request.target();
+            String target = prefix + request.target();
             if (request.method().equals("CONNECT")) {
                 send(socket, new HttpResponse.Builder(200, "OK").build());
-                upgradeToTls(socket, target.replaceFirst(":[0-9]+$", ""));
+                upgradeToTls(socket, target);
             } else if (target.equals("/")) {
                 send(socket, new HttpResponse.Builder(307, "Redirect")
                         .addHeader("Connection", "close")
@@ -124,10 +124,10 @@ class ReplayServer {
         }
     }
 
-    private void upgradeToTls(Socket socket, String host) throws Exception {
+    private void upgradeToTls(Socket socket, String target) throws Exception {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
-        generateCertificate(host, keyStore);
+        generateCertificate(target.replaceFirst(":[0-9]+$", ""), keyStore);
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, null);
         SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -135,7 +135,7 @@ class ReplayServer {
         SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, null, true);
         sslSocket.setUseClientMode(false);
         sslSocket.startHandshake();
-        interact(sslSocket);
+        interact(sslSocket, "https://" + target.replaceFirst(":443$", ""));
     }
 
     /**
