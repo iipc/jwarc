@@ -5,9 +5,13 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
+import static java.time.ZoneOffset.UTC;
+
 public class WarcTool {
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage();
@@ -25,12 +29,36 @@ public class WarcTool {
     }
 
     private enum Command {
-        ls("List records in WARC file(s)") {
-            void exec(String[] args) throws IOException {
+        cdx("List records in CDX format") {
+            void exec(String[] args) throws Exception {
+                DateTimeFormatter arcDate = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(UTC);
                 for (String arg : args) {
                     try (WarcReader reader = new WarcReader(Paths.get(arg))) {
-                        for (WarcRecord record : reader) {
-                            System.out.println(record);
+                        WarcRecord record = reader.next().orElse(null);
+                        while (record != null) {
+                            if ((record instanceof WarcResponse || record instanceof WarcResource) &&
+                                    ((WarcCaptureRecord) record).payload().isPresent()) {
+                                WarcPayload payload = ((WarcCaptureRecord) record).payload().get();
+                                MediaType type;
+                                try {
+                                    type = payload.type().base();
+                                } catch (IllegalArgumentException e) {
+                                    type = MediaType.OCTET_STREAM;
+                                }
+                                URI uri = ((WarcCaptureRecord) record).targetURI();
+                                String date = arcDate.format(record.date());
+                                int status = record instanceof WarcResponse ? ((WarcResponse) record).http().status() : 200;
+                                String digest = payload.digest().map(WarcDigest::toBase32).orElse("-");
+                                long position = reader.position();
+
+                                // advance to the next record so we can calculate the length
+                                record = reader.next().orElse(null);
+                                long length = reader.position() - position;
+
+                                System.out.printf("%s %s %s %s %d %s - - %d %d %s%n", uri, date, uri, type, status, digest, length, position, arg);
+                            } else {
+                                record = reader.next().orElse(null);
+                            }
                         }
                     }
                 }
@@ -41,6 +69,17 @@ public class WarcTool {
                 try (WarcWriter writer = new WarcWriter(System.out)) {
                     for (String arg : args) {
                         writer.fetch(new URI(arg));
+                    }
+                }
+            }
+        },
+        ls("List records in WARC file(s)") {
+            void exec(String[] args) throws IOException {
+                for (String arg : args) {
+                    try (WarcReader reader = new WarcReader(Paths.get(arg))) {
+                        for (WarcRecord record : reader) {
+                            System.out.println(record);
+                        }
                     }
                 }
             }
