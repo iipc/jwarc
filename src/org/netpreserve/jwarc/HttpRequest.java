@@ -45,14 +45,17 @@ public class HttpRequest extends HttpMessage {
 
     public static HttpRequest parse(ReadableByteChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
+        return parse(channel, buffer);
+    }
+
+    static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         buffer.flip();
         ParseHandler handler = new ParseHandler();
         HttpParser parser = new HttpParser(handler);
         parser.requestOnly();
         parser.parse(channel, buffer);
         MessageHeaders headers = new MessageHeaders(handler.headerMap);
-        // FIXME: should use remaining bytes of warc body instead
-        long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+        long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(-1L);
         MessageBody body = new MessageBody(channel, buffer, contentLength);
         return new HttpRequest(handler.method, handler.target, handler.version, headers, body);
     }

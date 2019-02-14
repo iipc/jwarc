@@ -64,6 +64,7 @@ public class MediaType {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
     }
     %% write data nofinal noerror noentry;
+    public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTTP = MediaType.parse("application/http");
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");

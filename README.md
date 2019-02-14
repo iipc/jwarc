@@ -32,18 +32,10 @@ probably too strict for real world data. The writing API is still incomplete in 
 
 ### Saving a remote resource
 
-Programmatically:
-
 ```java
 try (WarcWriter writer = new WarcWriter(System.out)) {
     writer.fetch(URI.create("http://example.org/"));
 }
-```
-
-From the command-line:
-
-```bash
-java -jar jwarc.jar fetch http://example.org/
 ```
 
 ### Writing records
@@ -78,6 +70,38 @@ WarcResponse response = new WarcResponse.Builder()
     .build();
 writer.write(response);
 ```
+
+### Command-line tool
+
+jwarc includes a command-line tool with a variety of commands. These may be useful in their own right but their primary
+purpose is to serve [code examples](src/org/netpreserve/jwarc/WarcTool.java).
+
+
+Capture a URL (without subresources):
+
+```bash
+java -jar jwarc.jar fetch http://example.org/ > example.warc
+```
+
+Create a CDX file:
+
+```bash
+java -jar jwarc.jar example.warc > records.cdx
+```
+
+Run a replay proxy and web server:
+
+```bash
+java -jar jwarc.jar serve example.warc
+```
+
+Load each page in a WARC using [headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome) and
+save a screenshots as resource records:
+
+```bash
+java -jar jwarc.jar screenshot example.warc > screenshots.warc
+```
+
 
 ## API Quick Reference
 

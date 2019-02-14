@@ -159,6 +159,7 @@ static final int media_type_start = 1;
 
 
 // line 67 "MediaType.rl"
+    public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTTP = MediaType.parse("application/http");
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
@@ -187,14 +188,14 @@ static final int media_type_start = 1;
         StringBuilder buf = new StringBuilder();
 
         
-// line 191 "MediaType.java"
+// line 192 "MediaType.java"
 	{
 	cs = media_type_start;
 	}
 
-// line 95 "MediaType.rl"
+// line 96 "MediaType.rl"
         
-// line 198 "MediaType.java"
+// line 199 "MediaType.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -340,7 +341,7 @@ case 1:
 // line 54 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 344 "MediaType.java"
+// line 345 "MediaType.java"
 			}
 		}
 	}
@@ -395,7 +396,7 @@ case 4:
 // line 54 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 399 "MediaType.java"
+// line 400 "MediaType.java"
 		}
 	}
 	}
@@ -405,7 +406,7 @@ case 5:
 	break; }
 	}
 
-// line 96 "MediaType.rl"
+// line 97 "MediaType.rl"
 
         String type = string.substring(0, typeEnd);
         String subtype = string.substring(typeEnd + 1, subtypeEnd);

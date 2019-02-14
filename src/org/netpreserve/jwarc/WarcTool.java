@@ -1,12 +1,19 @@
 package org.netpreserve.jwarc;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.time.ZoneOffset.UTC;
 
@@ -84,6 +91,85 @@ public class WarcTool {
                 }
             }
         },
+        screenshot("Take a screenshot of each page in the given WARCs") {
+            void exec(String[] args) throws Exception {
+                ExecutorService serverThread = Executors.newSingleThreadExecutor();
+                List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
+                try (WarcWriter warcWriter = new WarcWriter(System.out);
+                     ServerSocket serverSocket = new ServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
+                    ReplayServer replayServer = new ReplayServer(serverSocket, warcs);
+                    InetSocketAddress address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
+                    System.err.println("Replay proxy listening on " + address);
+                    serverThread.execute(() -> {
+                        try {
+                            replayServer.listen();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    for (String arg : args) {
+                        try (WarcReader reader = new WarcReader(Paths.get(arg))) {
+                            for (WarcRecord record : reader) {
+                                if (!isNormalPage(record)) continue;
+                                WarcCaptureRecord capture = (WarcCaptureRecord) record;
+                                screenshot(address, capture, warcWriter);
+                            }
+                        }
+                    }
+                }
+            }
+
+            private void screenshot(InetSocketAddress proxy, WarcCaptureRecord capture, WarcWriter warcWriter) throws IOException, InterruptedException {
+                Path screenshot = Files.createTempFile("jwarc-screenshot", ".png");
+                try {
+                    String url = capture.targetURI().toString();
+                    String[] cmd = {System.getenv().getOrDefault("BROWSER", "google-chrome"),
+                            "--headless", "--disable-gpu", "--disable-breakpad",
+                            "--ignore-certificate-errors",
+                            "--proxy-server=" + proxy.getHostString() + ":" + proxy.getPort(),
+                            "--hide-scrollbars", "--screenshot=" + screenshot,
+                            url};
+                    System.err.println(String.join(" ", cmd));
+                    Process p = new ProcessBuilder(cmd)
+                            .inheritIO()
+                            .redirectOutput(new File(System.getProperty("os.name").startsWith("Windows") ? "NUL" : "/dev/null"))
+                            .start();
+                    p.waitFor();
+                    try (FileChannel channel = FileChannel.open(screenshot)) {
+                        long size = channel.size();
+                        if (size == 0) return;
+                        warcWriter.write(new WarcResource.Builder(URI.create("screenshot:" + url))
+                                .date(capture.date())
+                                .body(MediaType.parse("image/png"), channel, size)
+                                .build());
+                    }
+                } finally {
+                    Files.deleteIfExists(screenshot);
+                }
+            }
+
+            private boolean isNormalPage(WarcRecord record) throws IOException {
+                if (!(record instanceof WarcResponse) && !(record instanceof WarcResource)) {
+                    return false;
+                }
+                WarcCaptureRecord capture = (WarcCaptureRecord) record;
+                String scheme = capture.targetURI().getScheme();
+                if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+                    return false;
+                }
+                try {
+                    if (!(capture.payload().isPresent() && capture.payload().get().type().base().equals(MediaType.HTML))) {
+                        return false;
+                    }
+                } catch (IllegalArgumentException e) {
+                    return false;
+                }
+                if (capture instanceof WarcResponse && ((WarcResponse) capture).http().status() != 200) {
+                    return false;
+                }
+                return true;
+            }
+        },
         serve("Serve WARC files with a basic replay server/proxy") {
             @Override
             void exec(String[] args) throws Exception {
@@ -92,14 +178,11 @@ public class WarcTool {
                     System.err.println("Obeys environment variable PORT.");
                     System.exit(1);
                 }
+                List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
                 int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
-                ReplayServer server = new ReplayServer(new InetSocketAddress(port));
-                for (String arg : args) {
-                    System.err.println("Indexing " + arg);
-                    server.index(Paths.get(arg));
-                }
+                ReplayServer server = new ReplayServer(new ServerSocket(port), warcs);
                 System.err.println("Listening on port " + port);
-                server.serve();
+                server.listen();
             }
         };
 
