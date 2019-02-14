@@ -73,34 +73,25 @@ writer.write(response);
 
 ### Command-line tool
 
-jwarc includes a command-line tool with a variety of commands. These may be useful in their own right but their primary
-purpose is to serve [code examples](src/org/netpreserve/jwarc/WarcTool.java).
-
+jwarc includes a number of command-line tools. Their primary purpose is testing and to serve as [reference code](src/org/netpreserve/jwarc/WarcTool.java)
+but they be useful in their own right.
 
 Capture a URL (without subresources):
 
-```bash
-java -jar jwarc.jar fetch http://example.org/ > example.warc
-```
+    java -jar jwarc.jar fetch http://example.org/ > example.warc
 
 Create a CDX file:
 
-```bash
-java -jar jwarc.jar example.warc > records.cdx
-```
+    java -jar jwarc.jar cdx example.warc > records.cdx
 
 Run a replay proxy and web server:
 
-```bash
-java -jar jwarc.jar serve example.warc
-```
+    java -jar jwarc.jar serve example.warc
 
-Load each page in a WARC using [headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome) and
-save a screenshots as resource records:
+Load each page using [headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome) and
+save a screenshot as a resource record:
 
-```bash
-java -jar jwarc.jar screenshot example.warc > screenshots.warc
-```
+    java -jar jwarc.jar screenshot example.warc > screenshots.warc
 
 
 ## API Quick Reference
