@@ -5,7 +5,6 @@
 
 package org.netpreserve.jwarc;
 
-import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,7 +20,6 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -85,7 +83,7 @@ public class WarcWriter implements Closeable {
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
             Instant date = Instant.now();
             InetAddress ip;
-            try (Socket socket = connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
+            try (Socket socket = IOUtils.connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
                 ip = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
                 socket.getOutputStream().write(httpRequest.serializeHeader());
                 IOUtils.copy(socket.getInputStream(), Channels.newOutputStream(tempFile));
@@ -104,17 +102,6 @@ public class WarcWriter implements Closeable {
                     .build();
             write(request);
             write(response);
-        }
-    }
-
-    private static Socket connect(String scheme, String host, int port) throws IOException {
-        Objects.requireNonNull(host);
-        if ("http".equalsIgnoreCase(scheme)) {
-            return new Socket(host, port < 0 ? 80 : port);
-        } else if ("https".equalsIgnoreCase(scheme)) {
-            return SSLSocketFactory.getDefault().createSocket(host, port < 0 ? 443 : port);
-        } else {
-            throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
         }
     }
 

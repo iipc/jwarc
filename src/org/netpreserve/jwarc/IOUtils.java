@@ -5,11 +5,14 @@
 
 package org.netpreserve.jwarc;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Objects;
 
 class IOUtils {
 
@@ -76,6 +79,17 @@ class IOUtils {
             int n = inputStream.read(buffer);
             if (n < 0) break;
             outputStream.write(buffer, 0, n);
+        }
+    }
+
+    static Socket connect(String scheme, String host, int port) throws IOException {
+        Objects.requireNonNull(host);
+        if ("http".equalsIgnoreCase(scheme)) {
+            return new Socket(host, port < 0 ? 80 : port);
+        } else if ("https".equalsIgnoreCase(scheme)) {
+            return SSLSocketFactory.getDefault().createSocket(host, port < 0 ? 443 : port);
+        } else {
+            throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
         }
     }
 }

@@ -91,6 +91,13 @@ public class WarcTool {
                 }
             }
         },
+        recorder("Run a recording proxy (work in progress, not really usable yet)") {
+            @Override
+            void exec(String[] args) throws Exception {
+                int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+                new WarcRecorder(new ServerSocket(port), new WarcWriter(System.out)).listen();
+            }
+        },
         screenshot("Take a screenshot of each page in the given WARCs") {
             void exec(String[] args) throws Exception {
                 ExecutorService serverThread = Executors.newSingleThreadExecutor();
