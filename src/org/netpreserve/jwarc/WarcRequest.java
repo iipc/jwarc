@@ -45,7 +45,7 @@ public class WarcRequest extends WarcCaptureRecord {
             return build(WarcRequest::new);
         }
 
-        public Builder body(HttpRequest httpRequest) {
+        public Builder body(HttpRequest httpRequest) throws IOException {
             return body(MediaType.HTTP_REQUEST, httpRequest);
         }
     }

@@ -251,8 +251,12 @@ case 5:
     public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         while (true) {
             parse(buffer);
-            if (isFinished()) break;
-            if (isError()) throw new ParsingException("invalid HTTP message at byte position " + position);
+            if (isFinished()) {
+                break;
+            }
+            if (isError()) {
+                throw new ParsingException("invalid HTTP message at byte position " + position);
+            }
             buffer.compact();
             int n = channel.read(buffer);
             if (n < 0) throw new EOFException("state=" + cs);
@@ -268,7 +272,7 @@ case 5:
     }
 
     
-// line 272 "HttpParser.java"
+// line 276 "HttpParser.java"
 private static byte[] init__http_actions_0()
 {
 	return new byte [] {
@@ -435,5 +439,5 @@ static final int http_en_http_request = 25;
 static final int http_en_http_response = 1;
 
 
-// line 169 "HttpParser.rl"
+// line 173 "HttpParser.rl"
 }

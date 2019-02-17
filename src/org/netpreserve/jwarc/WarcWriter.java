@@ -75,6 +75,7 @@ public class WarcWriter implements Closeable {
      */
     public void fetch(URI uri) throws IOException {
         HttpRequest httpRequest = new HttpRequest.Builder("GET", uri.getRawPath())
+                .version(MessageVersion.HTTP_1_0) // until we support chunked encoding
                 .addHeader("Host", uri.getHost())
                 .addHeader("User-Agent", "jwarc")
                 .addHeader("Connection", "close")

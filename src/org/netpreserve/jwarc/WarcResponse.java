@@ -63,7 +63,7 @@ public class WarcResponse extends WarcCaptureRecord {
             setHeader("WARC-Target-URI", targetURI.toString());
         }
 
-        public Builder body(HttpResponse httpResponse) {
+        public Builder body(HttpResponse httpResponse) throws IOException {
             return body(MediaType.HTTP_RESPONSE, httpResponse);
         }
 

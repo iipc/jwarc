@@ -5,11 +5,7 @@
 
 package org.netpreserve.jwarc;
 
-import java.io.ByteArrayInputStream;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.time.Instant;
 import java.util.*;
 

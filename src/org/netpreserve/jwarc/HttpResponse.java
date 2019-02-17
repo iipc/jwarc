@@ -44,13 +44,18 @@ public class HttpResponse extends HttpMessage {
         parser.parse(channel, buffer);
         MessageHeaders headers = new MessageHeaders(handler.headerMap);
         long contentLength;
-        if (channel instanceof MessageBody) {
-            MessageBody body = (MessageBody) channel;
-            contentLength = body.size() - body.position();
+        MessageBody body;
+        if (headers.sole("Tranfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
+            body = new ChunkedBody(channel, buffer);
         } else {
-            contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+            if (channel instanceof LengthedBody) {
+                LengthedBody lengthed = (LengthedBody) channel;
+                contentLength = lengthed.size() - lengthed.position();
+            } else {
+                contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+            }
+            body = new LengthedBody(channel, buffer, contentLength);
         }
-        MessageBody body = new MessageBody(channel, buffer, contentLength);
         return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
     }
 

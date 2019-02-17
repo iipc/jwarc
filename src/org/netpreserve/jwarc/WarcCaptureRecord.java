@@ -49,7 +49,7 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
             super(type);
         }
 
-        public B body(MediaType type, Message message) {
+        public B body(MediaType type, Message message) throws IOException {
             ByteBuffer header = ByteBuffer.wrap(message.serializeHeader());
             ReadableByteChannel channel = IOUtils.prefixChannel(header, message.body());
             return body(type, channel, message.body().size() + header.remaining());
