@@ -20,7 +20,7 @@ class WarcRecorder {
         this.warcWriter = warcWriter;
     }
 
-    private void handle(Socket clientSocket, String target, HttpRequest httpRequest) throws IOException, URISyntaxException {
+    private void handle(Socket socket, String target, HttpRequest httpRequest) throws IOException, URISyntaxException {
         URI uri = new URI(target);
         String path = uri.getPath();
         if (uri.getQuery() != null) {
@@ -35,8 +35,8 @@ class WarcRecorder {
                 rb.addHeader(e.getKey(), v);
             }
         }
-        warcWriter.fetch(uri, rb.build(), clientSocket.getOutputStream());
-        clientSocket.close();
+        warcWriter.fetch(uri, rb.build(), socket.getOutputStream());
+        socket.close();
     }
 
     void listen() throws IOException {

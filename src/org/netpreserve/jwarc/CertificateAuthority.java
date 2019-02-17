@@ -54,21 +54,20 @@ class CertificateAuthority {
     }
 
     private static byte[] derSequence(byte[]... arrays) {
-        int len = 0;
+        int length = 0;
         for (byte[] a : arrays) {
-            len += a.length;
+            length += a.length;
         }
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(0x30);
-            baos.write(derLength(len));
-            for (byte[] a : arrays) {
-                baos.write(a);
-            }
-            return baos.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException("impossible", e);
+        byte[] encodedLength = derLength(length);
+        byte[] out = new byte[length + encodedLength.length + 1];
+        out[0] = 0x30;
+        System.arraycopy(encodedLength, 0, out, 1, encodedLength.length);
+        int pos = encodedLength.length + 1;
+        for (byte[] a : arrays) {
+            System.arraycopy(a, 0, out, pos, a.length);
+            pos += a.length;
         }
+        return out;
     }
 
     private static byte[] derLength(int len) {
