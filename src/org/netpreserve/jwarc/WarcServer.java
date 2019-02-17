@@ -84,13 +84,13 @@ class WarcServer {
             if (i != -1) {
                 target = target.substring(i + 1);
             }
-            replay(socket, target);
+            replay(socket, target, true);
         } else {
-            replay(socket, target);
+            replay(socket, target, false);
         }
     }
 
-    private void replay(Socket socket, String target) throws IOException {
+    private void replay(Socket socket, String target, boolean inject) throws IOException {
         IndexEntry entry = index.get(target);
         if (entry != null) {
             try (FileChannel channel = FileChannel.open(entry.file, READ)) {
@@ -105,7 +105,7 @@ class WarcServer {
                 }
                 b.setHeader("Connection", "keep-alive");
                 MessageBody body = http.body();
-                if (HTML.equals(http.contentType().base())) {
+                if (inject && HTML.equals(http.contentType().base())) {
                     body = LengthedBody.create(body, ByteBuffer.wrap(script), script.length + body.size());
                 }
                 b.body(http.contentType(), body, body.size());
