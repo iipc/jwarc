@@ -34,7 +34,7 @@ token = tchar+;
 obs_text = 0x80..0xff;
 url_byte =  alpha | digit | "!" | "$" | "&" | "'" | "(" | ")" |
             "*" | "+" | "," | "-" | "." | "/" | ":" | ";" |
-            "=" | "?" | "@" | "_" | "~" | 0x80..0xff;
+            "=" | "?" | "@" | "_" | "~" | "%" | 0x80..0xff;
 
 version_major = digit $add_major;
 version_minor = digit $add_minor %handle_version;

@@ -115,7 +115,7 @@ separators = "(" | ")" | "<" | ">" | "@"
 
 url_byte = alpha | digit | "!" | "$" | "&" | "'" | "(" | ")"
          | "*" | "+" | "," | "-" | "." | "/" | ":" | ";"
-         | "=" | "?" | "@" | "_" | "~" | 0x80..0xff;
+         | "=" | "?" | "@" | "_" | "~" | "%" | 0x80..0xff;
 
 field_name = ((ascii - CTL - separators)+) $push %handle_name;
 field_value_first = OWS (TEXT OWS)? $push;
