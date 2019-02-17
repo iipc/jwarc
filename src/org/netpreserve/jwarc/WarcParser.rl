@@ -3,7 +3,6 @@
 
 package org.netpreserve.jwarc;
 
-import javax.annotation.Generated;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -114,7 +113,7 @@ separators = "(" | ")" | "<" | ">" | "@"
            | "/" | "[" | "]" | "?" | "="
            | "{" | "}" | " " | "\t";
 
-url_byte = alpha | digit | "!" | "$" | "&" | "'" | "(" | "("
+url_byte = alpha | digit | "!" | "$" | "&" | "'" | "(" | ")"
          | "*" | "+" | "," | "-" | "." | "/" | ":" | ";"
          | "=" | "?" | "@" | "_" | "~" | 0x80..0xff;
 
@@ -200,7 +199,6 @@ public class WarcParser {
         return cs == warc_error;
     }
 
-    @Generated("Ragel")
     public void parse(ByteBuffer data) {
         int p = data.position();
         int pe = data.limit();
@@ -239,12 +237,12 @@ public class WarcParser {
         buf[bufPos++] = b;
     }
 
-    public Headers headers() {
-        return new Headers(headerMap);
+    public MessageHeaders headers() {
+        return new MessageHeaders(headerMap);
     }
 
-    public ProtocolVersion version() {
-        return new ProtocolVersion(protocol, major, minor);
+    public MessageVersion version() {
+        return new MessageVersion(protocol, major, minor);
     }
 
     public long position() {
