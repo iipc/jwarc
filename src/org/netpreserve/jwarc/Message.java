@@ -83,6 +83,7 @@ public abstract class Message {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static abstract class AbstractBuilder<R extends Message, B extends AbstractBuilder<R, B>> {
         protected Map<String, List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         protected MessageVersion version;

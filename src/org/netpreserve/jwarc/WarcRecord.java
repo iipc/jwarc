@@ -85,6 +85,7 @@ public class WarcRecord extends Message {
         R construct(MessageVersion version, MessageHeaders headers, MessageBody body);
     }
 
+    @SuppressWarnings("unchecked")
     public abstract static class AbstractBuilder<R extends WarcRecord, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
         public AbstractBuilder(String type) {
             super(MessageVersion.WARC_1_1);

@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.util.zip.DataFormatException;
 
-import static org.junit.Assert.*;
-
 public class WarcReaderTest {
     @Test
     public void test() throws IOException, DataFormatException {

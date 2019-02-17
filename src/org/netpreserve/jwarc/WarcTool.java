@@ -164,10 +164,7 @@ public class WarcTool {
                 } catch (IllegalArgumentException e) {
                     return false;
                 }
-                if (capture instanceof WarcResponse && ((WarcResponse) capture).http().status() != 200) {
-                    return false;
-                }
-                return true;
+                return !(capture instanceof WarcResponse) || ((WarcResponse) capture).http().status() == 200;
             }
         },
         serve("Serve WARC files with a basic replay server/proxy") {

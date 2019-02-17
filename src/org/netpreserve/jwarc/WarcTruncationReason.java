@@ -29,5 +29,5 @@ public enum WarcTruncationReason {
     /**
      * other/unknown reason
      */
-    UNSPECIFIED;
+    UNSPECIFIED
 }
