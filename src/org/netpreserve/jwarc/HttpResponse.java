@@ -50,7 +50,7 @@ public class HttpResponse extends HttpMessage {
         } else {
             if (channel instanceof LengthedBody) {
                 LengthedBody lengthed = (LengthedBody) channel;
-                contentLength = lengthed.size() - lengthed.position();
+                contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
             } else {
                 contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
             }
