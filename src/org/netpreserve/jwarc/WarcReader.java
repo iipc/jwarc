@@ -125,7 +125,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         headerLength = parser.position();
         MessageHeaders headers = parser.headers();
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
-        MessageBody body = new LengthedBody(channel, buffer, contentLength);
+        MessageBody body = LengthedBody.create(channel, buffer, contentLength);
         record = construct(parser.version(), headers, body);
         return Optional.of(record);
     }

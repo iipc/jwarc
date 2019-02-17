@@ -54,7 +54,7 @@ public class HttpResponse extends HttpMessage {
             } else {
                 contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
             }
-            body = new LengthedBody(channel, buffer, contentLength);
+            body = LengthedBody.create(channel, buffer, contentLength);
         }
         return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
     }

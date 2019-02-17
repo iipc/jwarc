@@ -56,7 +56,7 @@ public class HttpRequest extends HttpMessage {
         parser.parse(channel, buffer);
         MessageHeaders headers = new MessageHeaders(handler.headerMap);
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(-1L);
-        LengthedBody body = new LengthedBody(channel, buffer, contentLength);
+        LengthedBody body = LengthedBody.create(channel, buffer, contentLength);
         return new HttpRequest(handler.method, handler.target, handler.version, headers, body);
     }
 

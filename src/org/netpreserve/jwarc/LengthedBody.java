@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 
@@ -18,15 +19,22 @@ import java.nio.channels.SeekableByteChannel;
  */
 class LengthedBody extends MessageBody {
     private final ReadableByteChannel channel;
-    private final ByteBuffer buffer;
+    final ByteBuffer buffer;
     private final long size;
-    private long position = 0;
+    long position = 0;
     private boolean open = true;
 
-    LengthedBody(ReadableByteChannel channel, ByteBuffer buffer, long size) {
+    private LengthedBody(ReadableByteChannel channel, ByteBuffer buffer, long size) {
         this.channel = channel;
         this.buffer = buffer;
         this.size = size;
+    }
+
+    static LengthedBody create(ReadableByteChannel channel, ByteBuffer buffer, long size) {
+        if (channel instanceof SeekableByteChannel) {
+            return new Seekable((SeekableByteChannel) channel, buffer, size);
+        }
+        return new LengthedBody(channel, buffer, size);
     }
 
     @Override
@@ -163,6 +171,39 @@ class LengthedBody extends MessageBody {
             }
             position++;
             return buffer.get();
+        }
+    }
+
+    private static class Seekable extends LengthedBody implements SeekableByteChannel {
+        private final SeekableByteChannel seekable;
+
+        Seekable(SeekableByteChannel channel, ByteBuffer buffer, long size) {
+            super(channel, buffer, size);
+            this.seekable = channel;
+        }
+
+        @Override
+        public SeekableByteChannel position(long position) throws IOException {
+            if (position < 0) throw new IllegalArgumentException("negative position");
+            long relative = Math.min(size(), position) - this.position;
+            if (relative >= 0 && relative < buffer.remaining()) {
+                buffer.position((int) (buffer.position() + relative));
+            } else {
+                buffer.position(buffer.limit());
+                seekable.position(seekable.position() + relative);
+            }
+            this.position += relative;
+            return this;
+        }
+
+        @Override
+        public int write(ByteBuffer byteBuffer) throws IOException {
+            throw new NonWritableChannelException();
+        }
+
+        @Override
+        public SeekableByteChannel truncate(long l) throws IOException {
+            throw new NonWritableChannelException();
         }
     }
 

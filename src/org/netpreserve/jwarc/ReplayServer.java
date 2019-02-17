@@ -194,7 +194,7 @@ class ReplayServer {
                 b.setHeader("Connection", "keep-alive");
                 MessageBody body = http.body();
                 if (HTML.equals(http.contentType().base())) {
-                    body = new LengthedBody(body, ByteBuffer.wrap(script), script.length + body.size());
+                    body = LengthedBody.create(body, ByteBuffer.wrap(script), script.length + body.size());
                 }
                 b.body(http.contentType(), body, body.size());
                 send(socket, b.build());

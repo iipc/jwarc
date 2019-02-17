@@ -128,7 +128,7 @@ public abstract class Message {
             if (values != null && !values.isEmpty()) {
                 contentLength = Long.parseLong(values.get(0));
             }
-            return new LengthedBody(bodyChannel, ByteBuffer.allocate(0), contentLength);
+            return LengthedBody.create(bodyChannel, ByteBuffer.allocate(0), contentLength);
         }
     }
 }
