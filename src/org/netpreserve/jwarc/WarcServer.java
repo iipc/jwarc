@@ -99,6 +99,9 @@ class WarcServer {
                 HttpResponse http = ((WarcResponse) reader.next().get()).http();
                 HttpResponse.Builder b = new HttpResponse.Builder(http.status(), http.reason());
                 for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
+                    if (e.getKey().equalsIgnoreCase("Strict-Transport-Security")) continue;
+                    if (e.getKey().equalsIgnoreCase("Transfer-Encoding")) continue;
+                    if (e.getKey().equalsIgnoreCase("Public-Key-Pins")) continue;
                     for (String value : e.getValue()) {
                         b.addHeader(e.getKey(), value);
                     }
