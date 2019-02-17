@@ -7,6 +7,7 @@ package org.netpreserve.jwarc;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -79,6 +80,10 @@ public class WarcWriter implements Closeable {
                 .addHeader("User-Agent", "jwarc")
                 .addHeader("Connection", "close")
                 .build();
+        fetch(uri, httpRequest, null);
+    }
+
+    void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
             Instant date = Instant.now();
@@ -86,7 +91,14 @@ public class WarcWriter implements Closeable {
             try (Socket socket = IOUtils.connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
                 ip = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
                 socket.getOutputStream().write(httpRequest.serializeHeader());
-                IOUtils.copy(socket.getInputStream(), Channels.newOutputStream(tempFile));
+                InputStream inputStream = socket.getInputStream();
+                byte[] buf = new byte[8192];
+                while (true) {
+                    int n = inputStream.read(buf);
+                    if (n < 0) break;
+                    tempFile.write(ByteBuffer.wrap(buf, 0, n));
+                    if (copyTo != null) copyTo.write(buf, 0, n);
+                }
             }
             tempFile.position(0);
             WarcRequest request = new WarcRequest.Builder(uri)
