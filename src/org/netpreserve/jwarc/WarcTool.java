@@ -97,12 +97,12 @@ public class WarcTool {
                 List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
                 try (WarcWriter warcWriter = new WarcWriter(System.out);
                      ServerSocket serverSocket = new ServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
-                    ReplayServer replayServer = new ReplayServer(serverSocket, warcs);
+                    WarcServer warcServer = new WarcServer(serverSocket, warcs);
                     InetSocketAddress address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
                     System.err.println("Replay proxy listening on " + address);
                     serverThread.execute(() -> {
                         try {
-                            replayServer.listen();
+                            warcServer.listen();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -177,7 +177,7 @@ public class WarcTool {
                 }
                 List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
                 int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
-                ReplayServer server = new ReplayServer(new ServerSocket(port), warcs);
+                WarcServer server = new WarcServer(new ServerSocket(port), warcs);
                 System.err.println("Listening on port " + port);
                 server.listen();
             }

@@ -24,7 +24,7 @@ class CertificateAuthority {
         caCert = signCertificate(caName, caKeyPair.getPrivate(), caName, caKeyPair.getPublic(), serial.getAndIncrement(), true);
     }
 
-    X509Certificate generateCertificate(X500Principal subject) throws GeneralSecurityException {
+    X509Certificate issue(X500Principal subject) throws GeneralSecurityException {
         return signCertificate(caCert.getSubjectX500Principal(), caKeyPair.getPrivate(), subject,
                 subKeyPair.getPublic(), serial.getAndIncrement(), false);
     }
