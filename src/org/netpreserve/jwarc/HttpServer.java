@@ -27,7 +27,7 @@ class HttpServer {
         this.serverSocket = serverSocket;
         this.handler = handler;
         try {
-            ca = new CertificateAuthority(new X500Principal("Dummy CA"));
+            ca = new CertificateAuthority(new X500Principal("cn=Dummy CA"));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
