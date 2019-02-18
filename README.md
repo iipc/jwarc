@@ -73,8 +73,7 @@ writer.write(response);
 
 ### Command-line tool
 
-jwarc includes a number of command-line tools. Their primary purpose is testing and to serve as [reference code](src/org/netpreserve/jwarc/WarcTool.java)
-but they be useful in their own right.
+jwarc also includes a basic command-line interface which doubles as [reference code](src/org/netpreserve/jwarc/WarcTool.java).
 
 Capture a URL (without subresources):
 
@@ -86,13 +85,24 @@ Create a CDX file:
 
 Run a replay proxy and web server:
 
+    #export PORT=8080
     java -jar jwarc.jar serve example.warc
 
-Load each page using [headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome) and
-save a screenshot as a resource record:
+Replay each page within in a WARC and use [headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome)
+to render a screenshot and save it as a resource record:
 
+    #export BROWSER=/opt/google/chrome/chrome
     java -jar jwarc.jar screenshot example.warc > screenshots.warc
 
+Running a proxy server which records requests and responses:
+
+    #export PORT=8080
+    java -jar jwarc.jar recorder > example.warc
+ 
+Capture a page by recording headless Chrome:
+
+    #export BROWSER=/opt/google/chrome/chrome
+    java -jar jwarc.jar record > example.warc
 
 ## API Quick Reference
 

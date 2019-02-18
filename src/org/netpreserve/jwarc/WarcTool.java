@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -91,7 +92,27 @@ public class WarcTool {
                 }
             }
         },
-        recorder("Run a recording proxy (work in progress, not really usable yet)") {
+        record("Fetch a page and subresources using headless Chrome") {
+            void exec(String[] args) throws Exception {
+                try (ServerSocket socket = new ServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
+                    WarcRecorder recorder = new WarcRecorder(socket, new WarcWriter(System.out));
+                    new Thread(() -> {
+                        try {
+                            recorder.listen();
+                        } catch (IOException e) {
+                            // probably shutting down
+                        }
+                    }).start();
+                    InetSocketAddress address = (InetSocketAddress) socket.getLocalSocketAddress();
+                    System.err.println("WarcRecorder listening on " + address);
+                    for (String arg : args) {
+                        runBrowser(address, arg);
+                    }
+                }
+                System.exit(0);
+            }
+        },
+        recorder("Run a recording proxy") {
             @Override
             void exec(String[] args) throws Exception {
                 int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
@@ -100,20 +121,19 @@ public class WarcTool {
         },
         screenshot("Take a screenshot of each page in the given WARCs") {
             void exec(String[] args) throws Exception {
-                ExecutorService serverThread = Executors.newSingleThreadExecutor();
                 List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
                 try (WarcWriter warcWriter = new WarcWriter(System.out);
                      ServerSocket serverSocket = new ServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
                     WarcServer warcServer = new WarcServer(serverSocket, warcs);
                     InetSocketAddress address = (InetSocketAddress) serverSocket.getLocalSocketAddress();
                     System.err.println("Replay proxy listening on " + address);
-                    serverThread.execute(() -> {
+                    new Thread(() -> {
                         try {
                             warcServer.listen();
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            // just shutdown
                         }
-                    });
+                    }).start();
                     for (String arg : args) {
                         try (WarcReader reader = new WarcReader(Paths.get(arg))) {
                             for (WarcRecord record : reader) {
@@ -130,18 +150,7 @@ public class WarcTool {
                 Path screenshot = Files.createTempFile("jwarc-screenshot", ".png");
                 try {
                     String url = capture.targetURI().toString();
-                    String[] cmd = {System.getenv().getOrDefault("BROWSER", "google-chrome"),
-                            "--headless", "--disable-gpu", "--disable-breakpad",
-                            "--ignore-certificate-errors",
-                            "--proxy-server=" + proxy.getHostString() + ":" + proxy.getPort(),
-                            "--hide-scrollbars", "--screenshot=" + screenshot,
-                            url};
-                    System.err.println(String.join(" ", cmd));
-                    Process p = new ProcessBuilder(cmd)
-                            .inheritIO()
-                            .redirectOutput(new File(System.getProperty("os.name").startsWith("Windows") ? "NUL" : "/dev/null"))
-                            .start();
-                    p.waitFor();
+                    runBrowser(proxy, "--screenshot=" + screenshot, url);
                     try (FileChannel channel = FileChannel.open(screenshot)) {
                         long size = channel.size();
                         if (size == 0) return;
@@ -197,5 +206,21 @@ public class WarcTool {
         }
 
         abstract void exec(String[] args) throws Exception;
+    }
+
+    private static void runBrowser(InetSocketAddress proxy, String... args) throws IOException, InterruptedException {
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(Arrays.asList(System.getenv().getOrDefault("BROWSER", "google-chrome"),
+                "--headless", "--disable-gpu", "--disable-breakpad",
+                "--ignore-certificate-errors",
+                "--proxy-server=" + proxy.getHostString() + ":" + proxy.getPort(),
+                "--hide-scrollbars"));
+        cmd.addAll(Arrays.asList(args));
+        System.err.println(String.join(" ", cmd));
+        Process p = new ProcessBuilder(cmd)
+                .inheritIO()
+                .redirectOutput(new File(System.getProperty("os.name").startsWith("Windows") ? "NUL" : "/dev/null"))
+                .start();
+        p.waitFor();
     }
 }

@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 
 class HttpServer {
     private final ServerSocket serverSocket;
-    private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private final CertificateAuthority ca;
     private final Handler handler;
 
@@ -37,9 +36,19 @@ class HttpServer {
      * Listens and accepts new connections.
      */
     void listen() throws IOException {
-        while (!serverSocket.isClosed()) {
-            Socket socket = serverSocket.accept();
-            threadPool.execute(() -> interact(socket, ""));
+        ExecutorService threadPool = Executors.newCachedThreadPool(runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            thread.setName("HttpServer worker");
+            return thread;
+        });
+        try {
+            while (!serverSocket.isClosed()) {
+                Socket socket = serverSocket.accept();
+                threadPool.execute(() -> interact(socket, ""));
+            }
+        } finally {
+            threadPool.shutdown();
         }
     }
 
