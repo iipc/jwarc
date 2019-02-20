@@ -16,6 +16,8 @@ import java.util.Map;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.READ;
+import static java.time.ZoneOffset.UTC;
+import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 import static org.netpreserve.jwarc.HttpServer.send;
 
 /**
@@ -96,7 +98,8 @@ class WarcServer {
             try (FileChannel channel = FileChannel.open(entry.file, READ)) {
                 channel.position(entry.position);
                 WarcReader reader = new WarcReader(channel);
-                HttpResponse http = ((WarcResponse) reader.next().get()).http();
+                WarcResponse record = (WarcResponse) reader.next().get();
+                HttpResponse http = record.http();
                 HttpResponse.Builder b = new HttpResponse.Builder(http.status(), http.reason());
                 for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
                     if (e.getKey().equalsIgnoreCase("Strict-Transport-Security")) continue;
@@ -107,6 +110,7 @@ class WarcServer {
                     }
                 }
                 b.setHeader("Connection", "keep-alive");
+                b.setHeader("Memento-Datetime", RFC_1123_DATE_TIME.format(record.date().atOffset(UTC)));
                 MessageBody body = http.body();
                 if (inject && HTML.equals(http.contentType().base())) {
                     body = LengthedBody.create(body, ByteBuffer.wrap(script), script.length + body.size());
