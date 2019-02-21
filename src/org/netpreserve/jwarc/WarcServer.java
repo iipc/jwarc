@@ -33,12 +33,14 @@ import static org.netpreserve.jwarc.HttpServer.send;
  */
 class WarcServer {
     private static final DateTimeFormatter ARC_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(UTC);
+    private static final DateTimeFormatter RFC_1123_UTC = RFC_1123_DATE_TIME.withZone(UTC);
     private static final MediaType HTML = MediaType.parse("text/html");
+    private static final MediaType LINK_FORMAT = MediaType.parse("application/link-format");
     private static final Pattern REPLAY_RE = Pattern.compile("/replay/([0-9]{14})/(.*)");
 
     private final HttpServer httpServer;
     private final Index index = new Index();
-    private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>".getBytes(US_ASCII);
+    private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>\n".getBytes(US_ASCII);
     private Entry entrypoint;
 
     WarcServer(ServerSocket serverSocket, List<Path> warcs) throws IOException {
@@ -93,27 +95,47 @@ class WarcServer {
                         .body(HTML, script)
                         .setHeader("Connection", "close")
                         .build());
+                return;
             }
             Matcher m = REPLAY_RE.matcher(target);
             if (!m.matches()) {
                 error(socket, 404, "Malformed replay url");
+                return;
             }
             Instant date = Instant.from(ARC_DATE.parse(m.group(1)));
-            replay(socket, m.group(2), date, true);
+            replay(socket, m.group(2), date, false);
+        } else if (target.startsWith("/timemap/")) {
+            URI uri = URI.create(target.substring("/timemap/".length()));
+            NavigableSet<Entry> versions = index.query(uri);
+            if (versions.isEmpty()) {
+                error(socket, 404, "Not found in archive");
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("<").append(versions.first().uri).append(">;rel=\"original\"");
+            for (Entry entry : versions) {
+                sb.append(",\n</replay/").append(ARC_DATE.format(entry.date)).append("/").append(entry.uri)
+                        .append(">;rel=\"memento\",datetime=\"").append(RFC_1123_UTC.format(entry.date) + "\"");
+            }
+            sb.append("\n");
+            send(socket, new HttpResponse.Builder(200, "OK")
+                    .body(LINK_FORMAT, sb.toString().getBytes(UTF_8)).build());
         } else {
             Instant date = request.headers().first("Accept-Datetime")
-                    .map(s -> Instant.from(RFC_1123_DATE_TIME.parse(s)))
+                    .map(s -> Instant.from(RFC_1123_UTC.parse(s)))
                     .orElse(Instant.EPOCH);
-            replay(socket, target, date, false);
+            replay(socket, target, date, true);
         }
     }
 
-    private void replay(Socket socket, String target, Instant date, boolean inject) throws IOException {
-        Entry entry = index.closest(URI.create(target), date);
-        if (entry == null) {
+    private void replay(Socket socket, String target, Instant date, boolean proxy) throws IOException {
+        URI uri = URI.create(target);
+        NavigableSet<Entry> versions = index.query(uri);
+        if (versions.isEmpty()) {
             error(socket, 404, "Not found in archive");
             return;
         }
+        Entry entry = closest(versions, uri, date);
         try (FileChannel channel = FileChannel.open(entry.file, READ)) {
             channel.position(entry.position);
             WarcReader reader = new WarcReader(channel);
@@ -129,14 +151,34 @@ class WarcServer {
                 }
             }
             b.setHeader("Connection", "keep-alive");
-            b.setHeader("Memento-Datetime", RFC_1123_DATE_TIME.format(record.date().atOffset(UTC)));
+            b.setHeader("Memento-Datetime", RFC_1123_UTC.format(record.date()));
+            if (!proxy) b.setHeader("Link", mementoLinks(versions, entry));
+            if (proxy) b.setHeader("Vary", "Accept-Datetime");
             MessageBody body = http.body();
-            if (inject && HTML.equals(http.contentType().base())) {
+            if (!proxy && HTML.equals(http.contentType().base())) {
                 body = LengthedBody.create(body, ByteBuffer.wrap(script), script.length + body.size());
             }
             b.body(http.contentType(), body, body.size());
             send(socket, b.build());
         }
+    }
+
+    private String mementoLinks(NavigableSet<Entry> versions, Entry current) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<").append(current.uri).append(">;rel=\"original\",");
+        sb.append("</timemap/").append(current.uri).append(">;rel=\"timemap\";type=\"").append(LINK_FORMAT).append('"');
+        mementoLink(sb, "first ", current, versions.first());
+        mementoLink(sb, "prev ", current, versions.lower(current));
+        mementoLink(sb, "next ", current, versions.higher(current));
+        mementoLink(sb, "last ", current, versions.last());
+        return sb.toString();
+    }
+
+    private void mementoLink(StringBuilder sb, String rel, Entry current, Entry entry) {
+        if (entry == null || entry.date.equals(current.date)) return;
+        if (sb.length() != 0) sb.append(',');
+        sb.append("</replay/").append(ARC_DATE.format(entry.date)).append("/").append(entry.uri).append(">;rel=\"")
+                .append(rel).append("memento\";datetime=\"").append(RFC_1123_UTC.format(entry.date)).append("\"");
     }
 
     private void error(Socket socket, int status, String reason) throws IOException {
@@ -157,6 +199,17 @@ class WarcServer {
         }
     }
 
+    private Entry closest(NavigableSet<Entry> versions, URI uri, Instant date) {
+        Entry key = new Entry(uri, date);
+        Entry a = versions.floor(key);
+        Entry b = versions.higher(key);
+        if (a == null) return b;
+        if (b == null) return a;
+        Duration da = Duration.between(a.date, date);
+        Duration db = Duration.between(b.date, date);
+        return da.compareTo(db) < 0 ? a : b;
+    }
+
     private static class Index {
         NavigableSet<Entry> entries = new TreeSet<>(comparing((Entry e) -> e.urikey).thenComparing(e -> e.date));
 
@@ -164,19 +217,7 @@ class WarcServer {
             entries.add(entry);
         }
 
-        Entry closest(URI uri, Instant date) {
-            NavigableSet<Entry> versions = versions(uri);
-            Entry key = new Entry(uri, date);
-            Entry a = versions.floor(key);
-            Entry b = versions.higher(key);
-            if (a == null) return b;
-            if (b == null) return a;
-            Duration da = Duration.between(a.date, date);
-            Duration db = Duration.between(b.date, date);
-            return da.compareTo(db) < 0 ? a : b;
-        }
-
-        NavigableSet<Entry> versions(URI uri) {
+        NavigableSet<Entry> query(URI uri) {
             return entries.subSet(new Entry(uri, Instant.MIN), true, new Entry(uri, Instant.MAX), true);
         }
     }

@@ -45,11 +45,11 @@ public class HttpRequest extends HttpMessage {
 
     public static HttpRequest parse(ReadableByteChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
         return parse(channel, buffer);
     }
 
     static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
-        buffer.flip();
         ParseHandler handler = new ParseHandler();
         HttpParser parser = new HttpParser(handler);
         parser.requestOnly();

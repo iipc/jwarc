@@ -57,6 +57,7 @@ class HttpServer {
      */
     private void interact(Socket socket, String prefix) {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
         try {
             while (!socket.isInputShutdown()) {
                 HttpRequest request;
