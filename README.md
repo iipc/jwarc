@@ -28,6 +28,20 @@ Inflater (coming in JDK 11).
 **Limitations:** This library has not been battle tested yet. The HTTP parser in lacking a robust parsing mode and is 
 probably too strict for real world data. The writing API is still incomplete in places and doesn't support gzip yet.
 
+## Getting it
+
+To use as a library add jwarc as a dependency from [Maven Central](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc).
+
+To use as a command-line tool install [Java 8 or later](https://adoptopenjdk.net/), download
+the latest [release jar](https://github.com/iipc/jwarc/releases) and run it using:
+ 
+    java -jar jwarc-{version}.jar
+
+If you would prefer to build it from source install [JDK 8+](https://adoptopenjdk.net/) and 
+[Maven](https://maven.apache.org/) and then run:
+
+    mvn package
+
 ## Examples
 
 ### Saving a remote resource
