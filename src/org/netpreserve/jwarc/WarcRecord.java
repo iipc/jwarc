@@ -7,7 +7,10 @@ package org.netpreserve.jwarc;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class WarcRecord extends Message {
     WarcRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
@@ -88,7 +91,7 @@ public class WarcRecord extends Message {
     @SuppressWarnings("unchecked")
     public abstract static class AbstractBuilder<R extends WarcRecord, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
         public AbstractBuilder(String type) {
-            super(MessageVersion.WARC_1_1);
+            super(MessageVersion.WARC_1_0);
             setHeader("WARC-Type", type);
             setHeader("Content-Length", "0");
             date(Instant.now());
@@ -104,6 +107,9 @@ public class WarcRecord extends Message {
         }
 
         public B date(Instant date) {
+            if (version.equals(MessageVersion.WARC_1_0)) {
+                date = date.truncatedTo(SECONDS);
+            }
             return setHeader("WARC-Date", date.toString());
         }
 
