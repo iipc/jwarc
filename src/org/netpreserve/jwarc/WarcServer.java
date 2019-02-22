@@ -74,7 +74,6 @@ class WarcServer {
             if (!request.headers().first("x-serviceworker").isPresent()) {
                 send(socket, new HttpResponse.Builder(200, "OK")
                         .body(HTML, script)
-                        .setHeader("Connection", "close")
                         .build());
                 return;
             }
@@ -174,7 +173,6 @@ class WarcServer {
         try (InputStream stream = conn.getInputStream()) {
             send(socket, new HttpResponse.Builder(200, "OK")
                     .body(MediaType.parse("application/javascript"), Channels.newChannel(stream), conn.getContentLengthLong())
-                    .setHeader("Connection", "close")
                     .setHeader("Service-Worker-Allowed", "/")
                     .build());
         }
