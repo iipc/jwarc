@@ -63,7 +63,7 @@ class WarcServer {
                 return;
             }
             send(socket, new HttpResponse.Builder(307, "Redirect")
-                    .addHeader("Connection", "close")
+                    .addHeader("Content-Length", "0")
                     .addHeader("Location", "/replay/" + ARC_DATE.format(entrypoint.date()) + "/" + entrypoint.uri())
                     .build());
         } else if (target.equals("/__jwarc__/sw.js")) {
