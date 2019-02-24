@@ -11,11 +11,11 @@ import java.util.Map;
 /**
  * HTTP proxy which records requests and responses as WARC records.
  */
-class WarcRecorder {
+public class WarcRecorder {
     private final HttpServer httpServer;
     private final WarcWriter warcWriter;
 
-    WarcRecorder(ServerSocket serverSocket, WarcWriter warcWriter) {
+    public WarcRecorder(ServerSocket serverSocket, WarcWriter warcWriter) {
         this.httpServer = new HttpServer(serverSocket, this::handle);
         this.warcWriter = warcWriter;
     }
@@ -39,7 +39,7 @@ class WarcRecorder {
         socket.close();
     }
 
-    void listen() throws IOException {
+    public void listen() throws IOException {
         httpServer.listen();
     }
 }
