@@ -82,9 +82,13 @@ public class WarcTool {
         filter("Copy records that match a given filter expression") {
             void exec(String[] args) throws Exception {
                 try {
-                    WarcFilter filter = WarcFilter.compile(args[0]);
                     String[] files;
-                    if (args.length > 1) {
+                    if (args.length == 0) {
+                        System.err.println("Usage: jwarc filter <expression> [warc-file]...");
+                        System.err.println("  e.g. jwarc filter 'warc-type == \"response\" && http:content-type =~ \"image/.*\" && :status == 200' example.warc");
+                        System.exit(1);
+                        return;
+                    } else if (args.length > 1) {
                         files = Arrays.copyOfRange(args, 1, args.length);
                     } else {
                         if (System.console() != null) {
@@ -92,6 +96,7 @@ public class WarcTool {
                         }
                         files = new String[]{"-"};
                     }
+                    WarcFilter filter = WarcFilter.compile(args[0]);
                     try (WarcWriter writer = new WarcWriter(System.out)) {
                         for (String file : files) {
                             try (WarcReader reader = file.equals("-") ? new WarcReader(System.in) : new WarcReader(Paths.get(file))) {
