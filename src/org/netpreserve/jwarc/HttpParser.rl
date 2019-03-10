@@ -12,14 +12,29 @@ action add_major   { major = major * 10 + data.get(p) - '0'; }
 action add_minor   { minor = minor * 10 + data.get(p) - '0'; }
 action add_status  { status = status * 10 + data.get(p) - '0'; }
 action end_of_text { endOfText = bufPos; }
-action handle_version { handler.version(major, minor); }
-action handle_name    { handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
-action handle_method  { handler.method(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
-action handle_reason  { handler.reason(new String(buf, 0, bufPos, ISO_8859_1)); bufPos = 0; }
-action handle_status  { handler.status(status); }
-action handle_target  { handler.target(new String(buf, 0, bufPos, ISO_8859_1)); bufPos = 0; }
-action handle_value   { handler.value(new String(buf, 0, endOfText, ISO_8859_1)); bufPos = 0; endOfText = 0; }
+action handle_method  { method = new String(buf, 0, bufPos, US_ASCII); bufPos = 0; }
+action handle_reason  { reason = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
+action handle_target  { target = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
 action finish { finished = true; }
+
+action fold {
+    if (bufPos > 0) {
+        bufPos = endOfText;
+        push((byte)' ');
+    }
+}
+
+action handle_name  {
+    name = new String(buf, 0, bufPos, US_ASCII);
+    bufPos = 0;
+}
+
+action handle_value {
+    String value = new String(buf, 0, endOfText, ISO_8859_1);
+    headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
+    bufPos = 0;
+    endOfText = 0;
+}
 
 CRLF = "\r\n";
 CTL = cntrl | 127;
@@ -37,14 +52,14 @@ url_byte =  alpha | digit | "!" | "$" | "&" | "'" | "(" | ")" |
             "=" | "?" | "@" | "_" | "~" | "%" | 0x80..0xff;
 
 version_major = digit $add_major;
-version_minor = digit $add_minor %handle_version;
+version_minor = digit $add_minor;
 http_version = "HTTP/" version_major "." version_minor;
 
 method = token $push %handle_method;
 request_target = url_byte+ $push %handle_target;
 request_line = method " " request_target " " http_version CRLF;
 
-status_code = digit {3} $add_status %handle_status;
+status_code = digit {3} $add_status;
 reason_phrase = ("\t" | " " | VCHAR | obs_text)* $push %handle_reason;
 status_line = http_version " " status_code " " reason_phrase CRLF;
 
@@ -54,7 +69,7 @@ TEXT = WORD (RWS WORD)* %end_of_text;
 
 field_name = token $push %handle_name;
 field_value_first = OWS (TEXT OWS)? $push;
-field_value_folded = LWS (TEXT OWS)? >push_space $push;
+field_value_folded = LWS (TEXT OWS)? >fold $push;
 field_value = field_value_first (field_value_folded)*;
 named_field = field_name ":" field_value CRLF %handle_value;
 named_fields = named_field* CRLF;
@@ -73,13 +88,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class HttpParser {
-    private final Handler handler;
     private int cs;
     private long position;
     private boolean finished;
@@ -89,19 +103,13 @@ public class HttpParser {
     private int major;
     private int minor;
     private int status;
+    private String reason;
+    private String method;
+    private String target;
+    private String name;
+    private Map<String,List<String>> headerMap;
 
-	public interface Handler {
-		void version(int major, int minor);
-		void name(String name);
-		void value(String value);
-		void method(String method);
-		void reason(String reason);
-		void status(int status);
-		void target(String target);
-	}
-
-	public HttpParser(Handler handler) {
-        this.handler = handler;
+	public HttpParser() {
         reset();
     }
 
@@ -114,9 +122,38 @@ public class HttpParser {
         major = 0;
         minor = 0;
         status = 0;
+        reason = null;
+        method = null;
+        target = null;
+        name = null;
+        headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         endOfText = 0;
         position = 0;
         finished = false;
+    }
+
+    public MessageHeaders headers() {
+        return new MessageHeaders(headerMap);
+    }
+
+    public MessageVersion version() {
+        return new MessageVersion("HTTP", major, minor);
+    }
+
+    public int status() {
+        return status;
+    }
+
+    public String reason() {
+        return reason;
+    }
+
+    public String target() {
+        return target;
+    }
+
+    public String method() {
+        return method;
     }
 
     public boolean isFinished() {

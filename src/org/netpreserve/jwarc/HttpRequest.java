@@ -50,57 +50,13 @@ public class HttpRequest extends HttpMessage {
     }
 
     static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
-        ParseHandler handler = new ParseHandler();
-        HttpParser parser = new HttpParser(handler);
+        HttpParser parser = new HttpParser();
         parser.requestOnly();
         parser.parse(channel, buffer);
-        MessageHeaders headers = new MessageHeaders(handler.headerMap);
+        MessageHeaders headers = parser.headers();
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(-1L);
         LengthedBody body = LengthedBody.create(channel, buffer, contentLength);
-        return new HttpRequest(handler.method, handler.target, handler.version, headers, body);
-    }
-
-    private static class ParseHandler implements HttpParser.Handler {
-        Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private MessageVersion version;
-        private String name;
-        private String method;
-        private String target;
-
-        @Override
-        public void version(int major, int minor) {
-            version = new MessageVersion("HTTP", major, minor);
-        }
-
-        @Override
-        public void name(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public void value(String value) {
-            headerMap.computeIfAbsent(name, name -> new ArrayList<>()).add(value);
-        }
-
-        @Override
-        public void method(String method) {
-            this.method = method;
-        }
-
-        @Override
-        public void reason(String reason) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void status(int status) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void target(String target) {
-            this.target = target;
-        }
+        return new HttpRequest(parser.method(), parser.target(), parser.version(), headers, body);
     }
 
     public static class Builder extends AbstractBuilder<HttpRequest, Builder> {

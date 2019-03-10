@@ -38,14 +38,13 @@ public class HttpResponse extends HttpMessage {
     public static HttpResponse parse(ReadableByteChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
-        ParseHandler handler = new ParseHandler();
-        HttpParser parser = new HttpParser(handler);
+        HttpParser parser = new HttpParser();
         parser.responseOnly();
         parser.parse(channel, buffer);
-        MessageHeaders headers = new MessageHeaders(handler.headerMap);
+        MessageHeaders headers = parser.headers();
         long contentLength;
         MessageBody body;
-        if (headers.sole("Tranfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
+        if (headers.sole("Transfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
             body = new ChunkedBody(channel, buffer);
         } else {
             if (channel instanceof LengthedBody) {
@@ -56,7 +55,7 @@ public class HttpResponse extends HttpMessage {
             }
             body = LengthedBody.create(channel, buffer, contentLength);
         }
-        return new HttpResponse(handler.status, handler.reason, handler.version, headers, body);
+        return new HttpResponse(parser.status(), parser.reason(), parser.version(), headers, body);
     }
 
     /**
@@ -71,49 +70,6 @@ public class HttpResponse extends HttpMessage {
      */
     public String reason() {
         return reason;
-    }
-
-    private static class ParseHandler implements HttpParser.Handler {
-        Map<String,List<String>> headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private MessageVersion version;
-        private String name;
-        private int status;
-        private String reason;
-
-        @Override
-        public void version(int major, int minor) {
-            version = new MessageVersion("HTTP", major, minor);
-        }
-
-        @Override
-        public void name(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public void value(String value) {
-            headerMap.computeIfAbsent(name, name -> new ArrayList<>()).add(value);
-        }
-
-        @Override
-        public void reason(String reason) {
-            this.reason = reason;
-        }
-
-        @Override
-        public void status(int status) {
-            this.status = status;
-        }
-
-        @Override
-        public void target(String target) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void method(String method) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     public static class Builder extends HttpMessage.AbstractBuilder<HttpResponse, Builder> {

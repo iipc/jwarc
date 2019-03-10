@@ -3,7 +3,7 @@
 // recompile: ragel -J HttpParser.rl -o HttpParser.java
 // diagram:   ragel -Vp HttpParser.rl | dot -Tpng | feh -
 
-// line 68 "HttpParser.rl"
+// line 83 "HttpParser.rl"
 
 
 package org.netpreserve.jwarc;
@@ -12,13 +12,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Arrays;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class HttpParser {
-    private final Handler handler;
     private int cs;
     private long position;
     private boolean finished;
@@ -28,30 +27,24 @@ public class HttpParser {
     private int major;
     private int minor;
     private int status;
+    private String reason;
+    private String method;
+    private String target;
+    private String name;
+    private Map<String,List<String>> headerMap;
 
-	public interface Handler {
-		void version(int major, int minor);
-		void name(String name);
-		void value(String value);
-		void method(String method);
-		void reason(String reason);
-		void status(int status);
-		void target(String target);
-	}
-
-	public HttpParser(Handler handler) {
-        this.handler = handler;
+	public HttpParser() {
         reset();
     }
 
     public void reset() {
         
-// line 50 "HttpParser.java"
+// line 43 "HttpParser.java"
 	{
 	cs = http_start;
 	}
 
-// line 110 "HttpParser.rl"
+// line 118 "HttpParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
@@ -59,9 +52,38 @@ public class HttpParser {
         major = 0;
         minor = 0;
         status = 0;
+        reason = null;
+        method = null;
+        target = null;
+        name = null;
+        headerMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         endOfText = 0;
         position = 0;
         finished = false;
+    }
+
+    public MessageHeaders headers() {
+        return new MessageHeaders(headerMap);
+    }
+
+    public MessageVersion version() {
+        return new MessageVersion("HTTP", major, minor);
+    }
+
+    public int status() {
+        return status;
+    }
+
+    public String reason() {
+        return reason;
+    }
+
+    public String target() {
+        return target;
+    }
+
+    public String method() {
+        return method;
     }
 
     public boolean isFinished() {
@@ -86,7 +108,7 @@ public class HttpParser {
         int pe = data.limit();
 
         
-// line 90 "HttpParser.java"
+// line 112 "HttpParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -171,58 +193,63 @@ case 1:
 	{ push(data.get(p)); }
 	break;
 	case 1:
-// line 10 "HttpParser.rl"
-	{ if (bufPos > 0) push((byte)' '); }
-	break;
-	case 2:
 // line 11 "HttpParser.rl"
 	{ major = major * 10 + data.get(p) - '0'; }
 	break;
-	case 3:
+	case 2:
 // line 12 "HttpParser.rl"
 	{ minor = minor * 10 + data.get(p) - '0'; }
 	break;
-	case 4:
+	case 3:
 // line 13 "HttpParser.rl"
 	{ status = status * 10 + data.get(p) - '0'; }
 	break;
-	case 5:
+	case 4:
 // line 14 "HttpParser.rl"
 	{ endOfText = bufPos; }
 	break;
-	case 6:
+	case 5:
 // line 15 "HttpParser.rl"
-	{ handler.version(major, minor); }
+	{ method = new String(buf, 0, bufPos, US_ASCII); bufPos = 0; }
+	break;
+	case 6:
+// line 16 "HttpParser.rl"
+	{ reason = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
 	break;
 	case 7:
-// line 16 "HttpParser.rl"
-	{ handler.name(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
+// line 17 "HttpParser.rl"
+	{ target = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
 	break;
 	case 8:
-// line 17 "HttpParser.rl"
-	{ handler.method(new String(buf, 0, bufPos, US_ASCII)); bufPos = 0; }
-	break;
-	case 9:
 // line 18 "HttpParser.rl"
-	{ handler.reason(new String(buf, 0, bufPos, ISO_8859_1)); bufPos = 0; }
-	break;
-	case 10:
-// line 19 "HttpParser.rl"
-	{ handler.status(status); }
-	break;
-	case 11:
-// line 20 "HttpParser.rl"
-	{ handler.target(new String(buf, 0, bufPos, ISO_8859_1)); bufPos = 0; }
-	break;
-	case 12:
-// line 21 "HttpParser.rl"
-	{ handler.value(new String(buf, 0, endOfText, ISO_8859_1)); bufPos = 0; endOfText = 0; }
-	break;
-	case 13:
-// line 22 "HttpParser.rl"
 	{ finished = true; }
 	break;
-// line 226 "HttpParser.java"
+	case 9:
+// line 20 "HttpParser.rl"
+	{
+    if (bufPos > 0) {
+        bufPos = endOfText;
+        push((byte)' ');
+    }
+}
+	break;
+	case 10:
+// line 27 "HttpParser.rl"
+	{
+    name = new String(buf, 0, bufPos, US_ASCII);
+    bufPos = 0;
+}
+	break;
+	case 11:
+// line 32 "HttpParser.rl"
+	{
+    String value = new String(buf, 0, endOfText, ISO_8859_1);
+    headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
+    bufPos = 0;
+    endOfText = 0;
+}
+	break;
+// line 253 "HttpParser.java"
 			}
 		}
 	}
@@ -242,7 +269,7 @@ case 5:
 	break; }
 	}
 
-// line 144 "HttpParser.rl"
+// line 181 "HttpParser.rl"
 
         position += p - data.position();
         data.position(p);
@@ -272,14 +299,13 @@ case 5:
     }
 
     
-// line 276 "HttpParser.java"
+// line 303 "HttpParser.java"
 private static byte[] init__http_actions_0()
 {
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
 	    5,    1,    6,    1,    7,    1,    8,    1,    9,    1,   10,    1,
-	   11,    1,   12,    1,   13,    2,    1,    0,    2,    5,    0,    2,
-	   12,    0
+	   11,    2,    4,    0,    2,    9,    0,    2,   11,    0
 	};
 }
 
@@ -419,12 +445,12 @@ private static final byte _http_trans_targs[] = init__http_trans_targs_0();
 private static byte[] init__http_trans_actions_0()
 {
 	return new byte [] {
-	    0,    0,    0,    0,    0,    0,    5,    0,    7,   13,    9,    9,
-	    9,   21,    1,   19,    0,    0,    1,   27,   15,    0,    0,    1,
-	    0,    0,   25,   35,    3,   29,   32,   11,    1,    1,   17,    1,
-	   23,    0,    0,    0,    0,    0,    5,    0,    7,   13,    0,    0,
-	    1,   27,   15,    0,    0,    1,    0,    0,   25,   35,    3,   29,
-	   32,   11,    1
+	    0,    0,    0,    0,    0,    0,    3,    0,    5,    0,    7,    7,
+	    7,    0,    1,   13,    0,    0,    1,   17,   21,    0,    0,    1,
+	    0,    0,   23,   31,   19,   28,   25,    9,    1,    1,   11,    1,
+	   15,    0,    0,    0,    0,    0,    3,    0,    5,    0,    0,    0,
+	    1,   17,   21,    0,    0,    1,    0,    0,   23,   31,   19,   28,
+	   25,    9,    1
 	};
 }
 
@@ -439,5 +465,5 @@ static final int http_en_http_request = 25;
 static final int http_en_http_response = 1;
 
 
-// line 173 "HttpParser.rl"
+// line 210 "HttpParser.rl"
 }

@@ -15,8 +15,7 @@ try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("example.warc
 ```
 
 It uses a finite state machine parser generated from a strict [grammar](https://github.com/ato/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
-using [Ragel](http://www.colm.net/open-source/ragel/). You can use the parser directly in a push fashion for advanced
-use cases like non-blocking I/O.
+using [Ragel](http://www.colm.net/open-source/ragel/).
 
 Gzipped records are automatically decompressed. The parser interprets ARC/1.1 record as if they are a WARC dialect and
 populates the appropriate WARC headers.
