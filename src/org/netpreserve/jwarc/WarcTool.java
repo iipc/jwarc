@@ -7,13 +7,10 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,29 +79,37 @@ public class WarcTool {
                 }
             }
         },
-        filter("Filter records that match an expression") {
+        filter("Copy records that match a given filter expression") {
             void exec(String[] args) throws Exception {
                 try {
                     WarcFilter filter = WarcFilter.compile(args[0]);
+                    String[] files;
+                    if (args.length > 1) {
+                        files = Arrays.copyOfRange(args, 1, args.length);
+                    } else {
+                        if (System.console() != null) {
+                            System.err.println("Warning: No input files specified, reading from STDIN");
+                        }
+                        files = new String[]{"-"};
+                    }
                     try (WarcWriter writer = new WarcWriter(System.out)) {
-                        for (String arg : Arrays.copyOfRange(args, 1, args.length)) {
-                            try (WarcReader reader = new WarcReader(Paths.get(arg))) {
-                                for (WarcRecord record : reader) {
-                                    if (filter.test(record)) {
-                                        writer.write(record);
-                                    }
-                                }
+                        for (String file : files) {
+                            try (WarcReader reader = file.equals("-") ? new WarcReader(System.in) : new WarcReader(Paths.get(file))) {
+                                filterRecords(filter, writer, reader);
                             }
                         }
                     }
-                } catch (ParseException e) {
-                    System.err.println(args[0]);
-                    for (int i = 0; i < e.getErrorOffset(); i++) {
-                        System.err.print(' ');
-                    }
-                    System.err.println("^");
-                    System.err.println("Error: " + e.getMessage());
+                } catch (WarcFilterException e) {
+                    System.err.println(e.prettyPrint());
                     System.exit(2);
+                }
+            }
+
+            private void filterRecords(WarcFilter filter, WarcWriter writer, WarcReader reader) throws IOException {
+                for (WarcRecord record : reader) {
+                    if (filter.test(record)) {
+                        writer.write(record);
+                    }
                 }
             }
         },

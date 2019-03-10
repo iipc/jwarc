@@ -13,6 +13,12 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterators.spliteratorUnknownSize;
 
 public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private static final int CRLFCRLF = 0x0d0a0d0a;
@@ -197,6 +203,9 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         return compression;
     }
 
+    /**
+     * Returns an iterator over the records in the WARC file.
+     */
     @Override
     public Iterator<WarcRecord> iterator() {
         return new Iterator<WarcRecord>() {
@@ -224,6 +233,13 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 return temp;
             }
         };
+    }
+
+    /**
+     * Returns a Stream over the records in the WARC file.
+     */
+    public Stream<WarcRecord> records() {
+        return StreamSupport.stream(spliteratorUnknownSize(iterator(), ORDERED | NONNULL), false);
     }
 
     /**

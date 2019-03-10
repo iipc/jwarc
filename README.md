@@ -84,6 +84,23 @@ WarcResponse response = new WarcResponse.Builder()
 writer.write(response);
 ```
 
+### Filter expressions
+
+The [WarcFilter](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcFilter.html) class
+provides a simple filter expression language for matching WARC records. For example here's a moderately complex filter
+which matches all records that are not image resources or image responses:
+
+     !((warc-type == "resource" && content-type =~ "image/.*") || 
+       (warc-type == "response" && http:content-type =~ "image/.*")) 
+
+WarcFilter implements `Predicate<WarcRecord>` and be used to conveniently with streams of records:
+
+```java
+long errorCount = warcReader.records().filter(WarcFilter.compile(":status >= 400")).count();
+``` 
+
+Their real power though is as a building block for user-supplied options. 
+
 ### Command-line tool
 
 jwarc also includes a basic command-line interface which doubles as [reference code](src/org/netpreserve/jwarc/WarcTool.java).
@@ -116,6 +133,10 @@ Capture a page by recording headless Chrome:
 
     export BROWSER=/opt/google/chrome/chrome
     java -jar jwarc.jar record > example.warc
+
+Create a new file containing only html responses with status 200:
+
+    java -jar jwarc.jar filter ':status == 200 && http:content-type =~ "text/html(;.*)?"' example.warc > pages.warc 
 
 ## API Quick Reference
 

@@ -1,7 +1,5 @@
 package org.netpreserve.jwarc;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -18,11 +16,11 @@ class WarcFilterCompiler {
      *            | unary "&&" predicate
      *            | unary "||" predicate;
      */
-    Predicate<WarcRecord> predicate() throws ParseException {
+    Predicate<WarcRecord> predicate() {
         Predicate<WarcRecord> lhs = unary();
         if (lexer.atEnd()) return lhs;
         String operator = lexer.peekOperator();
-        if (operator == null) throw new ParseException("syntax error", lexer.position());
+        if (operator == null) throw lexer.error("expected operator");
         switch (operator) {
             case ")":
                 return lhs;
@@ -33,7 +31,7 @@ class WarcFilterCompiler {
                 lexer.advance();
                 return lhs.or(predicate());
             default:
-                throw new ParseException("operator not allowed here: " + operator, lexer.position());
+                throw lexer.error("operator not allowed here: " + operator);
         }
     }
 
@@ -42,7 +40,7 @@ class WarcFilterCompiler {
      *      | "(" predicate ")"
      *       | "!(" predicate ")";
      */
-    private Predicate<WarcRecord> unary() throws ParseException {
+    private Predicate<WarcRecord> unary() {
         String operator = lexer.peekOperator();
         if (operator == null) {
             return comparison();
@@ -50,11 +48,11 @@ class WarcFilterCompiler {
             lexer.advance();
             Predicate<WarcRecord> predicate = predicate();
             if (!")".equals(lexer.operator())) {
-                throw new ParseException("')' expected", lexer.position());
+                throw lexer.error("')' expected");
             }
             return operator.startsWith("!") ? predicate.negate() : predicate;
         } else {
-            throw new ParseException("operator not allowed here: " + operator, lexer.position());
+            throw lexer.error("operator not allowed here: " + operator);
         }
     }
 
@@ -68,10 +66,10 @@ class WarcFilterCompiler {
      *            | field "<=" number
      *            | field ">=" number;
      */
-    private Predicate<WarcRecord> comparison() throws ParseException {
+    private Predicate<WarcRecord> comparison() {
         Accessor lhs = accessor(lexer.token());
         String operator = lexer.operator();
-        if (operator == null) throw new ParseException("expected operator", lexer.position());
+        if (operator == null) throw lexer.error("expected operator");
         switch (operator) {
             case "==":
             case "!=": {
@@ -110,7 +108,7 @@ class WarcFilterCompiler {
                 return rec -> lhs.integer(rec) > value;
             }
         }
-        throw new ParseException("operator not allowed here: " + operator, lexer.position());
+        throw lexer.error("operator not allowed here: " + operator);
     }
 
     private interface Accessor {

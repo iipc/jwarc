@@ -303,13 +303,13 @@ case 5:
             }
             buffer.compact();
             int n = channel.read(buffer);
+			buffer.flip();
             if (n < 0) {
                 if (position > 0) {
                     throw new EOFException();
                 }
                 return false;
             }
-            buffer.flip();
         }
     }
 
