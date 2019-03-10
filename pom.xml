@@ -161,7 +161,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <buildArgs>-H:IncludeResources=[.](properties|js)</buildArgs>
+                            <buildArgs>-H:IncludeResources=.*[.](properties|js)</buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>

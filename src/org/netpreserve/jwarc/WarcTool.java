@@ -2,6 +2,7 @@ package org.netpreserve.jwarc;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.*;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -233,6 +235,22 @@ public class WarcTool {
                 WarcServer server = new WarcServer(new ServerSocket(port), warcs);
                 System.err.println("Listening on port " + port);
                 server.listen();
+            }
+        },
+        version("Print version information") {
+            @Override
+            void exec(String[] args) throws Exception {
+                Properties properties = new Properties();
+                URL resource = getClass().getResource("/META-INF/maven/org.netpreserve/jwarc/pom.properties");
+                if (resource != null) {
+                    try (InputStream stream = resource.openStream()) {
+                        properties.load(stream);
+                    }
+                }
+                String version = properties.getProperty("version", "unknown version");
+                System.out.println("jwarc " + version);
+                System.out.println(System.getProperty("java.vm.name") + " " + System.getProperty("java.version"));
+                System.out.println(System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
             }
         };
 
