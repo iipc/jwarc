@@ -1,7 +1,7 @@
 language: java
 after_success:
 #  - bash <(curl -s https://codecov.io/bash)
-  - export GRAALVM=graalvm-ce-1.0.0-rc13
-  - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/${GRAALVM}-linux-amd64.tar.gz
-  - tar -zxf GRAALVM-linux-amd64.tar.gz
-  - JAVA_HOME=$PWD/$GRAALVM mvn package -Pnative-image
+  - GRAAL=graalvm-ce-1.0.0-rc13
+  - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-linux-amd64.tar.gz
+  - tar -zxf $GRAAL-linux-amd64.tar.gz
+  - JAVA_HOME=$PWD/$GRAAL mvn package -Pnative-image
