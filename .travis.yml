@@ -1,16 +1,23 @@
 language: java
-
 matrix:
   include:
-    - os: osx
-      env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
-    - os: linux
-      env: PLATFORM=linux-amd64 GRAALHOME=
-
-after_success:
-#  - bash <(curl -s https://codecov.io/bash)
-  - GRAAL=graalvm-ce-1.0.0-rc13
-  - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
-  - tar -zxf $GRAAL-$PLATFORM.tar.gz
-  - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
-  - mv target/org.netpreserve.jwarc.warctool target/jwarc-$PLATFORM
+  - os: osx
+    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
+  - os: linux
+    env: PLATFORM=linux-amd64 GRAALHOME=
+brefore_deploy:
+- GRAAL=graalvm-ce-1.0.0-rc13
+- wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
+- tar -zxf $GRAAL-$PLATFORM.tar.gz
+- JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
+- mv target/org.netpreserve.jwarc.warctool target/jwarc-$PLATFORM
+deploy:
+  provider: releases
+  api_key:
+    secure: fEMCoTRF1cYG2A6cDmufWOZ3epb/eitZKNXK0X+FXBA0fkWbC36jqQKHO2USRn4grRDy50xuuUkinCxd1u40rvFojDLW/dqkagd8MFr1wZgwD861Yd7RF7jtozYzmVh8Hbn6AQLRKm89RZfwNm+DEDcnFUDTtvLJekV/Ipnc9Rxll8G0rn1R3mO23Z4EH4aUMSmWDAJDdiQLYcWT8e/zqeoGajiMHiRbTEGMzzFQTnqhaFxkHwKMClAHzZcc8Mrq/cmYvrfzx+oLYxrakD3lR+f6C+N9KPJ/Cgkewuj3oBQX2Ix1GbIkuXIeQLT2ywzaQYTbGfxzFT4gOuf5AUcfmOx8NOdg8o4hAisJikxsVcIUJqNHE6SRjwQIBPfrXxDrGHRTThUfeA7iQaSyd0AqWVFOMNwrclHS0GZKjLsBdpn2ESaKpbtyI6a+q+Q+t8PHj11apZnJ5uZDXqHzIn8BEqq1p18VbwjNyy0i7vMs90wwRFor64U/aoMpTOCl0mPHSIkSfuEd8gbAFaFaPvQVuZa7GSr2BkQIlzaCaPihc3h3OMyasYYkCJqREoJFBU9xFQI+kXkb64ByOva0YVcb4vhDsNyEDNkWgkvKtymI4pzHt8spgWBgprUvUP4NNdTuWnenszZCRapfmcLEemBXE596GuVXFLkrAk3OxwUxgC4=
+  file: target/jwarc-$PLATFORM
+  draft: true
+  skip_cleanup: true
+  on:
+    repo: iipc/jwarc
+    branch: native
