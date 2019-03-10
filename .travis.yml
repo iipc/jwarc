@@ -12,7 +12,7 @@ before_deploy:
 - tar -zxf $GRAAL-$PLATFORM.tar.gz
 - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
 - mkdir deploy
-- [ "$PLATFORM" == linux-amd64 ] && mv -v target/*.jar deploy
+- '[ "$PLATFORM" == linux-amd64 ] && mv -v target/*.jar deploy'
 - mv -v target/org.netpreserve.jwarc.warctool deploy/jwarc-$PLATFORM
 
 deploy:
