@@ -7,6 +7,7 @@ import java.util.function.Predicate;
  * <p>
  * Simplified grammar for the expression language:
  * <pre>
+ * {@code
  * expression = "(" expression ")"         ; grouping
  *            | "!(" expression ")"        ; boolean NOT
  *            | expression "&&" expression ; boolean AND
@@ -27,6 +28,7 @@ import java.util.function.Predicate;
  *       | field-name         ; WARC header field
  *
  * string = '"' [^"]* '"'
+ * }
  * </pre>
  * Whitespace outside a string or field is ignored. Fields that do not exist are treated as an empty string when subject
  * to string comparison. Fields that do not contain a valid number are treated as zero when subject to integer
