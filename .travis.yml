@@ -1,25 +1,28 @@
 language: java
 matrix:
   include:
-  - os: osx
-    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
   - os: linux
     env: PLATFORM=linux-amd64 GRAALHOME=
+  - os: osx
+    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
 
 before_deploy:
 - GRAAL=graalvm-ce-1.0.0-rc13
 - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
 - tar -zxf $GRAAL-$PLATFORM.tar.gz
 - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
-- mv target/org.netpreserve.jwarc.warctool target/jwarc-$PLATFORM
+- mkdir deploy
+- [ "$PLATFORM" == linux-amd64 ] && mv -v target/*.jar deploy
+- mv -v target/org.netpreserve.jwarc.warctool deploy/jwarc-$PLATFORM
 
 deploy:
   provider: releases
   api_key:
     secure: zYS38t0aVGTANMh8UbONBVvPW+A5xYNkQYK9EIWTjz3bFp9KuTpH7/SGGzHgxVdR4PNXBFFC7razuQw00QkUXZZpCYPbpEky8K1BL6gdPvbOPaSwlXSw69lgRsEwQkm/LxtGl5GmiT1YPcQSywdRLlf6+mNgp0MB5ziP9vKU7FodCF+5jqmE5GGlvtb+apaCcTD4EWq24gjdohoTzyQFqo7XAd+7tjeyN7xZsvpkt8HKuN+nz2BGNa+sFbCkqzNdga7ipEHW9YHNJnUPwSHe/UIfknaIYW5H2JepVvYT+JR/gUDIzmC3t9pIz22fPDrzjqSpTODGuj8zhLry5ia3DO64iqAWoc6fb6QblhPJmkTGwwNK3fEoNhhVA9Ua3WvN2kvNSIs1a9A/JHC374YHUG4M+v7vFk/Y2RoPi4eLc6HKUIto5pbeWmetlRRowEvcBUiuJyPbDAo504ONWi7pX2OvBERg+s1g6Zq94htEb28ov1oO74ZD2HiLYWiHJleoaEQa50Tr4aY5dCTlvWLqy51qDa112stYefrqyFxce/prPkcSYBUOwP7bDRbOND+fW+Ib7n8RIP0ZHTeoEJ7M6DP97ute0ZDCWyjH/+WSZAE5pOfGMEUSTJ5fXUijCp2Cz175YYmd+X+WXOBiV9GcTDCeY8ny7w0xotySa3xAglM=
-  file: target/jwarc-$PLATFORM
+  file: deploy/*
+  file_glob: true
   draft: true
   skip_cleanup: true
   on:
     repo: iipc/jwarc
-    tags: true
+    #tags: true
