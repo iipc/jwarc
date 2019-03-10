@@ -5,12 +5,14 @@ matrix:
     env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
   - os: linux
     env: PLATFORM=linux-amd64 GRAALHOME=
-brefore_deploy:
+
+before_deploy:
 - GRAAL=graalvm-ce-1.0.0-rc13
 - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
 - tar -zxf $GRAAL-$PLATFORM.tar.gz
 - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
 - mv target/org.netpreserve.jwarc.warctool target/jwarc-$PLATFORM
+
 deploy:
   provider: releases
   api_key:
