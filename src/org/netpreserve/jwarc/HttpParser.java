@@ -12,6 +12,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -39,12 +40,12 @@ public class HttpParser {
 
     public void reset() {
         
-// line 43 "HttpParser.java"
+// line 44 "HttpParser.java"
 	{
 	cs = http_start;
 	}
 
-// line 118 "HttpParser.rl"
+// line 119 "HttpParser.rl"
         bufPos = 0;
         if (buf.length > 8192) {
             buf = new byte[256]; // if our buffer grew really big release it
@@ -108,7 +109,7 @@ public class HttpParser {
         int pe = data.limit();
 
         
-// line 112 "HttpParser.java"
+// line 113 "HttpParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -249,7 +250,7 @@ case 1:
     endOfText = 0;
 }
 	break;
-// line 253 "HttpParser.java"
+// line 254 "HttpParser.java"
 			}
 		}
 	}
@@ -269,15 +270,24 @@ case 5:
 	break; }
 	}
 
-// line 181 "HttpParser.rl"
+// line 182 "HttpParser.rl"
 
         position += p - data.position();
         data.position(p);
     }
 
     public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        parse(channel, buffer, null);
+    }
+
+    void parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo) throws IOException {
         while (true) {
+            ByteBuffer copy = buffer.duplicate();
             parse(buffer);
+            if (copyTo != null) {
+                copy.limit(buffer.position());
+                copyTo.write(copy);
+            }
             if (isFinished()) {
                 break;
             }
@@ -299,7 +309,7 @@ case 5:
     }
 
     
-// line 303 "HttpParser.java"
+// line 313 "HttpParser.java"
 private static byte[] init__http_actions_0()
 {
 	return new byte [] {
@@ -465,5 +475,5 @@ static final int http_en_http_request = 25;
 static final int http_en_http_response = 1;
 
 
-// line 210 "HttpParser.rl"
+// line 220 "HttpParser.rl"
 }

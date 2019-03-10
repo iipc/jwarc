@@ -5,9 +5,11 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +52,13 @@ public class HttpRequest extends HttpMessage {
     }
 
     static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        return parse(channel, buffer, null);
+    }
+
+    static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo) throws IOException {
         HttpParser parser = new HttpParser();
         parser.requestOnly();
-        parser.parse(channel, buffer);
+        parser.parse(channel, buffer, copyTo);
         MessageHeaders headers = parser.headers();
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(-1L);
         LengthedBody body = LengthedBody.create(channel, buffer, contentLength);

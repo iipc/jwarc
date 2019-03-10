@@ -5,8 +5,11 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.util.Optional;
 
 public class WarcRequest extends WarcCaptureRecord {
@@ -24,7 +27,18 @@ public class WarcRequest extends WarcCaptureRecord {
      */
     public HttpRequest http() throws IOException {
         if (http == null) {
-            http = HttpRequest.parse(body());
+            ByteBuffer buffer = ByteBuffer.allocate(8192);
+            buffer.flip();
+            MessageBody body = body();
+            if (body.position() != 0) throw new IllegalStateException("http() cannot be called after reading from body");
+            if (body instanceof LengthedBody) {
+                // if we can, save a copy of the raw header and push it back so we don't invalidate body
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                http = HttpRequest.parse(body, buffer, Channels.newChannel(baos));
+                ((LengthedBody) body).pushback(baos.toByteArray());
+            } else {
+                http = HttpRequest.parse(body, buffer);
+            }
         }
         return http;
     }

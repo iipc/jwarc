@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +37,16 @@ public class HttpResponse extends HttpMessage {
     }
 
     public static HttpResponse parse(ReadableByteChannel channel) throws IOException {
+        return parse(channel, null);
+    }
+
+    static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         HttpParser parser = new HttpParser();
         parser.responseOnly();
-        parser.parse(channel, buffer);
+        parser.parse(channel, buffer, copyTo);
+        copyTo.write(buffer);
         MessageHeaders headers = parser.headers();
         long contentLength;
         MessageBody body;
@@ -57,6 +63,7 @@ public class HttpResponse extends HttpMessage {
         }
         return new HttpResponse(parser.status(), parser.reason(), parser.version(), headers, body);
     }
+
 
     /**
      * The 3 digit response status code.

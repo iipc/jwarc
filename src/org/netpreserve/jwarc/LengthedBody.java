@@ -9,10 +9,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.NonWritableChannelException;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.*;
 
 /**
  * A message body with a known length.
@@ -23,6 +20,7 @@ class LengthedBody extends MessageBody {
     private final long size;
     long position = 0;
     private boolean open = true;
+    ByteBuffer pushback;
 
     private LengthedBody(ReadableByteChannel channel, ByteBuffer buffer, long size) {
         this.channel = channel;
@@ -37,13 +35,29 @@ class LengthedBody extends MessageBody {
         return new LengthedBody(channel, buffer, size);
     }
 
+    synchronized void pushback(byte[] pushback) {
+        if (pushback.length > position) throw new IllegalArgumentException("pushback would result in negative position");
+        if (this.pushback != null) throw new IllegalStateException("already pushed back");
+        this.pushback = ByteBuffer.wrap(pushback);
+        position -= pushback.length;
+    }
+
     @Override
-    public int read(ByteBuffer dest) throws IOException {
+    public synchronized int read(ByteBuffer dest) throws IOException {
         if (!open) {
             throw new ClosedChannelException();
         }
         if (position >= size) {
             return -1;
+        }
+
+        if (pushback != null) {
+            int n = IOUtils.transfer(pushback, dest, size - position);
+            if (!pushback.hasRemaining()) {
+                pushback = null;
+            }
+            position += n;
+            return n;
         }
 
         if (buffer.hasRemaining()) {
@@ -70,7 +84,11 @@ class LengthedBody extends MessageBody {
         }
     }
 
-    public void consume() throws IOException {
+    public synchronized void consume() throws IOException {
+        if (pushback != null) {
+            position += pushback.remaining();
+            pushback = null;
+        }
         while (true) {
             // if remaining body is in the buffer we only need to advance the buffer position
             long remaining = size - position;
@@ -130,48 +148,7 @@ class LengthedBody extends MessageBody {
      */
     @Override
     public InputStream stream() {
-        return new Stream();
-    }
-
-    private class Stream extends InputStream {
-        @Override
-        public int read(byte[] b) throws IOException {
-            return LengthedBody.this.read(ByteBuffer.wrap(b));
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            return LengthedBody.this.read(ByteBuffer.wrap(b, off, len));
-        }
-
-        @Override
-        public int available() {
-            return (int) Math.min(position - size, Integer.MAX_VALUE);
-        }
-
-        @Override
-        public void close() throws IOException {
-            LengthedBody.this.close();
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (!open) {
-                throw new ClosedChannelException();
-            }
-            if (position >= size) {
-                return -1;
-            }
-            while (!buffer.hasRemaining()) {
-                buffer.compact();
-                if (channel.read(buffer) < 0) {
-                    throw new EOFException();
-                }
-                buffer.flip();
-            }
-            position++;
-            return buffer.get();
-        }
+        return Channels.newInputStream(this);
     }
 
     private static class Seekable extends LengthedBody implements SeekableByteChannel {
@@ -183,14 +160,15 @@ class LengthedBody extends MessageBody {
         }
 
         @Override
-        public SeekableByteChannel position(long position) throws IOException {
+        public synchronized SeekableByteChannel position(long position) throws IOException {
             if (position < 0) throw new IllegalArgumentException("negative position");
             long relative = Math.min(size(), position) - this.position;
-            if (relative >= 0 && relative < buffer.remaining()) {
+            if (relative >= 0 && relative < buffer.remaining() && pushback == null) {
                 buffer.position((int) (buffer.position() + relative));
             } else {
                 buffer.position(buffer.limit());
                 seekable.position(seekable.position() + relative);
+                pushback = null;
             }
             this.position += relative;
             return this;

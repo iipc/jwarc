@@ -88,6 +88,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -184,8 +185,17 @@ public class HttpParser {
     }
 
     public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        parse(channel, buffer, null);
+    }
+
+    void parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo) throws IOException {
         while (true) {
+            ByteBuffer copy = buffer.duplicate();
             parse(buffer);
+            if (copyTo != null) {
+                copy.limit(buffer.position());
+                copyTo.write(copy);
+            }
             if (isFinished()) {
                 break;
             }

@@ -7,14 +7,15 @@ package org.netpreserve.jwarc.apitests;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.netpreserve.jwarc.MediaType;
-import org.netpreserve.jwarc.MessageVersion;
-import org.netpreserve.jwarc.WarcReader;
-import org.netpreserve.jwarc.WarcRequest;
+import org.netpreserve.jwarc.*;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -44,7 +45,7 @@ public class WarcRequestTest {
 
     @Test
     public void test() throws IOException {
-        WarcRequest request = (WarcRequest) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
+        WarcRequest request = sampleRequest();
         assertEquals(Collections.singletonList(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0")), request.concurrentTo());
         Assert.assertEquals(MediaType.HTTP_REQUEST, request.contentType());
         Assert.assertEquals(MessageVersion.WARC_1_1, request.version());
@@ -59,7 +60,25 @@ public class WarcRequestTest {
                 .concurrentTo(URI.create("id:2"))
                 .build();
         assertEquals(Arrays.asList(URI.create("id:1"), URI.create("id:2")), request.concurrentTo());
-
     }
 
+    @Test
+    public void callingHttpShouldNotCorruptBody() throws IOException {
+        WarcRequest request = sampleRequest();
+        request.http();
+        assertEquals(0, request.body().position());
+        String line = new BufferedReader(Channels.newReader(request.body(), UTF_8.name())).readLine();
+        assertEquals("GET /images/logoc.jpg HTTP/1.0", line);
+    }
+
+    private WarcRequest sampleRequest() throws IOException {
+        return (WarcRequest) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void readingBodyShouldInvalidateHttp() throws IOException {
+        WarcRequest response = sampleRequest();
+        response.body().read(ByteBuffer.allocate(1));
+        response.http();
+    }
 }

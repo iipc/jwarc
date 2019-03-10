@@ -9,10 +9,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.netpreserve.jwarc.*;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,7 +50,7 @@ public class WarcResponseTest {
 
     @Test
     public void test() throws IOException {
-        WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
+        WarcResponse response = sampleResponse();
         assertEquals(200, response.http().status());
         assertEquals("OK", response.http().reason());
         Assert.assertEquals(MediaType.parse("image/jpeg"), response.http().contentType());
@@ -56,6 +59,10 @@ public class WarcResponseTest {
         assertEquals(Optional.of(new WarcDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
         assertEquals(Optional.of(new WarcDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());
         assertEquals(Optional.of(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39")), response.warcinfoID());
+    }
+
+    private WarcResponse sampleResponse() throws IOException {
+        return (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
     }
 
     @Test
@@ -80,5 +87,21 @@ public class WarcResponseTest {
                 .build();
         assertFalse(response.headers().first("WARC-Truncated").isPresent());
         assertEquals(WarcTruncationReason.NOT_TRUNCATED, response.truncated());
+    }
+
+    @Test
+    public void callingHttpShouldNotCorruptBody() throws IOException {
+        WarcResponse response = sampleResponse();
+        response.http();
+        assertEquals(0, response.body().position());
+        String line = new BufferedReader(Channels.newReader(response.body(), UTF_8.name())).readLine();
+        assertEquals("HTTP/1.1 200 OK", line);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void readingBodyShouldInvalidateHttp() throws IOException {
+        WarcResponse response = sampleResponse();
+        response.body().read(ByteBuffer.allocate(1));
+        response.http();
     }
 }
