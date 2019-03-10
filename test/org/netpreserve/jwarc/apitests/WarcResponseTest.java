@@ -3,12 +3,15 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.Optional;
 
@@ -47,9 +50,9 @@ public class WarcResponseTest {
         WarcResponse response = (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(200, response.http().status());
         assertEquals("OK", response.http().reason());
-        assertEquals(MediaType.parse("image/jpeg"), response.http().contentType());
+        Assert.assertEquals(MediaType.parse("image/jpeg"), response.http().contentType());
         assertEquals(Optional.of(MediaType.parse("image/jpeg")), response.identifiedPayloadType());
-        assertEquals(Optional.of(InetAddresses.forString("207.241.233.58")), response.ipAddress());
+        assertEquals(Optional.of(InetAddress.getByAddress(new byte[]{(byte) 207, (byte) 241, (byte) 233, 58})), response.ipAddress());
         assertEquals(Optional.of(new WarcDigest("sha1", "UZY6ND6CCHXETFVJD2MSS7ZENMWF7KQ2")), response.blockDigest());
         assertEquals(Optional.of(new WarcDigest("sha1", "CCHXETFVJD2MUZY6ND6SS7ZENMWF7KQ2")), response.payloadDigest());
         assertEquals(Optional.of(URI.create("urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39")), response.warcinfoID());

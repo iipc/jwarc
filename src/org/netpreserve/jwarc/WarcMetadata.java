@@ -40,7 +40,7 @@ public class WarcMetadata extends WarcCaptureRecord {
     }
 
     public static class Builder extends AbstractBuilder<WarcMetadata, Builder> {
-        protected Builder() {
+        public Builder() {
             super("metadata");
         }
 

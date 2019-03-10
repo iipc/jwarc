@@ -3,9 +3,14 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.MediaType;
+import org.netpreserve.jwarc.MessageVersion;
+import org.netpreserve.jwarc.WarcReader;
+import org.netpreserve.jwarc.WarcRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,8 +46,8 @@ public class WarcRequestTest {
     public void test() throws IOException {
         WarcRequest request = (WarcRequest) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(Collections.singletonList(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0")), request.concurrentTo());
-        assertEquals(MediaType.HTTP_REQUEST, request.contentType());
-        assertEquals(MessageVersion.WARC_1_1, request.version());
+        Assert.assertEquals(MediaType.HTTP_REQUEST, request.contentType());
+        Assert.assertEquals(MessageVersion.WARC_1_1, request.version());
         assertEquals(MessageVersion.HTTP_1_0, request.http().version());
         assertEquals(Optional.of("close"), request.http().headers().sole("connection"));
     }

@@ -3,9 +3,12 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
 import org.junit.Test;
+import org.netpreserve.jwarc.WarcContinuation;
+import org.netpreserve.jwarc.WarcReader;
+import org.netpreserve.jwarc.WarcResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -5,7 +5,9 @@
 
 package org.netpreserve.jwarc;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.WarcDigest;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,7 +20,7 @@ public class WarcDigestTest {
     public void test() throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         md.update("hello world".getBytes());
-        assertEquals("sha1:FKXGYNOJJ7H3IFO35FPUBC445EPOQRXN", new WarcDigest(md).toPrefixedBase32());
+        Assert.assertEquals("sha1:FKXGYNOJJ7H3IFO35FPUBC445EPOQRXN", new WarcDigest(md).toPrefixedBase32());
     }
 
     @Test

@@ -3,9 +3,13 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.MediaType;
+import org.netpreserve.jwarc.WarcConversion;
+import org.netpreserve.jwarc.WarcReader;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -33,7 +37,7 @@ public class WarcConversionTest {
         WarcConversion conversion = (WarcConversion) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), conversion.refersTo().get());
         assertEquals(934, conversion.body().size());
-        assertEquals(MediaType.parse("image/neoimg"), conversion.contentType());
+        Assert.assertEquals(MediaType.parse("image/neoimg"), conversion.contentType());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), conversion.targetURI());
     }
 

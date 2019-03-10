@@ -6,6 +6,7 @@
 package org.netpreserve.jwarc;
 
 import org.junit.Test;
+import org.netpreserve.jwarc.GunzipChannel;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

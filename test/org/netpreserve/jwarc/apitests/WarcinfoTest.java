@@ -3,9 +3,14 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.MediaType;
+import org.netpreserve.jwarc.MessageHeaders;
+import org.netpreserve.jwarc.WarcReader;
+import org.netpreserve.jwarc.Warcinfo;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -50,7 +55,7 @@ public class WarcinfoTest {
         assertEquals(Instant.parse("2006-09-19T17:20:14Z"), warcinfo.date());
         assertEquals("hello.warc", warcinfo.filename().get());
         assertEquals(399, warcinfo.body().size());
-        assertEquals(MediaType.WARC_FIELDS, warcinfo.contentType());
+        Assert.assertEquals(MediaType.WARC_FIELDS, warcinfo.contentType());
         MessageHeaders fields = warcinfo.fields();
         assertEquals("207.241.227.234", fields.sole("ip").get());
         assertEquals("http://www.archive.org/documents/WarcFileFormat-1.0.html", fields.sole("conformsTo").get());

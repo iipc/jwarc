@@ -18,7 +18,7 @@ public class WarcResource extends WarcCaptureRecord {
             setHeader("WARC-Target-URI", targetURI.toString());
         }
 
-        protected Builder() {
+        public Builder() {
             super("resource");
         }
 

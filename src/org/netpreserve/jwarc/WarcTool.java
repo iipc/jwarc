@@ -7,6 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +79,32 @@ public class WarcTool {
                     for (String arg : args) {
                         writer.fetch(new URI(arg));
                     }
+                }
+            }
+        },
+        filter("Filter records that match an expression") {
+            void exec(String[] args) throws Exception {
+                try {
+                    WarcFilter filter = WarcFilter.compile(args[0]);
+                    try (WarcWriter writer = new WarcWriter(System.out)) {
+                        for (String arg : Arrays.copyOfRange(args, 1, args.length)) {
+                            try (WarcReader reader = new WarcReader(Paths.get(arg))) {
+                                for (WarcRecord record : reader) {
+                                    if (filter.test(record)) {
+                                        writer.write(record);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (ParseException e) {
+                    System.err.println(args[0]);
+                    for (int i = 0; i < e.getErrorOffset(); i++) {
+                        System.err.print(' ');
+                    }
+                    System.err.println("^");
+                    System.err.println("Error: " + e.getMessage());
+                    System.exit(2);
                 }
             }
         },

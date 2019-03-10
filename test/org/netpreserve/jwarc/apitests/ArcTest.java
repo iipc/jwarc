@@ -3,12 +3,15 @@
  * Copyright (C) 2018 National Library of Australia and the jwarc contributors
  */
 
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.apitests;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.netpreserve.jwarc.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
@@ -70,18 +73,18 @@ public class ArcTest {
         assertEquals(Optional.of("example.arc"), filedesc.filename());
         assertEquals(Instant.parse("2005-06-14T07:01:44Z"), filedesc.date());
         assertEquals(1338, filedesc.body().size());
-        assertEquals(MediaType.parse("text/plain"), filedesc.contentType());
-        assertEquals(MessageVersion.ARC_1_1, filedesc.version());
+        Assert.assertEquals(MediaType.parse("text/plain"), filedesc.contentType());
+        Assert.assertEquals(MessageVersion.ARC_1_1, filedesc.version());
 
         WarcResponse dns = (WarcResponse) reader.next().get();
         assertEquals("dns:www.law.gov.au", dns.target());
-        assertEquals(Optional.of(InetAddresses.forString("207.241.224.11")), dns.ipAddress());
+        assertEquals(Optional.of(InetAddress.getByAddress(new byte[]{(byte) 207, (byte) 241, (byte) 224, 11})), dns.ipAddress());
         assertEquals(MediaType.parse("text/dns"), dns.contentType());
         assertEquals(Instant.parse("2005-06-14T07:01:44Z"), dns.date());
 
         WarcResponse response = (WarcResponse) reader.next().get();
         assertEquals("http://www.uq.edu.au/robots.txt", response.target());
-        assertEquals(Optional.of(InetAddresses.forString("130.102.5.51")), response.ipAddress());
+        assertEquals(Optional.of(InetAddress.getByAddress(new byte[]{(byte) 130, 102, 5, 51})), response.ipAddress());
         assertEquals(MediaType.HTTP_RESPONSE, response.contentType());
         assertEquals(Instant.parse("2005-06-14T07:01:51Z"), response.date());
         assertEquals(302, response.http().status());

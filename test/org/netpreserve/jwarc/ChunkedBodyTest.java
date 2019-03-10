@@ -1,6 +1,8 @@
 package org.netpreserve.jwarc;
 
 import org.junit.Test;
+import org.netpreserve.jwarc.ChunkedBody;
+import org.netpreserve.jwarc.ParsingException;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
