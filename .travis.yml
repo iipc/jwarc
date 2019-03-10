@@ -22,4 +22,4 @@ deploy:
   skip_cleanup: true
   on:
     repo: iipc/jwarc
-    branch: native
+    tags: true
