@@ -1,0 +1,24 @@
+The native binary versions of jwarc are built with GraalVM's native-image tool and may contain compiled versions of
+code licensed under the GPL 2 with Classpath Exception and/or LGPL. The corresponding source code is located at:
+
+    https://github.com/oracle/graal/releases
+    https://github.com/graalvm/graal-jvmci-8
+    http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/share/native/sun/security/ec/impl
+
+In case these links change or unavailable please check the following pages for updated information:
+
+    https://github.com/iipc/jwarc/blob/master/SOURCE
+    https://www.nla.gov.au/source-code
+
+Also see the upstream source offers in THIRD_PARTY_README.
+
+You may also request the source code, within the period required by the applicable license, by contacting the National
+Library of Australia.
+
+    Source code request c/o IT Division
+    National Library of Australia
+    Canberra ACT 2600
+    AUSTRALIA
+
+Please include in your request your contact details, the name and version of the binary, the date you received it
+and if possible the URL you downloaded it from.

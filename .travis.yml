@@ -11,9 +11,11 @@ before_deploy:
 - wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
 - tar -zxf $GRAAL-$PLATFORM.tar.gz
 - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
-- mkdir deploy
+- mkdir deploy jwarc-$TRAVIS_TAG-$PLATFORM
+- mv target/jwarc jwarc-$TRAVIS_TAG-$PLATFORM
+- cp SOURCE $GRAAL/$GRAALHOME/THIRD_PARTY_README $GRAAL/$GRAALHOME/3rd_party_licenses.txt $GRAAL/$GRAALHOME/jre/lib/amd64/libsunec.* jwarc-$TRAVIS_TAG-$PLATFORM
+- tar -zvf deploy/jwarc-$TRAVIS_TAG-$PLATFORM.tar.gz jwarc-$TRAVIS_TAG-$PLATFORM
 - 'if [ "$PLATFORM" == linux-amd64 ]; then mv -v target/*.jar deploy; fi'
-- mv -v target/org.netpreserve.jwarc.warctool deploy/jwarc-$PLATFORM
 
 deploy:
   provider: releases

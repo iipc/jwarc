@@ -161,7 +161,8 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <buildArgs>-H:IncludeResources=.*[.](properties|js)</buildArgs>
+                            <buildArgs>-H:Name=jwarc -H:IncludeResources=.*[.](properties|js) --enable-https</buildArgs>
+                            <mainClass>org.netpreserve.jwarc.WarcTool</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
