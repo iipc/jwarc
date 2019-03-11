@@ -40,6 +40,22 @@ If you would prefer to build it from source install [JDK 8+](https://adoptopenjd
 [Maven](https://maven.apache.org/) and then run:
 
     mvn package
+    
+### Native binaries
+
+Experimental native binary versions of jwarc command-line tool for Linux and MacOS are now 
+available from the [releases page](https://github.com/iipc/jwarc/releases). These start
+faster than cross-platform jar version and do not require Java to be installed.
+
+If you would like to build the native binaries from source install [GraalVM](https://github.com/oracle/graal/releases)
+and [Maven](https://maven.apache.org/) and then run:
+
+    JAVA_HOME=path/to/graalvm mvn package -Pnative-image
+
+**Known issue:** In order to use HTTPS with the native builds the file libsunec.so (Linux) or
+libsunec.dylib (MacOS) needs to be in the current working directory. We hope to have
+a better solution to this problem in future releases, see [GraalVM's documentation]
+for more details.
 
 ## Examples
 
