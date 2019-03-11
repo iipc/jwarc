@@ -47,14 +47,14 @@ Experimental native binary versions of jwarc command-line tool for Linux and Mac
 available from the [releases page](https://github.com/iipc/jwarc/releases). These start
 faster than cross-platform jar version and do not require Java to be installed.
 
-If you would like to build the native binaries from source install [GraalVM](https://github.com/oracle/graal/releases)
+If you would like to build a native binary from source install [GraalVM](https://github.com/oracle/graal/releases)
 and [Maven](https://maven.apache.org/) and then run:
 
     JAVA_HOME=path/to/graalvm mvn package -Pnative-image
 
-**Known issue:** In order to use HTTPS with the native builds the file libsunec.so (Linux) or
+**Known issue:** In order to use HTTPS with the native binaries the file libsunec.so (Linux) or
 libsunec.dylib (MacOS) needs to be in the current working directory. We hope to have
-a better solution to this problem in future releases, see [GraalVM's documentation]
+a better solution to this problem in future releases, see the [GraalVM documentation](https://github.com/oracle/graal/blob/master/substratevm/JCA-SECURITY-SERVICES.md#native-implementations)
 for more details.
 
 ## Examples
