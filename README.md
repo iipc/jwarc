@@ -101,9 +101,9 @@ long errorCount = warcReader.records().filter(WarcFilter.compile(":status >= 400
 
 Their real power though is as a building block for user-supplied options. 
 
-### Command-line tool
+### Command-line tools
 
-jwarc also includes a basic command-line interface which doubles as [reference code](src/org/netpreserve/jwarc/WarcTool.java).
+jwarc also includes a set of command-lines tools which also serve as [examples](src/org/netpreserve/jwarc/tools/).
 
 Capture a URL (without subresources):
 
