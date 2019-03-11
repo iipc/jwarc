@@ -170,9 +170,24 @@ class WarcServer {
 
     private void serve(Socket socket, String resource) throws IOException {
         URLConnection conn = getClass().getResource(resource).openConnection();
+        long length = conn.getContentLengthLong();
+
+        // XXX: workaround for SubstrateVM, calculate the length by actually reading it
+        if (length == -1) {
+            byte[] buf = new byte[8192];
+            try (InputStream stream = conn.getInputStream()) {
+                length = 0;
+                while (true) {
+                    int n = stream.read(buf);
+                    if (n == -1) break;
+                    length += n;
+                }
+            }
+        }
+
         try (InputStream stream = conn.getInputStream()) {
             send(socket, new HttpResponse.Builder(200, "OK")
-                    .body(MediaType.parse("application/javascript"), Channels.newChannel(stream), conn.getContentLengthLong())
+                    .body(MediaType.parse("application/javascript"), Channels.newChannel(stream), length)
                     .setHeader("Service-Worker-Allowed", "/")
                     .build());
         }
