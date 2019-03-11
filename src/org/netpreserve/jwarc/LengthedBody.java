@@ -85,10 +85,7 @@ class LengthedBody extends MessageBody {
     }
 
     public synchronized void consume() throws IOException {
-        if (pushback != null) {
-            position += pushback.remaining();
-            pushback = null;
-        }
+        discardPushback();
         while (true) {
             // if remaining body is in the buffer we only need to advance the buffer position
             long remaining = size - position;
@@ -115,6 +112,33 @@ class LengthedBody extends MessageBody {
             }
             buffer.flip();
         }
+    }
+
+    void discardPushback() {
+        if (pushback != null) {
+            position += pushback.remaining();
+            pushback = null;
+        }
+    }
+
+    ReadableByteChannel discardPushbackOnRead() {
+        return new ReadableByteChannel() {
+            @Override
+            public int read(ByteBuffer byteBuffer) throws IOException {
+                discardPushback();
+                return LengthedBody.this.read(byteBuffer);
+            }
+
+            @Override
+            public boolean isOpen() {
+                return LengthedBody.this.isOpen();
+            }
+
+            @Override
+            public void close() throws IOException {
+                LengthedBody.this.close();
+            }
+        };
     }
 
     @Override
@@ -182,6 +206,54 @@ class LengthedBody extends MessageBody {
         @Override
         public SeekableByteChannel truncate(long l) throws IOException {
             throw new NonWritableChannelException();
+        }
+
+        @Override
+        SeekableByteChannel discardPushbackOnRead() {
+            return new SeekableByteChannel() {
+                @Override
+                public int read(ByteBuffer byteBuffer) throws IOException {
+                    discardPushback();
+                    return Seekable.this.read(byteBuffer);
+                }
+
+                @Override
+                public int write(ByteBuffer byteBuffer) throws IOException {
+                    throw new NonWritableChannelException();
+                }
+
+                @Override
+                public long position() throws IOException {
+                    discardPushback();
+                    return Seekable.this.position();
+                }
+
+                @Override
+                public SeekableByteChannel position(long l) throws IOException {
+                    discardPushback();
+                    return Seekable.this.position(l);
+                }
+
+                @Override
+                public long size() throws IOException {
+                    return Seekable.this.size();
+                }
+
+                @Override
+                public SeekableByteChannel truncate(long l) throws IOException {
+                    throw new NonWritableChannelException();
+                }
+
+                @Override
+                public boolean isOpen() {
+                    return Seekable.this.isOpen();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    Seekable.this.close();
+                }
+            };
         }
     }
 

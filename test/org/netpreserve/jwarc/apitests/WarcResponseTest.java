@@ -19,8 +19,7 @@ import java.nio.channels.Channels;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 public class WarcResponseTest {
     private static String warc = "WARC/1.1\r\n" +
@@ -34,7 +33,7 @@ public class WarcResponseTest {
             "WARC-Record-ID: <urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0>\r\n" +
             "Content-Type: application/http;msgtype=response\r\n" +
             "WARC-Identified-Payload-Type: image/jpeg\r\n" +
-            "Content-Length: 1902\r\n" +
+            "Content-Length: 277\r\n" +
             "\r\n" +
             "HTTP/1.1 200 OK\r\n" +
             "Date: Tue, 19 Sep 2016 17:18:40 GMT\r\n" +
@@ -42,7 +41,7 @@ public class WarcResponseTest {
             "Last-Modified: Mon, 16 Jun 2013 22:28:51 GMT\r\n" +
             "ETag: \"3e45-67e-2ed02ec0\"\r\n" +
             "Accept-Ranges: bytes\r\n" +
-            "Content-Length: 1662\r\n" +
+            "Content-Length: 29\r\n" +
             "Connection: close\r\n" +
             "Content-Type: image/jpeg\r\n" +
             "\r\n" +
@@ -92,10 +91,12 @@ public class WarcResponseTest {
     @Test
     public void callingHttpShouldNotCorruptBody() throws IOException {
         WarcResponse response = sampleResponse();
-        response.http();
+        HttpResponse http = response.http();
         assertEquals(0, response.body().position());
-        String line = new BufferedReader(Channels.newReader(response.body(), UTF_8.name())).readLine();
-        assertEquals("HTTP/1.1 200 OK", line);
+        assertEquals('H', response.body().stream().read());
+        assertEquals(0, http.body().position());
+        assertEquals('[', http.body().stream().read());
+
     }
 
     @Test(expected = IllegalStateException.class)

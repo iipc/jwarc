@@ -32,8 +32,9 @@ public class WarcResponse extends WarcCaptureRecord {
             if (body instanceof LengthedBody) {
                 // if we can, save a copy of the raw header and push it back so we don't invalidate body
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                http = HttpResponse.parse(body, Channels.newChannel(baos));
-                ((LengthedBody) body).pushback(baos.toByteArray());
+                LengthedBody lengthed = (LengthedBody) body;
+                http = HttpResponse.parse(lengthed.discardPushbackOnRead(), Channels.newChannel(baos));
+                lengthed.pushback(baos.toByteArray());
             } else {
                 http = HttpResponse.parse(body);
             }

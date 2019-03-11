@@ -46,7 +46,9 @@ public class HttpResponse extends HttpMessage {
         HttpParser parser = new HttpParser();
         parser.responseOnly();
         parser.parse(channel, buffer, copyTo);
-        copyTo.write(buffer);
+        if (copyTo != null) {
+            copyTo.write(buffer.duplicate());
+        }
         MessageHeaders headers = parser.headers();
         long contentLength;
         MessageBody body;
