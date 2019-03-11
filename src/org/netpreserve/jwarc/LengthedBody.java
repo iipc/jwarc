@@ -95,13 +95,17 @@ class LengthedBody extends MessageBody {
                 break;
             }
 
-            // if underlying channel is seekable discard buffer and skip directly
+            // if underlying channel is seekable discard buffer and try to skip directly
             if (channel instanceof SeekableByteChannel) {
-                SeekableByteChannel seekable = (SeekableByteChannel)channel;
-                seekable.position(seekable.position() + remaining - buffer.remaining());
-                position = size;
-                buffer.position(buffer.limit());
-                break;
+                try {
+                    SeekableByteChannel seekable = (SeekableByteChannel) channel;
+                    seekable.position(seekable.position() + remaining - buffer.remaining());
+                    position = size;
+                    buffer.position(buffer.limit());
+                    break;
+                } catch (IOException e) {
+                    // alas!
+                }
             }
 
             // otherwise move forward by discarding and refilling buffer

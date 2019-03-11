@@ -35,13 +35,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
 
     public WarcReader(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         this.types = new HashMap<>(defaultTypes);
-
-        if (channel instanceof SeekableByteChannel) {
-            startPosition = ((SeekableByteChannel) channel).position();
-        } else {
-            startPosition = 0;
-        }
-
+        startPosition = tryPosition(channel);
         position = startPosition;
 
         while (buffer.remaining() < 2) {
@@ -70,6 +64,18 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             this.buffer = buffer;
             compression = WarcCompression.NONE;
         }
+    }
+
+
+    static long tryPosition(ReadableByteChannel channel) {
+        if (channel instanceof SeekableByteChannel) {
+            try {
+                return ((SeekableByteChannel) channel).position();
+            } catch (IOException e) {
+                // alas!
+            }
+        }
+        return 0;
     }
 
     public WarcReader(ReadableByteChannel channel) throws IOException {
