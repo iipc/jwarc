@@ -18,9 +18,9 @@ public abstract class WarcPayload {
         return body;
     }
 
-    abstract MediaType type();
+    public abstract MediaType type();
 
     abstract Optional<MediaType> identifiedType();
 
-    abstract Optional<WarcDigest> digest();
+    public abstract Optional<WarcDigest> digest();
 }

@@ -1,4 +1,6 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.tools;
+
+import org.netpreserve.jwarc.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +58,7 @@ public class WarcTool {
                                 URI uri = ((WarcCaptureRecord) record).targetURI();
                                 String date = arcDate.format(record.date());
                                 int status = record instanceof WarcResponse ? ((WarcResponse) record).http().status() : 200;
-                                String digest = payload.digest().map(WarcDigest::toBase32).orElse("-");
+                                String digest = payload.digest().map(WarcDigest::base32).orElse("-");
                                 long position = reader.position();
 
                                 // advance to the next record so we can calculate the length

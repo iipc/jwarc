@@ -47,7 +47,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.netpreserve.jwarc.WarcTool</mainClass>
+                            <mainClass>org.netpreserve.jwarc.tools.WarcTool</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -162,7 +162,7 @@
                         </executions>
                         <configuration>
                             <buildArgs>-H:Name=jwarc -H:IncludeResources=.*[.](properties|js) --enable-https</buildArgs>
-                            <mainClass>org.netpreserve.jwarc.WarcTool</mainClass>
+                            <mainClass>org.netpreserve.jwarc.tools.WarcTool</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>

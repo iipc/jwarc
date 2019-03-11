@@ -33,7 +33,7 @@ import static org.netpreserve.jwarc.MediaType.HTML;
  * Mainly exists to exercise the API. Can be used either as a proxy or in link-rewriting mode. Link-rewriting is
  * handled client-side by https://github.com/oduwsdl/Reconstructive
  */
-class WarcServer {
+public class WarcServer {
     private static final DateTimeFormatter ARC_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(UTC);
     private static final DateTimeFormatter RFC_1123_UTC = RFC_1123_DATE_TIME.withZone(UTC);
     private static final MediaType LINK_FORMAT = MediaType.parse("application/link-format");
@@ -43,7 +43,7 @@ class WarcServer {
     private final CaptureIndex index;
     private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>\n".getBytes(US_ASCII);
 
-    WarcServer(ServerSocket serverSocket, List<Path> warcs) throws IOException {
+    public WarcServer(ServerSocket serverSocket, List<Path> warcs) throws IOException {
         httpServer = new HttpServer(serverSocket, this::handle);
         index = new CaptureIndex(warcs);
     }
@@ -51,7 +51,7 @@ class WarcServer {
     /**
      * Listens and accepts new connections.
      */
-    void listen() throws IOException {
+    public void listen() throws IOException {
         httpServer.listen();
     }
 

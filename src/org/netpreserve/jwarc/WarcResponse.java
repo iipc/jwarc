@@ -52,7 +52,7 @@ public class WarcResponse extends WarcCaptureRecord {
             return Optional.of(new WarcPayload(http().body()) {
 
                 @Override
-                MediaType type() {
+                public MediaType type() {
                     return http.contentType();
                 }
 
@@ -62,7 +62,7 @@ public class WarcResponse extends WarcCaptureRecord {
                 }
 
                 @Override
-                Optional<WarcDigest> digest() {
+                public Optional<WarcDigest> digest() {
                     return payloadDigest();
                 }
             });

@@ -41,7 +41,7 @@ public class WarcDigest {
         return algorithm;
     }
 
-    String toBase32() {
+    public String base32() {
         return value;
     }
 

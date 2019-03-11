@@ -58,7 +58,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
     public Optional<WarcPayload> payload() throws IOException {
         return Optional.of(new WarcPayload(body()) {
             @Override
-            MediaType type() {
+            public MediaType type() {
                 return contentType();
             }
 
@@ -68,7 +68,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
             }
 
             @Override
-            Optional<WarcDigest> digest() {
+            public Optional<WarcDigest> digest() {
                 Optional<WarcDigest> payloadDigest = payloadDigest();
                 return payloadDigest.isPresent() ? payloadDigest : blockDigest();
             }
