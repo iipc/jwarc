@@ -2,9 +2,9 @@ language: java
 matrix:
   include:
   - os: linux
-    env: PLATFORM=linux-amd64 GRAALHOME=
+    env: PLATFORM=linux-amd64 GRAALHOME= SUNEC=jre/lib/amd64/libsunec.so
   - os: osx
-    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
+    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home SUNEC=jre/lib/libsunec.dylib
 
 before_deploy:
 - GRAAL=graalvm-ce-1.0.0-rc13
@@ -14,7 +14,7 @@ before_deploy:
 - JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
 - mkdir deploy jwarc-$VERSION-$PLATFORM
 - mv target/jwarc jwarc-$VERSION-$PLATFORM
-- cp SOURCE $GRAAL/$GRAALHOME/THIRD_PARTY_README $GRAAL/$GRAALHOME/3rd_party_licenses.txt $GRAAL/$GRAALHOME/jre/lib/amd64/libsunec.* jwarc-$VERSION-$PLATFORM
+- cp SOURCE $GRAAL/$GRAALHOME/THIRD_PARTY_README $GRAAL/$GRAALHOME/3rd_party_licenses.txt $GRAAL/$GRAALHOME/$SUNEC jwarc-$VERSION-$PLATFORM
 - tar -zcvf deploy/jwarc-$VERSION-$PLATFORM.tar.gz jwarc-$VERSION-$PLATFORM
 - 'if [ "$PLATFORM" == linux-amd64 ]; then mv -v target/*.jar deploy; fi'
 
