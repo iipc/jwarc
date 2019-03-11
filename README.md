@@ -45,9 +45,9 @@ If you would prefer to build it from source install [JDK 8+](https://adoptopenjd
 
 Experimental native binary versions of jwarc command-line tool for Linux and MacOS are now 
 available from the [releases page](https://github.com/iipc/jwarc/releases). These start
-faster than cross-platform jar version and do not require Java to be installed.
+faster than the cross-platform jar version and do not require Java to be installed.
 
-If you would like to build a native binary from source install [GraalVM](https://github.com/oracle/graal/releases)
+If you would like to build them from source install [GraalVM](https://github.com/oracle/graal/releases)
 and [Maven](https://maven.apache.org/) and then run:
 
     JAVA_HOME=path/to/graalvm mvn package -Pnative-image
