@@ -15,16 +15,15 @@ import java.util.Map;
 /**
  * HTTP proxy which records requests and responses as WARC records.
  */
-public class WarcRecorder {
-    private final HttpServer httpServer;
+public class WarcRecorder extends HttpServer {
     private final WarcWriter warcWriter;
 
     public WarcRecorder(ServerSocket serverSocket, WarcWriter warcWriter) {
-        this.httpServer = new HttpServer(serverSocket, this::handle);
+        super(serverSocket);
         this.warcWriter = warcWriter;
     }
 
-    private void handle(Socket socket, String target, HttpRequest httpRequest) throws IOException, URISyntaxException {
+    void handle(Socket socket, String target, HttpRequest httpRequest) throws IOException, URISyntaxException {
         URI uri = new URI(target);
         String path = uri.getPath();
         if (uri.getQuery() != null) {
@@ -41,9 +40,5 @@ public class WarcRecorder {
         }
         warcWriter.fetch(uri, rb.build(), socket.getOutputStream());
         socket.close();
-    }
-
-    public void listen() throws IOException {
-        httpServer.listen();
     }
 }

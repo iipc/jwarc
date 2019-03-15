@@ -35,79 +35,87 @@ import static org.netpreserve.jwarc.MediaType.HTML;
  * Mainly exists to exercise the API. Can be used either as a proxy or in link-rewriting mode. Link-rewriting is
  * handled client-side by https://github.com/oduwsdl/Reconstructive
  */
-public class WarcServer {
+public class WarcServer extends HttpServer {
     private static final DateTimeFormatter ARC_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(UTC);
     private static final DateTimeFormatter RFC_1123_UTC = RFC_1123_DATE_TIME.withZone(UTC);
     private static final MediaType LINK_FORMAT = MediaType.parse("application/link-format");
     private static final Pattern REPLAY_RE = Pattern.compile("/replay/([0-9]{14})/(.*)");
 
-    private final HttpServer httpServer;
     private final CaptureIndex index;
     private byte[] script = "<!doctype html><script src='/__jwarc__/inject.js'></script>\n".getBytes(US_ASCII);
 
     public WarcServer(ServerSocket serverSocket, List<Path> warcs) throws IOException {
-        httpServer = new HttpServer(serverSocket, this::handle);
+        super(serverSocket);
         index = new CaptureIndex(warcs);
     }
 
-    /**
-     * Listens and accepts new connections.
-     */
-    public void listen() throws IOException {
-        httpServer.listen();
-    }
-
-    private void handle(Socket socket, String target, HttpRequest request) throws Exception {
+    void handle(Socket socket, String target, HttpRequest request) throws Exception {
         if (target.equals("/")) {
-            Capture entrypoint = index.entrypoint();
-            if (entrypoint == null) {
-                error(socket, 404, "Empty collection");
-                return;
-            }
-            send(socket, new HttpResponse.Builder(307, "Redirect")
-                    .addHeader("Content-Length", "0")
-                    .addHeader("Location", "/replay/" + ARC_DATE.format(entrypoint.date()) + "/" + entrypoint.uri())
-                    .build());
+            redirectToEntrypoint(socket);
         } else if (target.equals("/__jwarc__/sw.js")) {
             serve(socket, "sw.js");
         } else if (target.equals("/__jwarc__/inject.js")) {
             serve(socket, "inject.js");
         } else if (target.startsWith("/replay/")) {
-            if (!request.headers().first("x-serviceworker").isPresent()) {
-                send(socket, new HttpResponse.Builder(200, "OK")
-                        .body(HTML, script)
-                        .build());
-                return;
-            }
-            Matcher m = REPLAY_RE.matcher(target);
-            if (!m.matches()) {
-                error(socket, 404, "Malformed replay url");
-                return;
-            }
-            Instant date = Instant.from(ARC_DATE.parse(m.group(1)));
-            replay(socket, m.group(2), date, false);
+            replayNonProxy(socket, target, request);
         } else if (target.startsWith("/timemap/")) {
-            URI uri = URI.create(target.substring("/timemap/".length()));
-            NavigableSet<Capture> versions = index.query(uri);
-            if (versions.isEmpty()) {
-                error(socket, 404, "Not found in archive");
-                return;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append("<").append(versions.first().uri()).append(">;rel=\"original\"");
-            for (Capture entry : versions) {
-                sb.append(",\n</replay/").append(ARC_DATE.format(entry.date())).append("/").append(entry.uri())
-                        .append(">;rel=\"memento\",datetime=\"").append(RFC_1123_UTC.format(entry.date()) + "\"");
-            }
-            sb.append("\n");
-            send(socket, new HttpResponse.Builder(200, "OK")
-                    .body(LINK_FORMAT, sb.toString().getBytes(UTF_8)).build());
+            timemap(socket, target);
         } else {
-            Instant date = request.headers().first("Accept-Datetime")
-                    .map(s -> Instant.from(RFC_1123_UTC.parse(s)))
-                    .orElse(Instant.EPOCH);
-            replay(socket, target, date, true);
+            replayProxy(socket, target, request);
         }
+    }
+
+    private void redirectToEntrypoint(Socket socket) throws IOException {
+        Capture entrypoint = index.entrypoint();
+        if (entrypoint == null) {
+            error(socket, 404, "Empty collection");
+            return;
+        }
+        send(socket, new HttpResponse.Builder(307, "Redirect")
+                .addHeader("Content-Length", "0")
+                .addHeader("Location", "/replay/" + ARC_DATE.format(entrypoint.date()) + "/" + entrypoint.uri())
+                .build());
+    }
+
+    private void replayProxy(Socket socket, String target, HttpRequest request) throws IOException {
+        Instant date = request.headers().first("Accept-Datetime")
+                .map(s -> Instant.from(RFC_1123_UTC.parse(s)))
+                .orElse(Instant.EPOCH);
+        replay(socket, target, date, true);
+    }
+
+    private void timemap(Socket socket, String target) throws IOException {
+        URI uri = URI.create(target.substring("/timemap/".length()));
+        NavigableSet<Capture> versions = index.query(uri);
+        if (versions.isEmpty()) {
+            error(socket, 404, "Not found in archive");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("<").append(versions.first().uri()).append(">;rel=\"original\"");
+        for (Capture entry : versions) {
+            sb.append(",\n</replay/").append(ARC_DATE.format(entry.date())).append("/").append(entry.uri())
+                    .append(">;rel=\"memento\",datetime=\"").append(RFC_1123_UTC.format(entry.date()) + "\"");
+        }
+        sb.append("\n");
+        send(socket, new HttpResponse.Builder(200, "OK")
+                .body(LINK_FORMAT, sb.toString().getBytes(UTF_8)).build());
+    }
+
+    private void replayNonProxy(Socket socket, String target, HttpRequest request) throws IOException {
+        if (!request.headers().first("x-serviceworker").isPresent()) {
+            send(socket, new HttpResponse.Builder(200, "OK")
+                    .body(HTML, script)
+                    .build());
+            return;
+        }
+        Matcher m = REPLAY_RE.matcher(target);
+        if (!m.matches()) {
+            error(socket, 404, "Malformed replay url");
+            return;
+        }
+        Instant date = Instant.from(ARC_DATE.parse(m.group(1)));
+        replay(socket, m.group(2), date, false);
     }
 
     private void replay(Socket socket, String target, Instant date, boolean proxy) throws IOException {

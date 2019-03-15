@@ -22,14 +22,12 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class HttpServer {
+abstract class HttpServer {
     private final ServerSocket serverSocket;
     private final CertificateAuthority ca;
-    private final Handler handler;
 
-    HttpServer(ServerSocket serverSocket, Handler handler) {
+    HttpServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
-        this.handler = handler;
         try {
             ca = new CertificateAuthority(new X500Principal("cn=Dummy CA"));
         } catch (GeneralSecurityException e) {
@@ -40,7 +38,7 @@ class HttpServer {
     /**
      * Listens and accepts new connections.
      */
-    void listen() throws IOException {
+    public void listen() throws IOException {
         ExecutorService threadPool = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
@@ -79,7 +77,7 @@ class HttpServer {
                 if (request.method().equals("CONNECT")) {
                     upgradeToTls(socket, request.target());
                 } else {
-                    handler.handle(socket, prefix + request.target(), request);
+                    handle(socket, prefix + request.target(), request);
                 }
             }
         } catch (Exception e) {
@@ -141,7 +139,5 @@ class HttpServer {
         }
     }
 
-    interface Handler {
-        void handle(Socket socket, String target, HttpRequest request) throws Exception;
-    }
+    abstract void handle(Socket socket, String target, HttpRequest request) throws Exception;
 }
