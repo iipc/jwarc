@@ -1,6 +1,7 @@
 package org.netpreserve.jwarc.tools;
 
 import org.netpreserve.jwarc.*;
+import org.netpreserve.jwarc.net.WarcServer;
 
 import java.io.IOException;
 import java.net.InetAddress;

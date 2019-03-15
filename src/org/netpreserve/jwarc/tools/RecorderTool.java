@@ -1,6 +1,6 @@
 package org.netpreserve.jwarc.tools;
 
-import org.netpreserve.jwarc.WarcRecorder;
+import org.netpreserve.jwarc.net.WarcRecorder;
 import org.netpreserve.jwarc.WarcWriter;
 
 import java.net.ServerSocket;

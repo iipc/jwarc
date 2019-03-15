@@ -1,4 +1,4 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
 
 import java.net.URI;
 import java.nio.file.Path;

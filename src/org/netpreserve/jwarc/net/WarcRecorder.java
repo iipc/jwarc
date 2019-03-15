@@ -1,4 +1,8 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
+
+import org.netpreserve.jwarc.HttpRequest;
+import org.netpreserve.jwarc.MessageVersion;
+import org.netpreserve.jwarc.WarcWriter;
 
 import java.io.IOException;
 import java.net.ServerSocket;

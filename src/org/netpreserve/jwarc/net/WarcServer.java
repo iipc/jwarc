@@ -1,4 +1,6 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
+
+import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.time.ZoneOffset.UTC;
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
-import static org.netpreserve.jwarc.HttpServer.send;
+import static org.netpreserve.jwarc.net.HttpServer.send;
 import static org.netpreserve.jwarc.MediaType.HTML;
 
 /**

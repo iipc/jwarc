@@ -14,7 +14,7 @@ import java.nio.channels.*;
 /**
  * A message body with a known length.
  */
-class LengthedBody extends MessageBody {
+public class LengthedBody extends MessageBody {
     private final ReadableByteChannel channel;
     final ByteBuffer buffer;
     private final long size;
@@ -28,7 +28,7 @@ class LengthedBody extends MessageBody {
         this.size = size;
     }
 
-    static LengthedBody create(ReadableByteChannel channel, ByteBuffer buffer, long size) {
+    public static LengthedBody create(ReadableByteChannel channel, ByteBuffer buffer, long size) {
         if (channel instanceof SeekableByteChannel) {
             return new Seekable((SeekableByteChannel) channel, buffer, size);
         }

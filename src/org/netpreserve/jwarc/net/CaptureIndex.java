@@ -1,4 +1,6 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
+
+import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.net.URI;

@@ -1,9 +1,14 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
+
+import org.netpreserve.jwarc.HttpRequest;
+import org.netpreserve.jwarc.HttpResponse;
+import org.netpreserve.jwarc.IOUtils;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;

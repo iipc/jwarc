@@ -1,6 +1,6 @@
 package org.netpreserve.jwarc.tools;
 
-import org.netpreserve.jwarc.WarcServer;
+import org.netpreserve.jwarc.net.WarcServer;
 
 import java.net.ServerSocket;
 import java.nio.file.Path;

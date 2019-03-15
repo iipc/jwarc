@@ -14,7 +14,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
 
-class IOUtils {
+/**
+ * This class is public only due to technical constraints. Please don't depend on it your own code.
+ */
+public final class IOUtils {
 
     /**
      * Transfers as many bytes as possible from src to dst.
@@ -73,7 +76,7 @@ class IOUtils {
         };
     }
 
-    static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
+    public static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
         byte[] buffer = new byte[8192];
         while (true) {
             int n = inputStream.read(buffer);

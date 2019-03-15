@@ -1,4 +1,4 @@
-package org.netpreserve.jwarc;
+package org.netpreserve.jwarc.net;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;

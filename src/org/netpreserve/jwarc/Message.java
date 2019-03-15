@@ -73,7 +73,7 @@ public abstract class Message {
     /**
      * Serializes the message header.
      */
-    byte[] serializeHeader() {
+    public byte[] serializeHeader() {
         try {
             StringBuilder sb = new StringBuilder();
             serializeHeaderTo(sb);

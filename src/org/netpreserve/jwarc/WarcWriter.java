@@ -83,7 +83,15 @@ public class WarcWriter implements Closeable {
         fetch(uri, httpRequest, null);
     }
 
-    void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
+    /**
+     * Downloads a remote resource recording the request and response as WARC records.
+     * <p>
+     * @param uri to download
+     * @param httpRequest request to send
+     * @param copyTo if not null will receive a copy of the (raw) http response bytes
+     * @throws IOException
+     */
+    public void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
             Instant date = Instant.now();

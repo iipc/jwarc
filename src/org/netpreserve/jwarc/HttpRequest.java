@@ -51,7 +51,7 @@ public class HttpRequest extends HttpMessage {
         return parse(channel, buffer);
     }
 
-    static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+    public static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         return parse(channel, buffer, null);
     }
 
