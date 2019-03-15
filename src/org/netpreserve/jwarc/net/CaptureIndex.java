@@ -12,11 +12,11 @@ import java.util.TreeSet;
 
 import static java.util.Comparator.comparing;
 
-class CaptureIndex {
+public class CaptureIndex {
     private final NavigableSet<Capture> entries = new TreeSet<>(comparing(Capture::uriKey).thenComparing(Capture::date));
     private Capture entrypoint;
 
-    CaptureIndex(List<Path> warcs) throws IOException {
+    public CaptureIndex(List<Path> warcs) throws IOException {
         for (Path warc : warcs) {
             try (WarcReader reader = new WarcReader(warc)) {
                 for (WarcRecord record : reader) {

@@ -38,7 +38,7 @@ abstract class HttpServer {
     /**
      * Listens and accepts new connections.
      */
-    public void listen() throws IOException {
+    public void listen() {
         ExecutorService threadPool = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable);
             thread.setDaemon(true);
@@ -50,6 +50,8 @@ abstract class HttpServer {
                 Socket socket = serverSocket.accept();
                 threadPool.execute(() -> interact(socket, ""));
             }
+        } catch (IOException e) {
+            // shutdown
         } finally {
             threadPool.shutdown();
         }

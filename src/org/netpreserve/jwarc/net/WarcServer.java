@@ -49,6 +49,11 @@ public class WarcServer extends HttpServer {
         index = new CaptureIndex(warcs);
     }
 
+    WarcServer(ServerSocket serverSocket, CaptureIndex index) throws IOException {
+        super(serverSocket);
+        this.index = index;
+    }
+
     void handle(Socket socket, String target, HttpRequest request) throws Exception {
         if (target.equals("/")) {
             redirectToEntrypoint(socket);
