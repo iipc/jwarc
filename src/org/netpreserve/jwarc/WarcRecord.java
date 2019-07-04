@@ -118,7 +118,7 @@ public class WarcRecord extends Message {
         }
 
         public B blockDigest(WarcDigest digest) {
-            return addHeader("WARC-Block-Digest", digest.toPrefixedBase32());
+            return addHeader("WARC-Block-Digest", digest.prefixedBase32());
         }
 
         public B truncated(WarcTruncationReason truncationReason) {

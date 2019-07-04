@@ -37,7 +37,7 @@ public class WarcDigest {
         value = base32Encode(messageDigest.digest());
     }
 
-    String algorithm() {
+    public String algorithm() {
         return algorithm;
     }
 
@@ -45,10 +45,23 @@ public class WarcDigest {
         return value;
     }
 
-    byte[] toBytes() { return base32Decode(value); }
+    public String hex() {
+        return hexEncode(bytes());
+    }
 
-    public String toPrefixedBase32() {
+    public byte[] bytes() { return base32Decode(value); }
+
+    public String prefixedBase32() {
         return algorithm + ":" + value;
+    }
+
+    static String hexEncode(byte[] data) {
+        StringBuilder out = new StringBuilder(data.length * 2);
+        for (byte b : data) {
+            out.append("0123456789abcdef".charAt((b & 0xf0) >>> 4));
+            out.append("0123456789abcdef".charAt(b & 0xf));
+        }
+        return out.toString();
     }
 
     static String base32Encode(byte[] data) {

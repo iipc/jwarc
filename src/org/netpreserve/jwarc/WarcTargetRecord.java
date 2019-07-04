@@ -93,7 +93,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
         }
 
         public B payloadDigest(WarcDigest payloadDigest) {
-            return addHeader("WARC-Payload-Digest", payloadDigest.toPrefixedBase32());
+            return addHeader("WARC-Payload-Digest", payloadDigest.prefixedBase32());
         }
 
         public B identifiedPayloadType(String identifiedPayloadType) {
