@@ -51,6 +51,11 @@ public class WarcDigest {
 
     public byte[] bytes() { return base32Decode(value); }
 
+    @Override
+    public String toString() {
+        return prefixedBase32();
+    }
+
     public String prefixedBase32() {
         return algorithm + ":" + value;
     }
