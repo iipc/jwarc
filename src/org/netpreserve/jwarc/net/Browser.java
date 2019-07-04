@@ -4,11 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
 
 public class Browser {
     private final String executable;
@@ -34,6 +39,17 @@ public class Browser {
 
     public void screenshot(URI uri, Path outfile) throws IOException {
         run("--screenshot=" + outfile, uri.toString());
+    }
+
+    public FileChannel screenshot(URI uri) throws IOException {
+        Path outfile = Files.createTempFile("jwarc-screenshot", ".png");
+        try {
+            run("--screenshot=" + outfile, uri.toString());
+            return FileChannel.open(outfile, DELETE_ON_CLOSE);
+        } catch (Exception e) {
+            Files.deleteIfExists(outfile);
+            throw e;
+        }
     }
 
     private void run(String... args) throws IOException {

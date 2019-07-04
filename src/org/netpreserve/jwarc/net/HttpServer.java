@@ -2,29 +2,36 @@ package org.netpreserve.jwarc.net;
 
 import org.netpreserve.jwarc.HttpRequest;
 import org.netpreserve.jwarc.HttpResponse;
-import org.netpreserve.jwarc.IOUtils;
+import org.netpreserve.jwarc.MediaType;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.*;
+import static org.netpreserve.jwarc.MediaType.HTML_UTF8;
 
 abstract class HttpServer {
-    private final ServerSocket serverSocket;
+    final ServerSocket serverSocket;
     private final CertificateAuthority ca;
+    private final List<Route> routes = new ArrayList<>();
 
     HttpServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
@@ -94,7 +101,7 @@ abstract class HttpServer {
     }
 
     private void upgradeToTls(Socket socket, String target) throws Exception {
-        send(socket, new HttpResponse.Builder(200, "OK").build());
+        socket.getOutputStream().write(new HttpResponse.Builder(200, "OK").build().serializeHeader());
         String host = target.replaceFirst(":[0-9]+$", "");
         X509Certificate cert = ca.issue(new X500Principal("cn=" + host));
         SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -131,15 +138,29 @@ abstract class HttpServer {
         interact(sslSocket, "https://" + target.replaceFirst(":443$", ""));
     }
 
-    static void send(Socket socket, HttpResponse response) throws IOException {
-        try {
-            OutputStream outputStream = socket.getOutputStream();
-            outputStream.write(response.serializeHeader());
-            IOUtils.copy(response.body().stream(), outputStream);
-        } catch (SSLProtocolException | SocketException e) {
-            socket.close(); // client probably closed
+    void handle(Socket socket, String target, HttpRequest request) throws Exception {
+        for (Route route : routes) {
+            if (route.method != null && !route.method.equalsIgnoreCase(request.method())) continue;
+            Matcher matcher = route.pattern.matcher(target);
+            if (!matcher.matches()) continue;
+            route.handler.handle(new HttpExchange(socket, request, matcher));
         }
     }
 
-    abstract void handle(Socket socket, String target, HttpRequest request) throws Exception;
+    private static class Route {
+        private final String method;
+        Pattern pattern;
+        HttpHandler handler;
+
+        Route(String method, String regex, HttpHandler handler) {
+            this.method = method;
+            pattern = Pattern.compile(regex);
+            this.handler = handler;
+        }
+    }
+
+    protected void on(String method, String regex, HttpHandler handler) {
+        routes.add(new Route(method, regex, handler));
+    }
+
 }

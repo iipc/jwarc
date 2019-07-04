@@ -23,6 +23,7 @@ public class WarcRecorder extends HttpServer {
         this.warcWriter = warcWriter;
     }
 
+    @Override
     void handle(Socket socket, String target, HttpRequest httpRequest) throws IOException, URISyntaxException {
         URI uri = new URI(target);
         String path = uri.getPath();

@@ -65,6 +65,7 @@ public class MediaType {
     }
     %% write data nofinal noerror noentry;
     public static MediaType HTML = MediaType.parse("text/html");
+    public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");
     public static MediaType HTTP = MediaType.parse("application/http");
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");

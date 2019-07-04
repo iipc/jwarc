@@ -105,7 +105,11 @@ public class WarcWriter implements Closeable {
                     int n = inputStream.read(buf);
                     if (n < 0) break;
                     tempFile.write(ByteBuffer.wrap(buf, 0, n));
-                    if (copyTo != null) copyTo.write(buf, 0, n);
+                    try {
+                        if (copyTo != null) copyTo.write(buf, 0, n);
+                    } catch (IOException e) {
+                        // ignore
+                    }
                 }
             }
             tempFile.position(0);
