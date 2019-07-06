@@ -4,7 +4,7 @@
 
 machine http;
 
-getkey data.get(p);
+getkey (data.get(p) & 0xff);
 
 action push        { push(data.get(p)); }
 action push_space  { if (bufPos > 0) push((byte)' '); }

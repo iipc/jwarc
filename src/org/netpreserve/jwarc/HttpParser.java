@@ -143,9 +143,9 @@ case 1:
 				break;
 
 			_mid = _lower + ((_upper-_lower) >> 1);
-			if ( ( data.get(p)) < _http_trans_keys[_mid] )
+			if ( ( (data.get(p) & 0xff)) < _http_trans_keys[_mid] )
 				_upper = _mid - 1;
-			else if ( ( data.get(p)) > _http_trans_keys[_mid] )
+			else if ( ( (data.get(p) & 0xff)) > _http_trans_keys[_mid] )
 				_lower = _mid + 1;
 			else {
 				_trans += (_mid - _keys);
@@ -166,9 +166,9 @@ case 1:
 				break;
 
 			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
-			if ( ( data.get(p)) < _http_trans_keys[_mid] )
+			if ( ( (data.get(p) & 0xff)) < _http_trans_keys[_mid] )
 				_upper = _mid - 2;
-			else if ( ( data.get(p)) > _http_trans_keys[_mid+1] )
+			else if ( ( (data.get(p) & 0xff)) > _http_trans_keys[_mid+1] )
 				_lower = _mid + 2;
 			else {
 				_trans += ((_mid - _keys)>>1);

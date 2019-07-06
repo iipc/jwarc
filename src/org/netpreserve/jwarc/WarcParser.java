@@ -117,9 +117,9 @@ case 1:
 				break;
 
 			_mid = _lower + ((_upper-_lower) >> 1);
-			if ( ( data.get(p)) < _warc_trans_keys[_mid] )
+			if ( ( (data.get(p) & 0xff)) < _warc_trans_keys[_mid] )
 				_upper = _mid - 1;
-			else if ( ( data.get(p)) > _warc_trans_keys[_mid] )
+			else if ( ( (data.get(p) & 0xff)) > _warc_trans_keys[_mid] )
 				_lower = _mid + 1;
 			else {
 				_trans += (_mid - _keys);
@@ -140,9 +140,9 @@ case 1:
 				break;
 
 			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
-			if ( ( data.get(p)) < _warc_trans_keys[_mid] )
+			if ( ( (data.get(p) & 0xff)) < _warc_trans_keys[_mid] )
 				_upper = _mid - 2;
-			else if ( ( data.get(p)) > _warc_trans_keys[_mid+1] )
+			else if ( ( (data.get(p) & 0xff)) > _warc_trans_keys[_mid+1] )
 				_lower = _mid + 2;
 			else {
 				_trans += ((_mid - _keys)>>1);
@@ -303,13 +303,13 @@ case 5:
             }
             buffer.compact();
             int n = channel.read(buffer);
-			buffer.flip();
             if (n < 0) {
                 if (position > 0) {
                     throw new EOFException();
                 }
                 return false;
             }
+            buffer.flip();
         }
     }
 

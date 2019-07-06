@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 machine warc;
 
-getkey data.get(p);
+getkey (data.get(p) & 0xff);
 
 action push         { push(data.get(p)); }
 action add_major    { major = major * 10 + data.get(p) - '0'; }
