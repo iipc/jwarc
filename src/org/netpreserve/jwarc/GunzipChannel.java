@@ -46,7 +46,9 @@ class GunzipChannel implements ReadableByteChannel {
         }
 
         if (inflater.needsInput()) {
-            readAtLeast(1);
+            if (!readAtLeast(1)) {
+                throw new EOFException("unexpected end of gzip stream");
+            }
             inflater.setInput(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
         }
 
@@ -113,6 +115,9 @@ class GunzipChannel implements ReadableByteChannel {
         int os = buffer.get();
         inputPosition += 10;
         if ((flg & FEXTRA) == FEXTRA) {
+            if (!readAtLeast(2)) {
+                throw new EOFException("reading gzip extra");
+            }
             int xlen = buffer.getShort();
             ByteBuffer extra = ByteBuffer.allocate(xlen);
             while (extra.hasRemaining()) {
