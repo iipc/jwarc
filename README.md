@@ -332,6 +332,8 @@ individual fields.
 benchmark. JWAT was configured with a 8192 byte buffer as with default options it is 27x slower. For comparison
 merely decompressing the .warc.gz file with GZIPInputStream is about 0.95x.
 
+See also: [Unaffiliated benchmark against other languages](https://code402.com/hello-warc-common-crawl-code-samples)
+
 [JWAT]: https://sbforge.org/display/JWAT/JWAT
 [webarchive-commons]: https://github.com/iipc/webarchive-commons
 [Encoded words]: https://www.ietf.org/rfc/rfc2047.txt
@@ -339,6 +341,7 @@ merely decompressing the .warc.gz file with GZIPInputStream is about 0.95x.
 ### Other WARC libraries
 
 * [go-warc](https://github.com/wolfgangmeyers/go-warc) (Go)
+* [node-warc](https://www.npmjs.com/package/node-warc) (Node.js)
 * [warc](https://github.com/datatogether/warc) (Go)
 * [warc](https://github.com/internetarchive/warc) (Python)
 * [warc-clojure](https://github.com/shriphani/warc-clojure) (Clojure) - JWAT wrapper
