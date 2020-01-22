@@ -1,5 +1,5 @@
 # jwarc [![](https://travis-ci.com/iipc/jwarc.svg?branch=master)](https://travis-ci.com/iipc/jwarc) [![](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc) [![](https://www.javadoc.io/badge/org.netpreserve/jwarc.svg)](https://www.javadoc.io/doc/org.netpreserve/jwarc)
-(Work in progress) A Java library for reading and writing WARC files. This library includes a high level API modeling
+A Java library for reading and writing WARC files. This library includes a high level API modeling
 the standard record types as individual classes with typed accessors. The API is exensible and you can register
 extension record types and accessors for extension header fields.
 
@@ -23,9 +23,6 @@ populates the appropriate WARC headers.
 All I/O is performed using NIO and an an effort is made to minimize data copies and share buffers whenever feasible.
 Direct buffers and even memory-mapped files can be used, but only with uncompressed WARCS until they're supported by
 Inflater (coming in JDK 11).
-
-**Limitations:** This library has not been battle tested yet. The HTTP parser in lacking a robust parsing mode and is 
-probably too strict for real world data. The writing API is still incomplete in places and doesn't support gzip yet.
 
 ## Getting it
 
@@ -333,6 +330,7 @@ benchmark. JWAT was configured with a 8192 byte buffer as with default options i
 merely decompressing the .warc.gz file with GZIPInputStream is about 0.95x.
 
 See also: [Unaffiliated benchmark against other languages](https://code402.com/hello-warc-common-crawl-code-samples)
+[More recent benchmarks against Java libraries](https://github.com/iipc/jwarc/pull/19)
 
 [JWAT]: https://sbforge.org/display/JWAT/JWAT
 [webarchive-commons]: https://github.com/iipc/webarchive-commons
