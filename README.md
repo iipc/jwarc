@@ -330,6 +330,7 @@ benchmark. JWAT was configured with a 8192 byte buffer as with default options i
 merely decompressing the .warc.gz file with GZIPInputStream is about 0.95x.
 
 See also: [Unaffiliated benchmark against other languages](https://code402.com/hello-warc-common-crawl-code-samples)
+
 [More recent benchmarks against Java libraries](https://github.com/iipc/jwarc/pull/19)
 
 [JWAT]: https://sbforge.org/display/JWAT/JWAT
