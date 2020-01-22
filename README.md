@@ -297,7 +297,7 @@ No methods are specific to resource records. See WarcRecord, WarcTargetRecord, W
 
 | Criteria            | jwarc       | [JWAT]          | [webarchive-commons]  |
 |---------------------|-------------|-----------------|---------------|
-| Battle tested       | ✘           | ✔               | ✔             |
+| Battle tested       | Somewhat    | ✔               | ✔             |
 | License             | Apache 2    | Apache 2        | Apache 2      |
 | Parser based on     | Ragel FSM   | Hand-rolled FSM | Apache HTTP   |
 | Push parsing        | Low level   | ✘               | ✘             |
