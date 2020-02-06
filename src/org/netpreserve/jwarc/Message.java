@@ -117,7 +117,9 @@ public abstract class Message {
         }
 
         public B body(MediaType contentType, ReadableByteChannel channel, long length) {
-            setHeader("Content-Type", contentType.toString());
+            if (contentType != null) {
+                setHeader("Content-Type", contentType.toString());
+            }
             setHeader("Content-Length", Long.toString(length));
             this.bodyChannel = channel;
             return (B) this;
