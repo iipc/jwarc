@@ -101,7 +101,7 @@ public abstract class Message {
         }
 
         public B setHeader(String name, String value) {
-            List list = new ArrayList();
+            List<String> list = new ArrayList<>();
             list.add(value);
             headerMap.put(name, list);
             return (B) this;
