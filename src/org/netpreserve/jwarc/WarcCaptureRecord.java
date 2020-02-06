@@ -56,7 +56,7 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
         }
 
         public B concurrentTo(URI recordId) {
-            return addHeader("WARC-Concurrent-To", recordId.toString());
+            return addHeader("WARC-Concurrent-To", "<" + recordId.toString() + ">");
         }
 
         public B ipAddress(InetAddress ipAddress) {
