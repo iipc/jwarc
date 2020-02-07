@@ -16,7 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * A message consisting of headers and a content block. Forms the basis of protocols and formats like HTTP and WARC.
+ * A message consisting of headers and a content block (body). Forms the basis of protocols and formats like HTTP and
+ * WARC.
  */
 public abstract class Message {
     private final MessageVersion version;
@@ -93,29 +94,69 @@ public abstract class Message {
             this.version = defaultVersion;
         }
 
+        /**
+         * Finishes building.
+         */
         public abstract R build();
 
+        /**
+         * Adds a header field. Existing headers with the same name are not removed.
+         */
         public B addHeader(String name, String value) {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             headerMap.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
             return (B) this;
         }
 
-        public B setHeader(String name, String value) {
-            List<String> list = new ArrayList<>();
-            list.add(value);
-            headerMap.put(name, list);
+        /**
+         * Appends header fields. Existing headers with the same name are not removed.
+         */
+        public B addHeaders(Map<String, List<String>> headers) {
+            for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+                for (String value : entry.getValue()) {
+                    addHeader(entry.getKey(), value);
+                }
+            }
             return (B) this;
         }
 
+        /**
+         * Sets a header field. Removes any existing headers with the same name. If <code>value</code> is null then
+         * simply removes all existing headers with the given name.
+         */
+        public B setHeader(String name, String value) {
+            Objects.requireNonNull(name);
+            if (value == null) {
+                headerMap.remove(name);
+            } else {
+                List<String> list = new ArrayList<>();
+                list.add(value);
+                headerMap.put(name, list);
+            }
+            return (B) this;
+        }
+
+        /**
+         * Sets the protocol version of this message or record.
+         */
         public B version(MessageVersion version) {
             this.version = version;
             return (B)this;
         }
 
+        /**
+         * Sets the message body. The Content-Length header will be set to the length of <code>contentBytes</code>.
+         * The Content-Type header will be set to <code>contentType</code> unless it is null.
+         */
         public B body(MediaType contentType, byte[] contentBytes) {
             return body(contentType, Channels.newChannel(new ByteArrayInputStream(contentBytes)), contentBytes.length);
         }
 
+        /**
+         * Sets the message body. The Content-Length header will be set to <code>length</code>.
+         * The Content-Type header will be set to <code>contentType</code> unless it is null.
+         */
         public B body(MediaType contentType, ReadableByteChannel channel, long length) {
             if (contentType != null) {
                 setHeader("Content-Type", contentType.toString());
