@@ -7,6 +7,7 @@ package org.netpreserve.jwarc;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -33,7 +34,22 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private long position;
     private long headerLength;
 
-    public WarcReader(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+    /**
+     * Create WarcReader with user-provided buffer. Data contained in the buffer is
+     * used as initial input before reading from the input channel. The buffer must
+     * be ready for reading ({@link ByteBuffer#flip()} called).
+     * 
+     * @param channel read WARC data from
+     * @param buffer  buffer to read initial data from, later used to buffer data
+     *                from channel
+     * @throws IOException
+     * @throws IllegalArgumentException if buffer is not readable or is not backed
+     *                                  by an array
+     */
+    public WarcReader(ReadableByteChannel channel, ByteBuffer buffer) throws IOException, IllegalArgumentException {
+        if (!buffer.hasArray()) {
+            throw new IllegalArgumentException("ByteBuffer must be array-backed and writable");
+        }
         this.types = new HashMap<>(defaultTypes);
         startPosition = tryPosition(channel);
         position = startPosition;
@@ -54,7 +70,8 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             }
         }
 
-        if (buffer.getShort(buffer.position()) == 0x1f8b) {
+        if ((buffer.order() == ByteOrder.LITTLE_ENDIAN && buffer.getShort(buffer.position()) == (short) 0x8b1f)
+                || (buffer.order() == ByteOrder.BIG_ENDIAN && buffer.getShort(buffer.position()) == 0x1f8b)) {
             this.channel = new GunzipChannel(channel, buffer);
             this.buffer = ByteBuffer.allocate(8192);
             this.buffer.flip();

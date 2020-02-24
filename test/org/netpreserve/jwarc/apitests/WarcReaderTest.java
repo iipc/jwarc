@@ -5,15 +5,20 @@
 
 package org.netpreserve.jwarc.apitests;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.netpreserve.jwarc.WarcReader;
 import org.netpreserve.jwarc.WarcRecord;
+import org.netpreserve.jwarc.WarcResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -42,9 +47,7 @@ public class WarcReaderTest {
     @Test(timeout = 60000)
     public void incompleteGzippedWarcRecordShouldCauseException() throws IOException, URISyntaxException {
         String warcFileName = "cc.warc.gz"; // test a single-record WARC file
-        URL warcFile = getClass().getClassLoader().getResource("org/netpreserve/jwarc/" + warcFileName);
-        assertNotNull("WARC file " + warcFileName + " not found", warcFile);
-        byte[] gzipped = Files.readAllBytes(Paths.get(warcFile.toURI()));
+        byte[] gzipped = readWarcFile(warcFileName);
 
         // verify that unclipped WARC file is properly processed
         WarcReader reader1 = new WarcReader(Channels
@@ -75,4 +78,79 @@ public class WarcReaderTest {
         }
     }
 
+    private byte[] readWarcFile(String warcFileName) throws IOException, URISyntaxException {
+        URL warcFile = getClass().getClassLoader().getResource("org/netpreserve/jwarc/" + warcFileName);
+        assertNotNull("WARC file " + warcFileName + " not found", warcFile);
+        return Files.readAllBytes(Paths.get(warcFile.toURI()));
+    }
+
+    private void parseGzippedWithBuffer(ByteBuffer buffer) throws IOException, URISyntaxException {
+        String warcFileName = "cc.warc.gz"; // test a single-record WARC file
+        byte[] gzipped = readWarcFile(warcFileName);
+
+        WarcReader reader = new WarcReader(Channels
+                .newChannel(new ByteArrayInputStream(gzipped)), buffer);
+        Optional<WarcRecord> record = reader.next();
+        reader.close();
+        assertTrue(record.isPresent());
+        assertTrue(record.get() instanceof WarcResponse);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void externalBufferNoArray() throws IOException, URISyntaxException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192).asReadOnlyBuffer();
+        buffer.flip();
+        parseGzippedWithBuffer(buffer);
+    }
+
+    @Ignore("User must ensure buffer is in read state")
+    @Test
+    public void externalBufferNoReadState() throws IOException, URISyntaxException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        // not calling buffer.flip()
+        parseGzippedWithBuffer(buffer);
+    }
+
+    @Test
+    public void externalBufferByteOrderLE() throws IOException, URISyntaxException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.flip();
+        parseGzippedWithBuffer(buffer);
+    }
+
+    @Test
+    public void externalBufferByteOrderBE() throws IOException, URISyntaxException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.order(ByteOrder.BIG_ENDIAN);
+        buffer.flip();
+        parseGzippedWithBuffer(buffer);
+    }
+
+    @Test
+    public void externalBufferPrepopulated() throws IOException, URISyntaxException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        String warcFileName = "cc.warc.gz"; // test a single-record WARC file
+        byte[] gzipped = readWarcFile(warcFileName);
+
+        ReadableByteChannel channel = Channels.newChannel(new ByteArrayInputStream(gzipped));
+
+        // read an arbitrary number of bytes into the buffer
+        int bytesToBuffer = (int) (Math.random() * gzipped.length);
+        buffer.limit(bytesToBuffer);
+        channel.read(buffer);
+        buffer.flip();
+        String failureMessage = "Failed testing pre-populated buffer of " + bytesToBuffer + " bytes length";
+        System.out.println(failureMessage);
+
+        try {
+            WarcReader reader = new WarcReader(channel, buffer);
+            Optional<WarcRecord> record = reader.next();
+            reader.close();
+            assertTrue(failureMessage, record.isPresent());
+            assertTrue(record.get() instanceof WarcResponse);
+        } catch (Throwable e) {
+            fail(failureMessage);
+        }
+    }
 }
