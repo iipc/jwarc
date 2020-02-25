@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
@@ -104,7 +103,6 @@ public class GzipChannelTest {
         assertEquals(text, new String(inBytes, 0, n, StandardCharsets.US_ASCII));
 
         // read second member
-        assertTrue(gzis.available() > 0);
         n = gzis.read(inBytes);
         assertEquals(n, textBytes.length);
         assertEquals(text, new String(inBytes, 0, n, StandardCharsets.US_ASCII));
