@@ -30,9 +30,12 @@ class GunzipChannel implements ReadableByteChannel {
     private boolean seenHeader;
     private CRC32 crc; //= new CRC32();
 
-    public GunzipChannel(ReadableByteChannel channel, ByteBuffer buffer) {
+    public GunzipChannel(ReadableByteChannel channel, ByteBuffer buffer) throws IllegalArgumentException {
         this.channel = channel;
         this.buffer = buffer;
+        if (!buffer.hasArray()) {
+            throw new IllegalArgumentException("ByteBuffer must be array-backed and writable");
+        }
         buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
