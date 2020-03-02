@@ -20,8 +20,8 @@ class GunzipChannel implements ReadableByteChannel {
     private static final int FEXTRA = 4;
     private static final int FNAME = 8;
     private static final int FCOMMENT = 16;
-    private static final int CM_DEFLATE = 8;
-    private static final short GZIP_MAGIC = (short) 0x8b1f;
+    private static final int CM_DEFLATE = GzipChannel.CM_DEFLATE;
+    private static final short GZIP_MAGIC = GzipChannel.GZIP_MAGIC;
 
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;

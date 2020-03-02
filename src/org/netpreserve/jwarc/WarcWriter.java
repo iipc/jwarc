@@ -39,11 +39,12 @@ public class WarcWriter implements Closeable {
     private AtomicLong position = new AtomicLong(0);
 
     public WarcWriter(WritableByteChannel channel, WarcCompression compression) throws IOException {
-        if (compression == WarcCompression.GZIP) {
-            throw new UnsupportedOperationException("Writing of GZIP WARC files is not currently supported");
-        }
-        this.channel = channel;
         this.compression = compression;
+        if (compression == WarcCompression.GZIP) {
+            this.channel = new GzipChannel(channel);
+        } else {
+            this.channel = channel;
+        }
 
         if (channel instanceof SeekableByteChannel) {
             position.set(((SeekableByteChannel) channel).position());
@@ -59,7 +60,7 @@ public class WarcWriter implements Closeable {
     }
 
     public synchronized void write(WarcRecord record) throws IOException {
-        // TODO: buffer headers, compression
+        // TODO: buffer headers
         position.addAndGet(channel.write(ByteBuffer.wrap(record.serializeHeader())));
         MessageBody body = record.body();
         while (body.read(buffer) >= 0) {
@@ -68,6 +69,9 @@ public class WarcWriter implements Closeable {
             buffer.compact();
         }
         position.addAndGet(channel.write(ByteBuffer.wrap(TRAILER)));
+        if (compression == WarcCompression.GZIP) {
+            position.addAndGet(((GzipChannel) channel).finish());
+        }
     }
 
     /**
