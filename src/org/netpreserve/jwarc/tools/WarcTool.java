@@ -45,6 +45,9 @@ public class WarcTool {
             case "serve":
                 ServeTool.main(rest);
                 break;
+            case "validate":
+                ValidateTool.main(rest);
+                break;
             case "--version":
             case "version":
                 version();
@@ -70,6 +73,7 @@ public class WarcTool {
         System.out.println("  saveback    Saves wayback-style replayed pages as WARC records");
         System.out.println("  screenshot  Take a screenshot of each page in the given WARCs");
         System.out.println("  serve       Serve WARC files with a basic replay server/proxy");
+        System.out.println("  validate    Validate WARC or ARC files");
         System.out.println("  version     Print version information");
     }
 

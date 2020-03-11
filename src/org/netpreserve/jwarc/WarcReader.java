@@ -23,7 +23,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private static final int CRLFCRLF = 0x0d0a0d0a;
-    private static final Map<String, WarcRecord.Constructor> defaultTypes = initDefaultTypes();
+    public static final Map<String, WarcRecord.Constructor> defaultTypes = initDefaultTypes();
     private final HashMap<String, WarcRecord.Constructor> types;
     private final WarcParser parser = new WarcParser();
     private final ReadableByteChannel channel;
