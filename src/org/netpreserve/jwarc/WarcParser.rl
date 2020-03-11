@@ -150,7 +150,7 @@ any_header := (arc_header | warc_header) @{ fbreak; };
  * Unless you're doing something advanced (like non-blocking IO) you should use the higher-level {@link WarcReader}
  * class instead.
  */
-public class WarcParser {
+public class WarcParser extends MessageParser {
     private int entryState;
     private int cs;
     private long position;
@@ -216,7 +216,8 @@ public class WarcParser {
                 return true;
             }
             if (isError()) {
-                throw new ParsingException("invalid WARC record at position " + position);
+                throw new ParsingException("invalid WARC record at position " + position + ": "
+                        + getErrorContext(buffer, (int) position, 40));
             }
             buffer.compact();
             int n = channel.read(buffer);

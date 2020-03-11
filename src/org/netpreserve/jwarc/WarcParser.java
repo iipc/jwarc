@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * Unless you're doing something advanced (like non-blocking IO) you should use the higher-level {@link WarcReader}
  * class instead.
  */
-public class WarcParser {
+public class WarcParser extends MessageParser {
     private int entryState;
     private int cs;
     private long position;
@@ -299,7 +299,8 @@ case 5:
                 return true;
             }
             if (isError()) {
-                throw new ParsingException("invalid WARC record at position " + position);
+                throw new ParsingException("invalid WARC record at position " + position + ": "
+                        + getErrorContext(buffer, (int) position, 40));
             }
             buffer.compact();
             int n = channel.read(buffer);
@@ -339,7 +340,7 @@ case 5:
     }
 
     
-// line 343 "WarcParser.java"
+// line 344 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -538,5 +539,5 @@ static final int warc_en_warc_fields = 66;
 static final int warc_en_any_header = 1;
 
 
-// line 259 "WarcParser.rl"
+// line 260 "WarcParser.rl"
 }

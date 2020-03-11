@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
-class ChunkedBody implements MessageBody {
+class ChunkedBody extends MessageBody {
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;
     private long position = 0;
@@ -46,9 +46,11 @@ class ChunkedBody implements MessageBody {
                 }
 
                 // refill
+                ByteBuffer copy = buffer.duplicate();
                 buffer.compact();
                 if (channel.read(buffer) < 0) {
-                    throw new EOFException("EOF reached before end of chunked encoding");
+                    throw new EOFException("EOF reached before end of chunked encoding: "
+                            + getErrorContext(copy, (int) copy.position(), 40));
                 }
                 buffer.flip();
             }
@@ -123,7 +125,8 @@ class ChunkedBody implements MessageBody {
         %% write exec;
         buffer.position(p);
         if (cs == chunked_error) {
-            throw new ParsingException("chunked encoding (p=" + p + ")");
+            throw new ParsingException("chunked encoding at position " + p + ": "
+                    + getErrorContext(buffer, (int) p, 40));
         }
     }
 

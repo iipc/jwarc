@@ -94,7 +94,7 @@ import java.util.*;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-public class HttpParser {
+public class HttpParser extends MessageParser {
     private int cs;
     private long position;
     private boolean finished;
@@ -191,6 +191,7 @@ public class HttpParser {
     void parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo) throws IOException {
         while (true) {
             ByteBuffer copy = buffer.duplicate();
+            long buffOffset = buffer.position() - position;
             parse(buffer);
             if (copyTo != null) {
                 copy.limit(buffer.position());
@@ -200,7 +201,8 @@ public class HttpParser {
                 break;
             }
             if (isError()) {
-                throw new ParsingException("invalid HTTP message at byte position " + position);
+                throw new ParsingException("invalid HTTP message at byte position " + position + ": "
+                        + getErrorContext(buffer.duplicate(), (int) (buffOffset + position), 40));
             }
             buffer.compact();
             int n = channel.read(buffer);
