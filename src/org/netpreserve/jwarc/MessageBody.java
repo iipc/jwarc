@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
-public abstract class MessageBody implements ReadableByteChannel {
+public abstract class MessageBody extends MessageParser implements ReadableByteChannel {
     MessageBody() {
     }
 
