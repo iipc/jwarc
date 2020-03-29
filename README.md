@@ -305,7 +305,7 @@ No methods are specific to resource records. See WarcRecord, WarcTargetRecord, W
 | [Encoded words] †   | ✘           | ✘ (disabled)    | ✘             |
 | Validation          | ✘           | ✔               | ✘             |
 | Strict parsing  ‡   | ✔           | ✘               | ✘             |
-| Lenient parsing     | ✘           | ✔               | ✔             |
+| Lenient parsing     | HTTP only   | ✔               | ✔             |
 | Multi-value headers | ✔           | ✔               | ✘             |
 | I/O Framework       | NIO         | IO              | IO            |
 | Record type classes | ✔           | ✘               | ✘             |

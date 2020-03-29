@@ -36,15 +36,33 @@ public class HttpResponse extends HttpMessage {
         output.append("\r\n");
     }
 
+    /**
+     * Parses a HTTP response while leniently allowing common deviations from the standard.
+     */
     public static HttpResponse parse(ReadableByteChannel channel) throws IOException {
         return parse(channel, null);
     }
 
+    /**
+     * Parses a HTTP response while strictly rejecting deviations from the standard.
+     */
+    public static HttpResponse parseStrictly(ReadableByteChannel channel) throws IOException {
+        return parse(channel, null, true);
+    }
+
     static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
+        return parse(channel, copyTo, false);
+    }
+
+    private static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo, boolean strict) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         HttpParser parser = new HttpParser();
-        parser.responseOnly();
+        if (strict) {
+            parser.strictResponse();
+        } else {
+            parser.lenientResponse();
+        }
         parser.parse(channel, buffer, copyTo);
         if (copyTo != null) {
             copyTo.write(buffer.duplicate());

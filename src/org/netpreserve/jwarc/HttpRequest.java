@@ -45,19 +45,40 @@ public class HttpRequest extends HttpMessage {
         output.append("\r\n");
     }
 
+    /**
+     * Parses a HTTP request while leniently allowing common deviations from the standard.
+     */
     public static HttpRequest parse(ReadableByteChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         return parse(channel, buffer);
     }
 
+    /**
+     * Parses a HTTP request while leniently allowing common deviations from the standard.
+     */
     public static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
         return parse(channel, buffer, null);
     }
 
+    /**
+     * Parses a HTTP request while strictly rejecting deviations from the standard.
+     */
+    public static HttpRequest parseStrictly(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
+        return parse(channel, buffer, null, true);
+    }
+
     static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo) throws IOException {
+        return parse(channel, buffer, copyTo, false);
+    }
+
+    private static HttpRequest parse(ReadableByteChannel channel, ByteBuffer buffer, WritableByteChannel copyTo, boolean strict) throws IOException {
         HttpParser parser = new HttpParser();
-        parser.requestOnly();
+        if (strict) {
+            parser.strictRequest();
+        } else {
+            parser.lenientRequest();
+        }
         parser.parse(channel, buffer, copyTo);
         if (copyTo != null) {
             copyTo.write(buffer.duplicate());
