@@ -22,16 +22,30 @@ public abstract class WarcTargetRecord extends WarcRecord {
 
     /**
      * The URI of the original target resource this record holds information about as an unparsed string.
+     * <p>
+     * Strips enclosing angle brackets if present as a compatibility quirk with WARC 1.0.
      */
     public String target() {
-        return headers().sole("WARC-Target-URI").get();
+        String value = headers().sole("WARC-Target-URI").orElse(null);
+
+        /*
+         * Quirk: The grammar in the WARC 1.0 standard included angle brackets around the value of WARC-Target-URI.
+         * This was likely an editing mistake as it was not present in the drafts of the standard, nor in the examples
+         * or most implementations. The grammar was corrected in WARC 1.1.  It is what ended up published as 1.0 though
+         * and consequently some software in the wild (e.g. Wget) generates WARCs with angle brackets in this field.
+         */
+        if (value != null && value.startsWith("<") && value.endsWith(">")) {
+            return value.substring(1, value.length() - 1);
+        } else {
+            return value;
+        }
     }
 
     /**
      * The URI of the original target resource this record holds information about.
      */
     public URI targetURI() {
-        return headers().sole("WARC-Target-URI").map(URIs::parseLeniently).get();
+        return URIs.parseLeniently(target());
     }
 
     /**
