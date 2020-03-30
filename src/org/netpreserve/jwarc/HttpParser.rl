@@ -77,8 +77,27 @@ named_fields = named_field* CRLF;
 http_request := request_line named_fields @finish;
 http_response := status_line named_fields @finish;
 
-# start_line = request_line | status_line;
-# http_message := start_line named_fields @{ fbreak; };
+#
+# Variations for lenient parsing:
+#
+
+CRLF_lenient = "\r"? "\n";
+LWS_lenient = CRLF_lenient RWS;
+TEXT_lenient = ((any - '\n' - WS) (any - '\n')*)? (any - '\n' - WS - '\r') %end_of_text;
+
+request_target_lenient = (any - ' ' - '\n')+ $push %handle_target;
+request_line_lenient = method " "+ request_target_lenient " "+ http_version " "* CRLF_lenient;
+
+status_line_lenient = http_version " "+ status_code (" " reason_phrase)? CRLF_lenient;
+
+field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
+field_value_folded_lenient = LWS (TEXT_lenient OWS)? >fold $push;
+field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
+named_field_lenient = field_name OWS ":" field_value_lenient CRLF_lenient %handle_value;
+named_fields_lenient = named_field_lenient* CRLF_lenient;
+
+http_request_lenient := request_line_lenient named_fields_lenient @finish;
+http_response_lenient := status_line_lenient named_fields_lenient @finish;
 
 }%%
 
@@ -95,6 +114,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class HttpParser extends MessageParser {
+    private int initialState;
     private int cs;
     private long position;
     private boolean finished;
@@ -131,6 +151,7 @@ public class HttpParser extends MessageParser {
         endOfText = 0;
         position = 0;
         finished = false;
+        cs = initialState;
     }
 
     public MessageHeaders headers() {
@@ -165,12 +186,49 @@ public class HttpParser extends MessageParser {
         return cs == http_error;
     }
 
-    public void requestOnly() {
+    /**
+     * Configures the parser to read a HTTP request while rejecting deviations from the standard.
+     */
+    public void strictRequest() {
         cs = http_en_http_request;
+        initialState = cs;
     }
 
-    public void responseOnly() {
+    /**
+     * Configures the parser to read a HTTP response while rejecting deviations from the standard.
+     */
+    public void strictResponse() {
         cs = http_en_http_response;
+        initialState = cs;
+    }
+
+    /**
+     * Configures the parser to read a HTTP request while allowing some deviations from the standard:
+     * <ul>
+     *   <li>The number of spaces in the request line may vary
+     *   <li>Any character except space and newline is allowed in the target
+     *   <li>Lines may end with LF instead of CRLF
+     *   <li>Any byte except LF is allowed in header field values
+     *   <li>Whitespace is allowed between the field name and colon
+     * </ul>
+     */
+    public void lenientRequest() {
+        cs = http_en_http_request_lenient;
+        initialState = cs;
+    }
+
+    /**
+     * Configures the parser to read a HTTP response while allowing some deviations from the standard:
+     * <ul>
+     *   <li>The number of spaces in the status line may vary
+     *   <li>Lines may end with LF instead of CRLF
+     *   <li>Any byte except LF is allowed in header field values
+     *   <li>Whitespace is allowed between the field name and colon
+     * </ul>
+     */
+    public void lenientResponse() {
+        cs = http_en_http_response_lenient;
+        initialState = cs;
     }
 
     @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
