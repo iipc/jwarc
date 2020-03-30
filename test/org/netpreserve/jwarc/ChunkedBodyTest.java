@@ -18,8 +18,8 @@ import static org.junit.Assert.*;
 public class ChunkedBodyTest {
     @Test
     public void test() throws IOException {
-        byte[] one = "3\r\nhel\r\n7\r\nlo ".getBytes(US_ASCII);
-        byte[] two = "worl\r\n1\r\nd\r\n0\r\n\r\n".getBytes(US_ASCII);
+        byte[] one = "3\r\nhel\r\n0007\r\nlo ".getBytes(US_ASCII);
+        byte[] two = "worl\r\n1\r\nd\r\n00000\r\n\r\n".getBytes(US_ASCII);
         ReadableByteChannel chan = Channels.newChannel(new ByteArrayInputStream(two));
         ByteBuffer b1 = ByteBuffer.wrap(one);
         ChunkedBody decoder = new ChunkedBody(chan, b1);

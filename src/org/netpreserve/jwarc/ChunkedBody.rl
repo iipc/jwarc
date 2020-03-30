@@ -107,12 +107,12 @@ class ChunkedBody extends MessageBody {
         named_field = field_name ":" field_value CRLF;
         named_fields = named_field* CRLF;
 
-        chunk_value = token | quoted_string;
-        chunk_ext = ';' token '=' chunk_value;
+        chunk_ext_val = token | quoted_string;
+        chunk_extension = ';' token '=' chunk_ext_val;
         chunk_length = hexdigit+ $add_length;
-        chunk_header = chunk_length chunk_ext* "\r\n" @end_header;
+        chunk_header = chunk_length chunk_extension* CRLF @end_header;
         chunk = chunk_header CRLF;
-        last_chunk = "0\r\n";
+        last_chunk = "0"+ chunk_extension* CRLF;
         chunks := chunk* last_chunk named_fields @end_final;
     }%%
 
