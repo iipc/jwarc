@@ -72,7 +72,6 @@ public class GunzipChannelTest {
 
         ByteBuffer buffer = ByteBuffer.allocate(20);
         channel.read(buffer);
-        channel.close();
         buffer.flip();
 
         byte[] bytes = new byte[buffer.remaining()];
@@ -80,6 +79,16 @@ public class GunzipChannelTest {
 
 		assertTrue("Failed reading WARC file: expected \"WARC/1.0\" as first line",
 				new String(bytes).startsWith("WARC/1.0"));
+
+        // consume remaining compressed content to determine the length
+        do {
+            buffer.clear();
+        } while (channel.read(buffer) > -1);
+        channel.close();
+
+        // check GunzipChannel position
+        long warcFileSize = FileChannel.open(Paths.get(warcFile.toURI())).size();
+        assertEquals("Wrong input position", warcFileSize, channel.inputPosition());
     }
 
     private void checkExternalBuffer(ByteBuffer buffer) throws IOException {
