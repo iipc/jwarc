@@ -26,7 +26,7 @@ public class ChunkedBodyTest {
         ByteBuffer buf = ByteBuffer.allocate(32);
         while (true) {
             int n = decoder.read(buf);
-            assertNotEquals(0, buf);
+            assertNotEquals(0, n);
             if (n == -1) {
                 break;
             }
@@ -47,5 +47,26 @@ public class ChunkedBodyTest {
         buf.flip();
         new ChunkedBody(Channels.newChannel(new ByteArrayInputStream(new byte[0])), buf)
                 .read(ByteBuffer.allocate(32));
+    }
+
+    /** Test optimisation when internal buffer is bypassed on large chunks */
+    @Test
+    public void testBypassInternalBuffer() throws IOException {
+        String bodyString = "hello world, hello world!";
+        byte[] body = ("19\r\n" + bodyString + "\r\n00000\r\n\r\n").getBytes(US_ASCII);
+        ByteBuffer buf = ByteBuffer.allocate(8192);
+        ByteBuffer initBuf = ByteBuffer.allocate(12);
+        initBuf.flip();
+        ReadableByteChannel chan = Channels.newChannel(new ByteArrayInputStream(body));
+        ChunkedBody decoder = new ChunkedBody(chan, initBuf);
+        while (true) {
+            int n = decoder.read(buf);
+            assertNotEquals(0, n);
+            if (n < 0) {
+                break;
+            }
+        }
+        assertFalse(initBuf.hasRemaining());
+        assertEquals(bodyString, new String(Arrays.copyOf(buf.array(), buf.position()), US_ASCII));
     }
 }

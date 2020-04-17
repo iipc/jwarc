@@ -38,7 +38,7 @@ class ChunkedBody extends MessageBody {
             if (!buffer.hasRemaining()) {
                 // optimisation: let large reads bypass our buffer
                 if (remaining >= buffer.capacity() && dst.remaining() >= buffer.capacity()) {
-                    int n = channel.read(dst);
+                    int n = IOUtils.transfer(channel, dst, remaining);
                     if (n < 0) throw new EOFException("EOF reached before end of chunked encoding");
                     remaining -= n;
                     position += n;
@@ -46,11 +46,9 @@ class ChunkedBody extends MessageBody {
                 }
 
                 // refill
-                ByteBuffer copy = buffer.duplicate();
                 buffer.compact();
                 if (channel.read(buffer) < 0) {
-                    throw new EOFException("EOF reached before end of chunked encoding: "
-                            + getErrorContext(copy, (int) copy.position(), 40));
+                    throw new EOFException("EOF reached before end of chunked encoding");
                 }
                 buffer.flip();
             }
