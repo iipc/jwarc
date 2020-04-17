@@ -121,6 +121,7 @@ class GunzipChannel implements ReadableByteChannel {
             if (!readAtLeast(2)) {
                 throw new EOFException("reading gzip extra");
             }
+            inputPosition += 2;
             int xlen = buffer.getShort();
             ByteBuffer extra = ByteBuffer.allocate(xlen);
             while (extra.hasRemaining()) {
