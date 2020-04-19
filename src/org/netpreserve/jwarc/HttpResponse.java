@@ -73,7 +73,10 @@ public class HttpResponse extends HttpMessage {
         if (headers.sole("Transfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
             body = new ChunkedBody(channel, buffer);
         } else {
-            if (channel instanceof LengthedBody) {
+            if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
+                LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
+                contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
+            } else if (channel instanceof LengthedBody) {
                 LengthedBody lengthed = (LengthedBody) channel;
                 contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
             } else {

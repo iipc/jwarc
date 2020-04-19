@@ -125,8 +125,13 @@ public class LengthedBody extends MessageBody {
         }
     }
 
+    public interface LengthedReadableByteChannel extends ReadableByteChannel {
+        public long position();
+        public long size();
+    }
+
     ReadableByteChannel discardPushbackOnRead() {
-        return new ReadableByteChannel() {
+        return new LengthedReadableByteChannel() {
             @Override
             public int read(ByteBuffer byteBuffer) throws IOException {
                 discardPushback();
@@ -141,6 +146,16 @@ public class LengthedBody extends MessageBody {
             @Override
             public void close() throws IOException {
                 LengthedBody.this.close();
+            }
+
+            @Override
+            public long position() {
+                return LengthedBody.this.position;
+            }
+
+            @Override
+            public long size() {
+                return LengthedBody.this.size;
             }
         };
     }
