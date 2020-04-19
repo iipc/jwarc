@@ -9,14 +9,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.netpreserve.jwarc.*;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.util.Optional;
+import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
@@ -61,7 +61,22 @@ public class WarcResponseTest {
     }
 
     private WarcResponse sampleResponse() throws IOException {
-        return (WarcResponse) new WarcReader(new ByteArrayInputStream(warc.getBytes(UTF_8))).next().get();
+        return sampleResponse(warc, false);
+    }
+
+    private WarcResponse sampleResponse(String warc, boolean gzip) throws IOException {
+        return sampleResponse(warc.getBytes(UTF_8), gzip);
+    }
+
+    private WarcResponse sampleResponse(byte[] warc, boolean gzip) throws IOException {
+        if (gzip) {
+            try (ByteArrayOutputStream bs = new ByteArrayOutputStream(warc.length); GZIPOutputStream gz = new GZIPOutputStream(bs)) {
+                gz.write(warc);
+                gz.close();
+                warc = bs.toByteArray();
+            }
+        }
+        return (WarcResponse) new WarcReader(new ByteArrayInputStream(warc)).next().get();
     }
 
     @Test
@@ -104,5 +119,24 @@ public class WarcResponseTest {
         WarcResponse response = sampleResponse();
         response.body().read(ByteBuffer.allocate(1));
         response.http();
+    }
+
+    @Test
+    public void testNoHttpContentLength() throws IOException {
+        String w = warc.replace("Content-Length: 29\r\n", "").replace("Content-Length: 277", "Content-Length: 257");
+        // test for uncompressed and compressed WARC record
+        WarcResponse[] responses = { sampleResponse(w, false), sampleResponse(w, true) };
+        for (WarcResponse response : responses) {
+            HttpResponse http = response.http();
+            Optional<String> contentLengthHeader = http.headers().first("content-length");
+            assertFalse("Test setup: HTTP Content-Length header not removed", contentLengthHeader.isPresent());
+            Optional<WarcPayload> payload = response.payload();
+            MessageBody payloadBody = payload.get().body();
+            assertNotEquals(payloadBody.size(), 0);
+            ByteBuffer buf = ByteBuffer.allocate(1024);
+            payloadBody.read(buf);
+            buf.flip();
+            assertEquals("[image/jpeg binary data here]", new String(buf.array(), 0, buf.limit(), UTF_8));
+        }
     }
 }
