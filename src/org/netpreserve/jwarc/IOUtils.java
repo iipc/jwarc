@@ -50,6 +50,20 @@ public final class IOUtils {
         return n;
     }
 
+    static int transfer(ReadableByteChannel src, ByteBuffer dst, long limit) throws IOException {
+        if (dst.remaining() > limit) {
+            int savedLimit = dst.limit();
+            try {
+                dst.limit(dst.position() + (int) limit);
+                int n = src.read(dst);
+                return n;
+            } finally {
+                dst.limit(savedLimit);
+            }
+        }
+        return src.read(dst);
+    }
+
     static ReadableByteChannel prefixChannel(ByteBuffer prefix, ReadableByteChannel channel) {
         return new ReadableByteChannel() {
             @Override
