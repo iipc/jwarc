@@ -13,6 +13,7 @@ import org.netpreserve.jwarc.WarcResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -20,6 +21,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
@@ -151,6 +153,27 @@ public class WarcReaderTest {
             assertTrue(record.get() instanceof WarcResponse);
         } catch (Throwable e) {
             fail(failureMessage);
+        }
+    }
+
+    @Test
+    public void testReadingFileChannel() throws IOException, URISyntaxException {
+        byte[] data = readWarcFile("cc.warc.gz");
+        Path temp = Files.createTempFile("jwarc", ".tmp");
+        try {
+            Files.write(temp, data);
+            try (WarcReader reader = new WarcReader(temp)) {
+                WarcResponse response = (WarcResponse)reader.next().get();
+                byte[] buf = new byte[8192];
+                InputStream stream = response.http().body().stream();
+                int total = 0;
+                for (int n = stream.read(buf); n >= 0; n = stream.read(buf)) {
+                    total += n;
+                }
+                assertEquals(20289, total);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
         }
     }
 }

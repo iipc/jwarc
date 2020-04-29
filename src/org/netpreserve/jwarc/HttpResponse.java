@@ -8,11 +8,8 @@ package org.netpreserve.jwarc;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class HttpResponse extends HttpMessage {
     private final int status;
@@ -79,6 +76,9 @@ public class HttpResponse extends HttpMessage {
             } else if (channel instanceof LengthedBody) {
                 LengthedBody lengthed = (LengthedBody) channel;
                 contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
+            } else if (channel instanceof SeekableByteChannel) {
+                SeekableByteChannel seekable = (SeekableByteChannel) channel;
+                contentLength = seekable.size() - seekable.position() + buffer.remaining();
             } else {
                 contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
             }
