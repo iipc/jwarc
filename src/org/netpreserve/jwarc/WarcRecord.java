@@ -24,7 +24,7 @@ public class WarcRecord extends Message {
         return URI.create(uri);
     }
 
-    private static String formatId(UUID recordId) {
+    static String formatId(UUID recordId) {
         return "<urn:uuid:" + recordId + ">";
     }
 

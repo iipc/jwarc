@@ -191,6 +191,7 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
             WarcRequest     (request)
             WarcResource    (resource)
             WarcResponse    (response)
+            WarcRevisit     (revisit)
 
 #### [Message](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/Message.html)
 
@@ -292,6 +293,18 @@ No methods are specific to resource records. See WarcRecord, WarcTargetRecord, W
             (Headers) response.http().headers(); // HTTP response headers
 ```
 
+#### [WarcRevisit](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcResponse.html)
+
+```java
+       (HttpResponse) revisit.http();              // parses the body as a HTTP response
+            (Headers) revisit.http().headers();    // HTTP response headers (note: revisits never have a payload!)
+                (URI) revisit.profile()            // revisit profile (not modified or identical payload)
+                (URI) revisit.refersTo();          // id of record this is a duplicate of
+                (URI) revisit.refersToTargetURI(); // targetURI of the referred to record 
+            (Instant) revisit.refersToDate();      // date of the referred to record  
+```
+
+Note: revisit records never have a payload so 
 
 ## Comparison
 

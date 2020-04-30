@@ -13,9 +13,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class WarcRevisitTest {
     final static String warc = "WARC/1.1\r\n" +
@@ -28,13 +30,15 @@ public class WarcRevisitTest {
             "WARC-Refers-To-Target-URI: http://www.archive.org/images/logoc.jpg\r\n" +
             "WARC-Refers-To-Date: 2016-09-19T17:20:24Z\r\n" +
             "Content-Type: message/http\r\n" +
-            "Content-Length: 226\r\n" +
+            "Content-Length: 202\r\n" +
             "\r\n" +
-            "HTTP/1.x 304 Not Modified\r\n" +
+            "HTTP/1.0 304 Not Modified\r\n" +
             "Date: Tue, 06 Mar 2017 00:43:35 GMT\r\n" +
             "Server: Apache/2.0.54 (Ubuntu) PHP/5.0.5-2ubuntu1.4 Connection: Keep-Alive\r\n" +
             "Keep-Alive: timeout=15, max=100\r\n" +
-            "ETag: \"3e45-67e-2ed02ec0\"\r\n";
+            "ETag: \"3e45-67e-2ed02ec0\"\r\n" +
+            "\r\n" +
+            "this line should not be read";
 
     @Test
     public void test() throws IOException {
@@ -43,6 +47,9 @@ public class WarcRevisitTest {
         assertEquals(Instant.parse("2016-09-19T17:20:24Z"), revisit.refersToDate().get());
         assertEquals(URI.create("http://www.archive.org/images/logoc.jpg"), revisit.refersToTargetURI().get());
         assertEquals(URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0"), revisit.refersTo().get());
+        assertEquals(304, revisit.http().status());
+        assertEquals(Optional.of("timeout=15, max=100"), revisit.http().headers().sole("Keep-Alive"));
+        assertFalse(revisit.payload().isPresent());
     }
 
     @Test
@@ -50,10 +57,11 @@ public class WarcRevisitTest {
         URI target = URI.create("http://example.org/");
         Instant date = Instant.now();
         URI reference = URI.create("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0");
-        WarcRevisit revisit = new WarcRevisit.Builder(WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_1)
+        WarcRevisit revisit = new WarcRevisit.Builder(target, WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_1)
                 .refersTo(reference, target, date)
                 .build();
         assertEquals(WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_1, revisit.profile());
+        assertEquals(target, revisit.targetURI());
         assertEquals(date, revisit.refersToDate().get());
         assertEquals(target, revisit.refersToTargetURI().get());
         assertEquals(reference, revisit.refersTo().get());

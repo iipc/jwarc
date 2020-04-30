@@ -44,14 +44,18 @@ public class HttpResponse extends HttpMessage {
      * Parses a HTTP response while strictly rejecting deviations from the standard.
      */
     public static HttpResponse parseStrictly(ReadableByteChannel channel) throws IOException {
-        return parse(channel, null, true);
+        return parse(channel, null, true, false);
     }
 
     static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
-        return parse(channel, copyTo, false);
+        return parse(channel, copyTo, false, false);
     }
 
-    private static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo, boolean strict) throws IOException {
+    static HttpResponse parseWithoutBody(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
+        return parse(channel, copyTo, false, true);
+    }
+
+    private static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo, boolean strict, boolean withoutBody) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         HttpParser parser = new HttpParser();
@@ -67,7 +71,9 @@ public class HttpResponse extends HttpMessage {
         MessageHeaders headers = parser.headers();
         long contentLength;
         MessageBody body;
-        if (headers.sole("Transfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
+        if (withoutBody) {
+            body = MessageBody.empty();
+        } else if (headers.sole("Transfer-Encoding").orElse("").equalsIgnoreCase("chunked")) {
             body = new ChunkedBody(channel, buffer);
         } else {
             if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
