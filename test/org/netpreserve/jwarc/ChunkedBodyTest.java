@@ -69,4 +69,25 @@ public class ChunkedBodyTest {
         assertFalse(initBuf.hasRemaining());
         assertEquals(bodyString, new String(Arrays.copyOf(buf.array(), buf.position()), US_ASCII));
     }
+
+    /** Test trailing whitespace after chunk length (#33) */
+    @Test
+    public void testChunkLengthTrailingWhiteSpace() throws IOException {
+        String bodyString = "hello world, hello world!";
+        byte[] body = ("19  \r\n" + bodyString + "\r\n00000\r\n\r\n").getBytes(US_ASCII);
+        ByteBuffer buf = ByteBuffer.allocate(8192);
+        ByteBuffer initBuf = ByteBuffer.allocate(8192);
+        initBuf.flip();
+        ReadableByteChannel chan = Channels.newChannel(new ByteArrayInputStream(body));
+        ChunkedBody decoder = new ChunkedBody(chan, initBuf);
+        while (true) {
+            int n = decoder.read(buf);
+            assertNotEquals(0, n);
+            if (n < 0) {
+                break;
+            }
+        }
+        assertFalse(initBuf.hasRemaining());
+        assertEquals(bodyString, new String(Arrays.copyOf(buf.array(), buf.position()), US_ASCII));
+    }
 }
