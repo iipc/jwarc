@@ -17,19 +17,13 @@ import java.util.*;
     action end_value_token {
         String name = string.substring(nameStart, nameEnd);
         String value = string.substring(valueStart, p);
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 
     action end_value_quoted {
         String name = string.substring(nameStart, nameEnd);
         String value = buf.toString();
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 
     action parse_error {

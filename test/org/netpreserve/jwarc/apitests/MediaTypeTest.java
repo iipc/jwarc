@@ -28,6 +28,7 @@ public class MediaTypeTest {
         assertNotEquals(MediaType.parse("text/html;chartset=utf-8"), MediaType.parse("text/html;chartset=UTF-8"));
         assertEquals(MediaType.parse("text/html"), MediaType.parse("teXT/htML  ;\tCHARsET=utf-8").base());
         assertTrue(type.base().parameters().isEmpty());
+        assertEquals("one", MediaType.parse("text/html;CHARSET=one;charset=two;charset=three").parameters().get("charset"));
     }
 
 }

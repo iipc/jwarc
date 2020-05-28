@@ -13,7 +13,7 @@ package org.netpreserve.jwarc;
 import java.util.*;
 
 
-// line 59 "MediaType.rl"
+// line 53 "MediaType.rl"
 
 
 public class MediaType {
@@ -158,7 +158,7 @@ private static final byte _media_type_eof_actions[] = init__media_type_eof_actio
 static final int media_type_start = 1;
 
 
-// line 67 "MediaType.rl"
+// line 61 "MediaType.rl"
     public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");
     public static MediaType HTTP = MediaType.parse("application/http");
@@ -194,7 +194,7 @@ static final int media_type_start = 1;
 	cs = media_type_start;
 	}
 
-// line 97 "MediaType.rl"
+// line 91 "MediaType.rl"
         
 // line 200 "MediaType.java"
 	{
@@ -281,25 +281,19 @@ case 1:
 	{
         String name = string.substring(nameStart, nameEnd);
         String value = string.substring(valueStart, p);
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 	break;
 	case 1:
-// line 26 "MediaType.rl"
+// line 23 "MediaType.rl"
 	{
         String name = string.substring(nameStart, nameEnd);
         String value = buf.toString();
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 	break;
 	case 2:
-// line 35 "MediaType.rl"
+// line 29 "MediaType.rl"
 	{
         if (p >= 0) { /* this if statement is just to stop javac complaining about unreachable code */
             throw new IllegalArgumentException("parse error at position " + p + " near " + string.substring(p));
@@ -307,42 +301,42 @@ case 1:
     }
 	break;
 	case 3:
-// line 46 "MediaType.rl"
+// line 40 "MediaType.rl"
 	{valueStart = p; }
 	break;
 	case 4:
-// line 47 "MediaType.rl"
+// line 41 "MediaType.rl"
 	{ buf.append(string, valueStart, p); }
 	break;
 	case 5:
-// line 48 "MediaType.rl"
+// line 42 "MediaType.rl"
 	{ buf.append(string.charAt(p)); }
 	break;
 	case 6:
-// line 49 "MediaType.rl"
+// line 43 "MediaType.rl"
 	{ buf.setLength(0); }
 	break;
 	case 7:
-// line 50 "MediaType.rl"
+// line 44 "MediaType.rl"
 	{ nameStart = p; }
 	break;
 	case 8:
-// line 50 "MediaType.rl"
+// line 44 "MediaType.rl"
 	{ nameEnd = p; }
 	break;
 	case 9:
-// line 51 "MediaType.rl"
+// line 45 "MediaType.rl"
 	{ valueStart = p; }
 	break;
 	case 10:
-// line 53 "MediaType.rl"
+// line 47 "MediaType.rl"
 	{ typeEnd = p; }
 	break;
 	case 11:
-// line 54 "MediaType.rl"
+// line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 346 "MediaType.java"
+// line 340 "MediaType.java"
 			}
 		}
 	}
@@ -368,25 +362,19 @@ case 4:
 	{
         String name = string.substring(nameStart, nameEnd);
         String value = string.substring(valueStart, p);
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 	break;
 	case 1:
-// line 26 "MediaType.rl"
+// line 23 "MediaType.rl"
 	{
         String name = string.substring(nameStart, nameEnd);
         String value = buf.toString();
-        if (map.containsKey(name)) {
-            throw new IllegalArgumentException("duplicate parameter: " + name);
-        }
-        map.put(name, value);
+        map.putIfAbsent(name, value);
     }
 	break;
 	case 2:
-// line 35 "MediaType.rl"
+// line 29 "MediaType.rl"
 	{
         if (p >= 0) { /* this if statement is just to stop javac complaining about unreachable code */
             throw new IllegalArgumentException("parse error at position " + p + " near " + string.substring(p));
@@ -394,10 +382,10 @@ case 4:
     }
 	break;
 	case 11:
-// line 54 "MediaType.rl"
+// line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 401 "MediaType.java"
+// line 389 "MediaType.java"
 		}
 	}
 	}
@@ -407,7 +395,7 @@ case 5:
 	break; }
 	}
 
-// line 98 "MediaType.rl"
+// line 92 "MediaType.rl"
 
         String type = string.substring(0, typeEnd);
         String subtype = string.substring(typeEnd + 1, subtypeEnd);
