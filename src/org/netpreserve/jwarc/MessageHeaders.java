@@ -66,7 +66,7 @@ public class MessageHeaders {
     public boolean contains(String name, String value) {
         for (String rawValue : all(name)) {
             for (String splitValue : COMMA_SEPARATOR.split(rawValue)) {
-                if (splitValue.trim().equalsIgnoreCase(value)) {
+                if (splitValue.equalsIgnoreCase(value)) {
                     return true;
                 }
             }
