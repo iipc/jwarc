@@ -84,7 +84,7 @@ public class HttpRequest extends HttpMessage {
             copyTo.write(buffer.duplicate());
         }
         MessageHeaders headers = parser.headers();
-        long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(-1L);
+        long contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(-1L);
         LengthedBody body = LengthedBody.create(channel, buffer, contentLength);
         return new HttpRequest(parser.method(), parser.target(), parser.version(), headers, body);
     }

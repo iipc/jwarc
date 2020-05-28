@@ -86,7 +86,7 @@ public class HttpResponse extends HttpMessage {
                 SeekableByteChannel seekable = (SeekableByteChannel) channel;
                 contentLength = seekable.size() - seekable.position() + buffer.remaining();
             } else {
-                contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
+                contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(0L);
             }
             body = LengthedBody.create(channel, buffer, contentLength);
         }
