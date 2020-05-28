@@ -108,9 +108,9 @@ class ChunkedBody extends MessageBody {
         chunk_ext_val = token | quoted_string;
         chunk_extension = ';' token '=' chunk_ext_val;
         chunk_length = hexdigit+ $add_length;
-        chunk_header = chunk_length chunk_extension* CRLF @end_header;
+        chunk_header = chunk_length chunk_extension* WS* CRLF @end_header;
         chunk = chunk_header CRLF;
-        last_chunk = "0"+ chunk_extension* CRLF;
+        last_chunk = "0"+ chunk_extension* WS* CRLF;
         chunks := chunk* last_chunk named_fields @end_final;
     }%%
 
