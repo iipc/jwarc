@@ -13,10 +13,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
 
 public class MessageHeaders {
+    private static Pattern COMMA_SEPARATOR = Pattern.compile("[ \t]*,[ \t]*");
     private Map<String,List<String>> map;
 
     MessageHeaders(Map<String, List<String>> map) {
@@ -54,6 +56,22 @@ public class MessageHeaders {
      */
     public Map<String,List<String>> map() {
         return map;
+    }
+
+    /**
+     * Returns true when the given header value is present.
+     *
+     * Fields are interpreted as a comma-separated list and the value is compared case-insensitively.
+     */
+    public boolean contains(String name, String value) {
+        for (String rawValue : all(name)) {
+            for (String splitValue : COMMA_SEPARATOR.split(rawValue)) {
+                if (splitValue.trim().equalsIgnoreCase(value)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

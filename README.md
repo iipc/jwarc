@@ -207,6 +207,7 @@ fields and a body. Header field names are case-insensitvie and may have multiple
                   (String) message.contentType();              // the media type of the body
                  (Headers) message.headers();                  // the header fields
             (List<String>) message.headers().all("Cookie");    // all values of a header
+                 (boolean) message.headers().contains("TE", "deflate"); // tests if a value is present
         (Optional<String>) message.headers().first("Cookie");  // the first value of a header
 (Map<String,List<String>>) message.headers().map();            // views the header fields as a map
         (Optional<String>) message.headers().sole("Location"); // throws if header has multiple values
