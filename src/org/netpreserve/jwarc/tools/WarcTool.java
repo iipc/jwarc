@@ -17,6 +17,9 @@ public class WarcTool {
             case "cdx":
                 CdxTool.main(rest);
                 break;
+            case "extract":
+                ExtractTool.main(rest);
+                break;
             case "fetch":
                 FetchTool.main(rest);
                 break;
@@ -59,6 +62,7 @@ public class WarcTool {
         System.out.println("Commands:");
         System.out.println("");
         System.out.println("  cdx         List records in CDX format");
+        System.out.println("  extract     Extract record by offset");
         System.out.println("  fetch       Download a URL recording the request and response");
         System.out.println("  filter      Copy records that match a given filter expression");
         System.out.println("  ls          List records in WARC file(s)");
