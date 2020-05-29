@@ -16,7 +16,7 @@ import java.util.*;
 // line 53 "MediaType.rl"
 
 
-public class MediaType {
+public class MediaType extends MessageParser {
     private static BitSet tokenChars = new BitSet();
     static {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
@@ -296,7 +296,7 @@ case 1:
 // line 29 "MediaType.rl"
 	{
         if (p >= 0) { /* this if statement is just to stop javac complaining about unreachable code */
-            throw new IllegalArgumentException("parse error at position " + p + " near " + string.substring(p));
+            throw new IllegalArgumentException("parse error at position " + p + ": " + getErrorContext(string, p, 40));
         }
     }
 	break;
@@ -377,7 +377,7 @@ case 4:
 // line 29 "MediaType.rl"
 	{
         if (p >= 0) { /* this if statement is just to stop javac complaining about unreachable code */
-            throw new IllegalArgumentException("parse error at position " + p + " near " + string.substring(p));
+            throw new IllegalArgumentException("parse error at position " + p + ": " + getErrorContext(string, p, 40));
         }
     }
 	break;

@@ -9,6 +9,28 @@ import java.nio.ByteBuffer;
 
 public class MessageParser {
 
+    protected static String getErrorContext(String input, int position, int length) {
+        StringBuilder context = new StringBuilder();
+
+        int start = position - length;
+        if (start < 0) {
+            start = 0;
+        } else {
+            context.append("...");
+        }
+        int end = Math.min(input.length(), (position + length));
+
+        context.append(input.substring(start, position));
+        context.append("<-- HERE -->");
+        context.append(input.substring(position, end));
+
+        if (end < input.length()) {
+            context.append("...");
+        }
+
+        return context.toString();
+    }
+
     protected static String getErrorContext(ByteBuffer buffer, int position, int length) {
         StringBuilder context = new StringBuilder();
 
