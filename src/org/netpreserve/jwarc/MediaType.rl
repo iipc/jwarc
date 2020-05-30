@@ -28,7 +28,7 @@ import java.util.*;
 
     action parse_error {
         if (p >= 0) { /* this if statement is just to stop javac complaining about unreachable code */
-            throw new IllegalArgumentException("parse error at position " + p + " near " + string.substring(p));
+            throw new IllegalArgumentException("parse error at position " + p + ": " + getErrorContext(string, p, 40));
         }
     }
 
@@ -52,7 +52,7 @@ import java.util.*;
 
 }%%
 
-public class MediaType {
+public class MediaType extends MessageParser {
     private static BitSet tokenChars = new BitSet();
     static {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
