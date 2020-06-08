@@ -38,6 +38,7 @@ class GzipChannel implements WritableByteChannel {
     private boolean headerWritten = false;
     private boolean finished = false;
     private boolean dataWritten = false;
+    private long outputPosition;
     private final WritableByteChannel channel;
     private final Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
     private final ByteBuffer buffer;
@@ -56,21 +57,18 @@ class GzipChannel implements WritableByteChannel {
         this.buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
-    private int checkStatus(boolean finish) throws IOException {
-        int cwritten = 0;
+    private void checkStatus(boolean finish) throws IOException {
         if ((finish && !dataWritten) || (!finish && !headerWritten)) {
-            cwritten += writeHeader();
+            writeHeader();
             dataWritten = true;
             finished = false;
         }
-        return cwritten;
     }
 
-    private int writeHeader() throws IOException {
-        int n = channel.write(GZIP_HEADER);
+    private void writeHeader() throws IOException {
+        outputPosition += channel.write(GZIP_HEADER);
         GZIP_HEADER.rewind();
         headerWritten = true;
-        return n;
     }
 
     /**
@@ -86,16 +84,18 @@ class GzipChannel implements WritableByteChannel {
             return 0;
         }
 
-        int cwritten = checkStatus(true);
+        checkStatus(true);
 
         deflater.finish();
 
         int clen;
+        int cwritten = 0;
         while ((clen = deflater.deflate(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining(),
                 Deflater.FULL_FLUSH)) > 0) {
+            cwritten += clen;
             buffer.position(buffer.position() + clen);
             buffer.flip();
-            cwritten += channel.write(buffer);
+            outputPosition += channel.write(buffer);
             buffer.compact();
         }
 
@@ -103,7 +103,7 @@ class GzipChannel implements WritableByteChannel {
         buffer.putInt((int) crc.getValue());
         buffer.putInt((int) deflater.getBytesRead());
         buffer.flip();
-        cwritten += channel.write(buffer);
+        outputPosition += channel.write(buffer);
         buffer.compact();
 
         deflater.reset();
@@ -149,7 +149,8 @@ class GzipChannel implements WritableByteChannel {
         crc.update(srcBytes, off, len);
         deflater.setInput(srcBytes, off, len);
 
-        int cwritten = checkStatus(false);
+        checkStatus(false);
+
         int clen;
         while (!deflater.needsInput()) {
             clen = deflater.deflate(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining(),
@@ -157,12 +158,15 @@ class GzipChannel implements WritableByteChannel {
             if (clen > 0) {
                 buffer.position(buffer.position() + clen);
                 buffer.flip();
-                cwritten += channel.write(buffer);
+                outputPosition += channel.write(buffer);
                 buffer.compact();
             }
         }
 
-        return cwritten;
+        return len;
     }
 
+    public long outputPosition() {
+        return outputPosition;
+    }
 }

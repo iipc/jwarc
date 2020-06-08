@@ -70,7 +70,8 @@ public class WarcWriter implements Closeable {
         }
         position.addAndGet(channel.write(ByteBuffer.wrap(TRAILER)));
         if (compression == WarcCompression.GZIP) {
-            position.addAndGet(((GzipChannel) channel).finish());
+            ((GzipChannel) channel).finish();
+            position.set(((GzipChannel) channel).outputPosition());
         }
     }
 

@@ -50,6 +50,9 @@ public class WarcWriterTest {
         assertEquals(warcBytes[0], (byte) 0x1f);
         assertEquals(warcBytes[1], (byte) 0x8b);
 
+        // does position indicate the end of the gzipped WARC record?
+        assertEquals(warcBytes.length, writer.position());
+
         // uncompress and check whether body is contained
         ByteArrayInputStream bais = new ByteArrayInputStream(warcBytes);
         GZIPInputStream gzin = new GZIPInputStream(bais);
