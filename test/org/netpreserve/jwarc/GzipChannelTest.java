@@ -36,7 +36,8 @@ public class GzipChannelTest {
     public void test() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GzipChannel channel = new GzipChannel(Channels.newChannel(baos));
-        channel.write(ByteBuffer.wrap(textBytes));
+        int written = channel.write(ByteBuffer.wrap(textBytes));
+        assertEquals(written, textBytes.length);
         channel.close();
         byte[] gzipped = baos.toByteArray();
 
@@ -85,15 +86,17 @@ public class GzipChannelTest {
     public void testMultiMember() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GzipChannel channel = new GzipChannel(Channels.newChannel(baos));
-        int posSecond = 0;
-        posSecond += channel.write(ByteBuffer.wrap(textBytes));
-        posSecond += channel.finish(); // finish first member
-        channel.write(ByteBuffer.wrap(textBytes));
+        int written = channel.write(ByteBuffer.wrap(textBytes));
+        assertEquals(written, textBytes.length);
+        channel.finish(); // finish first member
+        long posSecond = channel.outputPosition();
+        written = channel.write(ByteBuffer.wrap(textBytes));
+        assertEquals(written, textBytes.length);
         channel.close();
         byte[] gzipped = baos.toByteArray();
 
         checkGzip(gzipped);
-        checkGzip(Arrays.copyOfRange(gzipped, posSecond, gzipped.length));
+        checkGzip(Arrays.copyOfRange(gzipped, (int) posSecond, gzipped.length));
 
         GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(gzipped));
         byte[] inBytes = new byte[8192];
