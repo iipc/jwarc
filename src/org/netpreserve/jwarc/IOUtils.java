@@ -105,6 +105,12 @@ public final class IOUtils {
         return new GunzipChannel(gzipped, buffer);
     }
 
+    public static ReadableByteChannel inflateChannel(ReadableByteChannel deflated) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        buffer.flip();
+        return new InflateChannel(deflated, buffer);
+    }
+
     static Socket connect(String scheme, String host, int port) throws IOException {
         Objects.requireNonNull(host);
         if ("http".equalsIgnoreCase(scheme)) {

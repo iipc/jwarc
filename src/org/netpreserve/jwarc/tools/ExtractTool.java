@@ -62,9 +62,14 @@ public class ExtractTool {
         } else {
             if (contentEncodings.size() > 1) {
                 System.err.println("Multiple Content-Encodings not supported: " + contentEncodings);
+            } else if (contentEncodings.get(0).equalsIgnoreCase("identity")
+                    || contentEncodings.get(0).equalsIgnoreCase("none")) {
+                writeBody(out, payload);
             } else if (contentEncodings.get(0).equalsIgnoreCase("gzip")
                     || contentEncodings.get(0).equalsIgnoreCase("x-gzip")) {
                 writeBody(out, IOUtils.gunzipChannel(payload));
+            } else if (contentEncodings.get(0).equalsIgnoreCase("deflate")) {
+                writeBody(out, IOUtils.inflateChannel(payload));
             } else {
                 System.err.println("Content-Encoding not supported: " + contentEncodings.get(0));
             }
