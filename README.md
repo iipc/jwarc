@@ -239,11 +239,12 @@ Methods available on all WARC records:
 Methods available on all WARC records except Warcinfo:
 
 ```java
-   (Optional<String>) record.identifiedPayloadType(); // media type of payload identified by an independent check
-             (String) record.target();                // captured URI as an unparsed string
-                (URI) record.targetURI();             // captured URI
-   (Optional<Digest>) record.payloadDigest();         // value of hash function applied to bytes of the payload
-      (Optional<URI>) record.warcinfoID();            // ID of warcinfo record when stored separately
+     (Optional<String>) record.identifiedPayloadType(); // media type of payload identified by an independent check
+               (String) record.target();                // captured URI as an unparsed string
+                  (URI) record.targetURI();             // captured URI
+(Optional<WarcPayload>) record.payload();               // payload
+     (Optional<Digest>) record.payloadDigest();         // value of hash function applied to bytes of the payload
+        (Optional<URI>) record.warcinfoID();            // ID of warcinfo record when stored separately
 ```
 
 #### [WarcContinuation](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcContinuation.html)
