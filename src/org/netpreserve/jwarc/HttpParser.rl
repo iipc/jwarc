@@ -25,7 +25,7 @@ action fold {
 }
 
 action handle_name  {
-    name = new String(buf, 0, bufPos, US_ASCII);
+    name = new String(buf, 0, bufPos, US_ASCII).trim();
     bufPos = 0;
 }
 
@@ -90,10 +90,11 @@ request_line_lenient = method " "+ request_target_lenient " "+ http_version " "*
 
 status_line_lenient = http_version " "+ status_code (" " reason_phrase)? CRLF_lenient;
 
+field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' - ':')*) $push;
 field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
 field_value_folded_lenient = LWS (TEXT_lenient OWS)? >fold $push;
 field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
-named_field_lenient = field_name OWS ":" field_value_lenient CRLF_lenient %handle_value;
+named_field_lenient = (field_name_lenient OWS)? ":" >handle_name field_value_lenient CRLF_lenient %handle_value;
 named_fields_lenient = named_field_lenient* CRLF_lenient;
 
 http_request_lenient := request_line_lenient named_fields_lenient @finish;
