@@ -81,6 +81,12 @@ public class HttpParserTest {
         assertEquals(Optional.of("abc\1def"), httpParser.headers().sole("Set-Cookie"));
         parse("HTTP/1.1 200 OK\nContent-Length  \t: 0  \n\n");
         assertEquals(Optional.of("0"), httpParser.headers().sole("Content-Length"));
+        parse("HTTP/1.1 200 OK\nbroken \tfield  \t: yes  \n\n");
+        assertEquals(Optional.of("yes"), httpParser.headers().sole("broken \tfield"));
+        parse("HTTP/1.1 200 OK\n<span class=\"nonsense\">nonsense</span>: yes  \n\n");
+        assertEquals(Optional.of("yes"), httpParser.headers().sole("<span class=\"nonsense\">nonsense</span>"));
+        parse("HTTP/1.1 200 OK\n: yes  \n\n");
+        assertEquals(Optional.of("yes"), httpParser.headers().sole(""));
     }
 
     private void parse(String message) throws IOException {
