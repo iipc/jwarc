@@ -88,7 +88,7 @@ class GunzipChannel implements ReadableByteChannel {
         int isize = buffer.getInt();
         inputPosition += 8;
 
-        if ((isize & 0xfffffffffL) != (inflater.getBytesWritten() & 0xfffffffffL)) {
+        if ((isize & 0xffffffffL) != (inflater.getBytesWritten() & 0xffffffffL)) {
             throw new ZipException("gzip uncompressed size mismatch");
         }
         if (crc != null && expectedCrc != crc.getValue()) {
