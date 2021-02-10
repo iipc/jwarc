@@ -1,10 +1,6 @@
 package org.netpreserve.jwarc.tools;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.*;
 import java.util.Arrays;
-import java.util.Properties;
 
 public class WarcTool {
     public static void main(String[] args) throws Exception {
@@ -40,6 +36,9 @@ public class WarcTool {
             case "recorder":
                 RecorderTool.main(rest);
                 break;
+            case "saveback":
+                SavebackTool.main(rest);
+                break;
             case "screenshot":
                 ScreenshotTool.main(rest);
                 break;
@@ -58,9 +57,9 @@ public class WarcTool {
 
     private static void usage() {
         System.out.println("usage: jwarc <command> [args]...");
-        System.out.println("");
+        System.out.println();
         System.out.println("Commands:");
-        System.out.println("");
+        System.out.println();
         System.out.println("  cdx         List records in CDX format");
         System.out.println("  extract     Extract record by offset");
         System.out.println("  fetch       Download a URL recording the request and response");
@@ -68,23 +67,15 @@ public class WarcTool {
         System.out.println("  ls          List records in WARC file(s)");
         System.out.println("  record      Fetch a page and subresources using headless Chrome");
         System.out.println("  recorder    Run a recording proxy");
+        System.out.println("  saveback    Saves wayback-style replayed pages as WARC records");
         System.out.println("  screenshot  Take a screenshot of each page in the given WARCs");
         System.out.println("  serve       Serve WARC files with a basic replay server/proxy");
         System.out.println("  version     Print version information");
     }
 
     private static void version() {
-        Properties properties = new Properties();
-        URL resource = WarcTool.class.getResource("/META-INF/maven/org.netpreserve/jwarc/pom.properties");
-        if (resource != null) {
-            try (InputStream stream = resource.openStream()) {
-                properties.load(stream);
-            } catch (IOException e) {
-                // alas!
-            }
-        }
-        String version = properties.getProperty("version", "unknown version");
-        System.out.println("jwarc " + version);
+        String version = Utils.getJwarcVersion();
+        System.out.println("jwarc " + (version == null ? "unknown version" : version));
         System.out.println(System.getProperty("java.vm.name") + " " + System.getProperty("java.version"));
         System.out.println(System.getProperty("os.name") + " " + System.getProperty("os.version") + " " + System.getProperty("os.arch"));
     }

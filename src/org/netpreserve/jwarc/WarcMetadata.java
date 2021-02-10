@@ -6,6 +6,7 @@
 package org.netpreserve.jwarc;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +52,15 @@ public class WarcMetadata extends WarcCaptureRecord {
 
         public Builder fields(Map<String, List<String>> map) {
             return body(MediaType.WARC_FIELDS, MessageHeaders.format(map).getBytes(UTF_8));
+        }
+
+        public Builder targetURI(String uri) {
+            addHeader("WARC-Target-URI", uri);
+            return this;
+        }
+
+        public Builder targetURI(URI uri) {
+            return targetURI(uri.toString());
         }
     }
 }
