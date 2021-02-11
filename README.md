@@ -116,7 +116,8 @@ Their real power though is as a building block for user-supplied options.
 
 ### Command-line tools
 
-jwarc also includes a set of command-lines tools which also serve as [examples](src/org/netpreserve/jwarc/tools/).
+jwarc also includes a set of command-lines tools which serve as [examples](src/org/netpreserve/jwarc/tools/). Note that
+many of the tools are lightweight demonstrations and may lack important options and features.
 
 Capture a URL (without subresources):
 
@@ -137,10 +138,14 @@ to render a screenshot and save it as a resource record:
     export BROWSER=/opt/google/chrome/chrome
     java -jar jwarc.jar screenshot example.warc > screenshots.warc
 
-Running a proxy server which records requests and responses:
+Running a proxy server which records requests and responses. This will generate self-signed SSL certificates so you will
+will need turn off TLS verification in the client. For Chrome/Chromium use the `--ignore-certificate-errors`
+command-line option.
 
     export PORT=8080
     java -jar jwarc.jar recorder > example.warc
+
+    chromium --proxy-server=http://localhost:8080 --ignore-certificate-errors
  
 Capture a page by recording headless Chrome:
 
