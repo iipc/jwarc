@@ -85,8 +85,8 @@ CRLF_lenient = "\r"? "\n";
 LWS_lenient = CRLF_lenient RWS;
 TEXT_lenient = ((any - '\n' - WS) (any - '\n')*)? (any - '\n' - WS - '\r') %end_of_text;
 
-request_target_lenient = (any - ' ' - '\n')+ $push %handle_target;
-request_line_lenient = method " "+ request_target_lenient " "+ http_version " "* CRLF_lenient;
+request_target_lenient = (any - ' ' - '\n' - '\r')+ $push %handle_target;
+request_line_lenient = method " "+ request_target_lenient (" "+ http_version)? " "* CRLF_lenient;
 
 status_line_lenient = http_version " "+ status_code (" " reason_phrase)? CRLF_lenient;
 

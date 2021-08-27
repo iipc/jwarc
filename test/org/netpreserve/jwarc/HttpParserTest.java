@@ -41,6 +41,7 @@ public class HttpParserTest {
         parseShouldFail("GET / HTTP/1.1\r\nCookie: abc\1def\r\n\r\n");
         parseShouldFail("GET /# HTTP/1.1\r\nContent-Length: 0\r\n\r\n");
         parseShouldFail("GET /\1 HTTP/1.1\r\nContent-Length: 0\r\n\r\n");
+        parseShouldFail("GET /\r\nContent-Length: 0\r\n\r\n");
     }
 
     @Test
@@ -55,6 +56,10 @@ public class HttpParserTest {
         assertEquals(Optional.of("abc\1def"), httpParser.headers().sole("Cookie"));
         parse("GET /#\1 HTTP/1.1\r\nContent-Length: 0\r\n\r\n");
         assertEquals("/#\1", httpParser.target());
+        parse("GET /foo\r\nContent-Length: 0\r\n\r\n");
+        assertEquals("/foo", httpParser.target());
+        parse("GET   /foo  \r\nContent-Length: 0\r\n\r\n");
+        assertEquals("/foo", httpParser.target());
     }
 
     @Test
