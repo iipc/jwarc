@@ -225,8 +225,4 @@ public class WarcDigest {
     public MessageDigest getDigester() throws NoSuchAlgorithmException {
         return getDigester(algorithm);
     }
-
-    public boolean equals(MessageDigest d) {
-        return false;
-    }
 }
