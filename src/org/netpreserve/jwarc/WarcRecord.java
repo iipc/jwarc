@@ -90,6 +90,8 @@ public class WarcRecord extends Message {
 
     @SuppressWarnings("unchecked")
     public abstract static class AbstractBuilder<R extends WarcRecord, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {
+        private Instant date;
+
         public AbstractBuilder(String type) {
             super(MessageVersion.WARC_1_0);
             setHeader("WARC-Type", type);
@@ -106,11 +108,14 @@ public class WarcRecord extends Message {
             return setHeader("WARC-Record-ID", formatId(recordId));
         }
 
+        /**
+         * The instant that data capture for this record began. Note that WARC/1.0 does not support subsecond precision
+         * and the supplied date will be truncated accordingly. Set version to WARC/1.1 or newer if you need millisecond
+         * precision.
+         */
         public B date(Instant date) {
-            if (version.equals(MessageVersion.WARC_1_0)) {
-                date = date.truncatedTo(SECONDS);
-            }
-            return setHeader("WARC-Date", date.toString());
+            this.date = date;
+            return (B) this;
         }
 
         public B blockDigest(String algorithm, String value) {
@@ -134,6 +139,12 @@ public class WarcRecord extends Message {
         }
 
         protected R build(Constructor<R> constructor) {
+            if (date != null) {
+                if (version.equals(MessageVersion.WARC_1_0)) {
+                    date = date.truncatedTo(SECONDS);
+                }
+                setHeader("WARC-Date", date.toString());
+            }
             MessageHeaders headers = new MessageHeaders(headerMap);
             return constructor.construct(version, headers, makeBody());
         }
