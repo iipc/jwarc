@@ -65,7 +65,6 @@ public class ValidateTool extends WarcTool {
 
     private Logger logger;
     private boolean verbose;
-    private Optional<DigestingMessageBody> blockDigestBody = Optional.empty();
 
     public ValidateTool(boolean verbose) {
         this.verbose = verbose;
@@ -103,27 +102,6 @@ public class ValidateTool extends WarcTool {
         consumedBytes.set(size);
         WarcDigest dig = new WarcDigest(md);
         validateDigest(digest, dig, size);
-    }
-
-    /**
-     * Wrap the record body into a DigestingMessageBody in order to verify the
-     * WARC-Block-Digest. and update the digest while the parser reads the body
-     */
-    private WarcRecord wrapDigestingBody(WarcRecord record) {
-        if (record.blockDigest().isPresent()) {
-            try {
-                MessageDigest md = record.blockDigest().get().getDigester();
-                blockDigestBody = Optional.of(new DigestingMessageBody(record.body(), md));
-                return WarcReader.defaultTypes.get(record.type()).construct(record.version(), record.headers(),
-                        blockDigestBody.get());
-            } catch (NoSuchAlgorithmException e) {
-                blockDigestBody = Optional.empty();
-                logger.log("digest unknown algorithm: %s", e.getMessage());
-            }
-        } else {
-            blockDigestBody = Optional.empty();
-        }
-        return record;
     }
 
     private boolean validateCapture(WarcRecord record) throws IOException {
@@ -173,7 +151,7 @@ public class ValidateTool extends WarcTool {
                     logger.error("payload digest failed: %s", e.getMessage());
                     valid = false;
                 } catch (NoSuchAlgorithmException e) {
-                    logger.log("digest unknown algorithm: %s", e.getMessage());
+                    logger.log("payload digest unknown algorithm: %s", e.getMessage());
                 }
                 length = plength.get();
             } else {
@@ -193,8 +171,6 @@ public class ValidateTool extends WarcTool {
         while (record != null) {
             boolean valid = true;
 
-            record = wrapDigestingBody(record);
-
             if (record instanceof WarcCaptureRecord) {
                 try {
                     valid = validateCapture(record);
@@ -211,14 +187,24 @@ public class ValidateTool extends WarcTool {
                 record.body().consume();
             }
 
-            if (record.blockDigest().isPresent() && blockDigestBody.isPresent()) {
-                try {
-                    validateDigest(record.blockDigest().get(), new WarcDigest(blockDigestBody.get().getDigest()),
-                            blockDigestBody.get().getLength());
-                    logger.log("block digest pass");
-                } catch (DigestException e) {
-                    logger.error("block digest failed: %s", e.getMessage());
-                    valid = false;
+            if (record.blockDigest().isPresent()) {
+                Optional<WarcDigest> calculated = record.calculatedBlockDigest();
+                if (calculated.isPresent()) {
+                    try {
+                        validateDigest(record.blockDigest().get(), calculated.get(),
+                                ((DigestingMessageBody) record.body()).getLength());
+                        logger.log("block digest pass");
+                    } catch (DigestException e) {
+                        logger.error("block digest failed: %s", e.getMessage());
+                        valid = false;
+                    }
+                } else {
+                    try {
+                        record.blockDigest().get().getDigester();
+                        logger.log("block digest not calculated (unknown reason)");
+                    } catch (NoSuchAlgorithmException e) {
+                        logger.log("block digest not calculated: %s", e.getMessage());
+                    }
                 }
             }
 
@@ -276,6 +262,7 @@ public class ValidateTool extends WarcTool {
                 default:
                     ValidateTool validator = new ValidateTool(verbose);
                     try (WarcReader reader = new WarcReader(Paths.get(arg))) {
+                        reader.calculateBlockDigest();
                         if (verbose)
                             System.out.println("Validating " + arg);
                         if (!validator.validate(reader)) {
