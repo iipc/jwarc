@@ -15,11 +15,11 @@ import java.security.MessageDigest;
  */
 public class DigestingMessageBody extends MessageBody {
 
-    public MessageBody body;
-    public MessageDigest digest;
-    public long length = 0;
+    private final MessageBody body;
+    private final MessageDigest digest;
+    private long length = 0;
 
-    public DigestingMessageBody(MessageBody digestedBody, MessageDigest digest) {
+    DigestingMessageBody(MessageBody digestedBody, MessageDigest digest) {
         this.body = digestedBody;
         this.digest = digest;
     }
