@@ -12,6 +12,8 @@ import java.util.UUID;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import java.io.IOException;
+
 public class WarcRecord extends Message {
     WarcRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
@@ -72,10 +74,28 @@ public class WarcRecord extends Message {
     }
 
     /**
-     * Digest values that were calculated by applying hash functions to this content body.
+     * Digest created from "WARC-Block-Digest" header containing digest values that
+     * were calculated by applying hash functions to this content body during
+     * creation of the WARC file.
      */
     public Optional<WarcDigest> blockDigest() {
         return headers().sole("WARC-Block-Digest").map(WarcDigest::new);
+    }
+
+    /**
+     * Digest created while reading the WARC record body if the WARC reader is
+     * configured to calculate digests and a "WARC-Block-Digest" header is present,
+     * see {@link WarcReader#calculateBlockDigest()}.
+     * 
+     * Note: Calling this method will consume the record body exhaustively, it
+     * should be called after the record block or payload has been processed.
+     */
+    public Optional<WarcDigest> calculatedBlockDigest() throws IOException {
+        if (body() instanceof DigestingMessageBody) {
+            body().consume();
+            return Optional.of(new WarcDigest(((DigestingMessageBody) body()).getDigest()));
+        }
+        return Optional.empty();
     }
 
     @Override

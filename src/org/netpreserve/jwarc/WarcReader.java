@@ -13,6 +13,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -33,6 +35,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private final long startPosition;
     private long position;
     private long headerLength;
+    private boolean blockDigestCalculation = false;
 
     /**
      * Create WarcReader with user-provided buffer. Data contained in the buffer is
@@ -155,6 +158,18 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         MessageHeaders headers = parser.headers();
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
         MessageBody body = LengthedBody.create(channel, buffer, contentLength);
+        if (blockDigestCalculation) {
+            Optional<String> blockDigestHeader = headers.sole("WARC-Block-Digest");
+            if (blockDigestHeader.isPresent()) {
+                try {
+                    MessageDigest md = (new WarcDigest(blockDigestHeader.get())).getDigester();
+                    body = new DigestingMessageBody(body, md);
+                } catch (NoSuchAlgorithmException e) {
+                    // ignore in order to be able to read also WARC records with unknown digest algorithm
+                    //throw new IOException("Failed to calculate block digest", e);
+                }
+            }
+        }
         record = construct(parser.version(), headers, body);
         return Optional.of(record);
     }
@@ -207,6 +222,18 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      */
     public void registerType(String type, WarcRecord.Constructor<WarcRecord> constructor) {
         types.put(type, constructor);
+    }
+
+    /**
+     * Enable calculation of block digests for all WARC records which include the
+     * header "WARC-Block-Digest" and using the same digest algorithm as mentioned
+     * in the header. The actually calculated record digests
+     * ({@link WarcRecord#calculatedBlockDigest()}) can be then compared to the
+     * pre-calculated digests ({@link WarcRecord#blockDigest()}). See also
+     * {@link DigestingMessageBody}.
+     */
+    public void calculateBlockDigest() {
+        blockDigestCalculation  = true;
     }
 
     /**
