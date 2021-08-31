@@ -13,11 +13,10 @@ import java.security.MessageDigest;
  * Wrapper around a MessageBody which calculates a MessageDigest while the body
  * is read.
  */
-public class DigestingMessageBody extends MessageBody {
+class DigestingMessageBody extends MessageBody {
 
     private final MessageBody body;
     private final MessageDigest digest;
-    private long length = 0;
 
     DigestingMessageBody(MessageBody digestedBody, MessageDigest digest) {
         this.body = digestedBody;
@@ -28,7 +27,6 @@ public class DigestingMessageBody extends MessageBody {
     public int read(ByteBuffer dst) throws IOException {
         int i = body.read(dst);
         if (i > 0) {
-            length += i;
             ByteBuffer tmp = dst.duplicate();
             tmp.position(dst.position() - i);
             tmp.limit(dst.position());
@@ -56,7 +54,4 @@ public class DigestingMessageBody extends MessageBody {
         return digest;
     }
 
-    public long getLength() {
-        return length;
-    }
 }

@@ -192,7 +192,7 @@ public class ValidateTool extends WarcTool {
                 if (calculated.isPresent()) {
                     try {
                         validateDigest(record.blockDigest().get(), calculated.get(),
-                                ((DigestingMessageBody) record.body()).getLength());
+                                record.body().position());
                         logger.log("block digest pass");
                     } catch (DigestException e) {
                         logger.error("block digest failed: %s", e.getMessage());
