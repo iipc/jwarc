@@ -26,11 +26,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.*;
 
 public class WarcReaderTest {
     @Test
@@ -175,5 +172,25 @@ public class WarcReaderTest {
         } finally {
             Files.deleteIfExists(temp);
         }
+    }
+
+    @Test
+    public void testCalculateBlockDigest() throws IOException {
+        String testWarc = "WARC/1.0\r\n" +
+                "WARC-Type: warcinfo\r\n" +
+                "WARC-Date: 2006-09-19T17:20:14Z\r\n" +
+                "WARC-Record-ID: <urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39>\r\n" +
+                "WARC-Filename: hello.warc\r\n" +
+                "WARC-Block-Digest: sha1:PQRC7MUSPWBIV4RPLEQTJ2ETESAGG7AN\r\n" +
+                "Content-Type: text/plain\r\n" +
+                "Content-Length: 8\r\n" +
+                "\r\n" +
+                "12345678" +
+                "\r\n\r\n";
+        WarcReader reader = new WarcReader(new ByteArrayInputStream(testWarc.getBytes(UTF_8)));
+        reader.calculateBlockDigest();
+        WarcRecord record = reader.next().orElseThrow(AssertionError::new);
+        assertEquals("sha1:PQRC7MUSPWBIV4RPLEQTJ2ETESAGG7AN", record.calculatedBlockDigest()
+                .orElseThrow(AssertionError::new).toString());
     }
 }

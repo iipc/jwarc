@@ -27,11 +27,13 @@ public class DigestingMessageBody extends MessageBody {
     @Override
     public int read(ByteBuffer dst) throws IOException {
         int i = body.read(dst);
-        int pos = dst.position();
-        length += (dst.limit() - pos);
-        digest.update(dst);
-        // rewind buffer position, so that data can be consumed a second time 
-        dst.position(pos);
+        if (i > 0) {
+            length += i;
+            ByteBuffer tmp = dst.duplicate();
+            tmp.position(dst.position() - i);
+            tmp.limit(dst.position());
+            digest.update(tmp);
+        }
         return i;
     }
 
