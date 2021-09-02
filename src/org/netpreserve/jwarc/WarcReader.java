@@ -200,7 +200,8 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 buffer.position(buffer.position() - 1);
                 return 0;
             } else if (trailer != '\n') {
-                throw new ParsingException("invalid ARC trailer: " + Integer.toHexString(trailer));
+                throw new ParsingException("invalid ARC trailer 0x" + Integer.toHexString(trailer) + ": " +
+                        MessageParser.getErrorContext(buffer, buffer.position() - 1, 40));
             }
             return 1;
         } else {
