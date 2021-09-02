@@ -167,6 +167,7 @@ public class ValidateTool extends WarcTool {
 
     private boolean validate(WarcReader reader) throws IOException {
         boolean warcValidates = true;
+        reader.onWarning(logger::error);
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
             boolean valid = true;

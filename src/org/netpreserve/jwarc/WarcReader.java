@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -36,6 +37,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private long position;
     private long headerLength;
     private boolean blockDigestCalculation = false;
+    private Consumer<String> warningHandler;
 
     /**
      * Create WarcReader with user-provided buffer. Data contained in the buffer is
@@ -200,13 +202,32 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             while (buffer.remaining() < 4) {
                 buffer.compact();
                 if (channel.read(buffer) < 0) {
-                    throw new EOFException("expected trailing CRLFCRLF");
+                    buffer.flip();
+                    emitWarning("invalid record trailer");
+                    return;
                 }
                 buffer.flip();
             }
             int trailer = buffer.getInt();
-            if (trailer != CRLFCRLF) { // CRLFCRLF
-                throw new ParsingException("invalid WARC trailer: " + Integer.toHexString(trailer));
+            if (trailer != CRLFCRLF) {
+                emitWarning("invalid record trailer");
+
+                // try to recover by skipping an arbitrary number of CR and LF characters
+                buffer.position(buffer.position() - 4);
+                while (true) {
+                    while (!buffer.hasRemaining()) {
+                        buffer.compact();
+                        if (channel.read(buffer) < 0) {
+                            break;
+                        }
+                        buffer.flip();
+                    }
+                    byte b = buffer.get();
+                    if (b != '\r' && b != '\n') {
+                        buffer.position(buffer.position() - 1);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -290,6 +311,19 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      */
     public Stream<WarcRecord> records() {
         return StreamSupport.stream(spliteratorUnknownSize(iterator(), ORDERED | NONNULL), false);
+    }
+
+    private void emitWarning(String message) {
+        if (warningHandler != null) {
+            warningHandler.accept(message);
+        }
+    }
+
+    /**
+     * Registers a handler that will be called when the reader encounters an error it was able to recover from.
+     */
+    public void onWarning(Consumer<String> warningHandler) {
+        this.warningHandler = warningHandler;
     }
 
     /**
