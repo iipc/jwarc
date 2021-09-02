@@ -132,7 +132,7 @@ quoted_pair = "\\" CHAR;
 quoted_string = '"' (qdtext | quoted_pair)* '"';
 parameter = token "=" (token | quoted_string );
 
-arc_url_byte = url_byte | "[" | "]";
+arc_url_byte = ascii - CTL - " ";
 arc_url = (lower+ ":" arc_url_byte*) $push %handle_arc_url;
 arc_ip = (digit{1,3} "." digit{1,3} "." digit{1,3} "." digit{1,3}) $push %handle_arc_ip;
 arc_date = digit{14} $push %handle_arc_date;
