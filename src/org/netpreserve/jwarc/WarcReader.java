@@ -195,7 +195,10 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 buffer.flip();
             }
             int trailer = buffer.get();
-            if (trailer != '\n') {
+            if (trailer == 'h') {
+                emitWarning("invalid record trailer");
+                buffer.position(buffer.position() - 1);
+            } else if (trailer != '\n') {
                 throw new ParsingException("invalid ARC trailer: " + Integer.toHexString(trailer));
             }
         } else {
