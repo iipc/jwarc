@@ -14,6 +14,7 @@ import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -167,7 +168,11 @@ public class ValidateTool extends WarcTool {
 
     private boolean validate(WarcReader reader) throws IOException {
         boolean warcValidates = true;
-        reader.onWarning(logger::error);
+        AtomicBoolean sawWarning = new AtomicBoolean(false);
+        reader.onWarning(message -> {
+            logger.error(message);
+            sawWarning.set(true);
+        });
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
             boolean valid = true;
@@ -213,6 +218,10 @@ public class ValidateTool extends WarcTool {
             MediaType contentType = record.contentType();
             long position = reader.position();
 
+            if (sawWarning.getAndSet(false)) {
+                valid = false;
+            }
+
             record = reader.next().orElse(null);
             long length = reader.position() - position;
 
@@ -227,6 +236,11 @@ public class ValidateTool extends WarcTool {
                 warcValidates = false;
             }
         }
+
+        if (sawWarning.get()) { // in case of a warning reading the trailer of the last record
+            warcValidates = false;
+        }
+
         return warcValidates;
     }
 
