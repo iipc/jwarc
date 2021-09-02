@@ -81,7 +81,7 @@ http_response := status_line named_fields @finish;
 # Variations for lenient parsing:
 #
 
-CRLF_lenient = "\r"? "\n";
+CRLF_lenient = "\r"* "\n";
 LWS_lenient = CRLF_lenient RWS;
 TEXT_lenient = ((any - '\n' - WS) (any - '\n')*)? (any - '\n' - WS - '\r') %end_of_text;
 
