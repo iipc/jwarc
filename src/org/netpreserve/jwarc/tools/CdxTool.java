@@ -14,6 +14,7 @@ public class CdxTool {
         DateTimeFormatter arcDate = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(UTC);
         for (String arg : args) {
             try (WarcReader reader = new WarcReader(Paths.get(arg))) {
+                reader.onWarning(System.err::println);
                 WarcRecord record = reader.next().orElse(null);
                 while (record != null) {
                     try {

@@ -143,12 +143,12 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         if (record != null) {
             record.body().consume();
             record.body().close();
-            consumeTrailer();
+            long trailerLength = consumeTrailer();
 
             if (channel instanceof GunzipChannel) {
                 position = startPosition + ((GunzipChannel) channel).inputPosition();
             } else {
-                position += headerLength + record.body().size() + 4;
+                position += headerLength + record.body().size() + trailerLength;
             }
         }
 
@@ -185,7 +185,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         return constructor.construct(version, headers, body);
     }
 
-    private void consumeTrailer() throws IOException {
+    private long consumeTrailer() throws IOException {
         if (record.version().getProtocol().equals("ARC")) {
             while (buffer.remaining() < 1) {
                 buffer.compact();
@@ -198,16 +198,18 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             if (trailer == 'h') {
                 emitWarning("invalid record trailer");
                 buffer.position(buffer.position() - 1);
+                return 0;
             } else if (trailer != '\n') {
                 throw new ParsingException("invalid ARC trailer: " + Integer.toHexString(trailer));
             }
+            return 1;
         } else {
             while (buffer.remaining() < 4) {
                 buffer.compact();
                 if (channel.read(buffer) < 0) {
                     buffer.flip();
                     emitWarning("invalid record trailer");
-                    return;
+                    return 0;
                 }
                 buffer.flip();
             }
@@ -217,6 +219,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
 
                 // try to recover by skipping an arbitrary number of CR and LF characters
                 buffer.position(buffer.position() - 4);
+                long length = 0;
                 while (true) {
                     while (!buffer.hasRemaining()) {
                         buffer.compact();
@@ -228,9 +231,12 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                     byte b = buffer.get();
                     if (b != '\r' && b != '\n') {
                         buffer.position(buffer.position() - 1);
-                        break;
+                        return length;
                     }
+                    length++;
                 }
+            } else {
+                return 4;
             }
         }
     }
