@@ -16,27 +16,32 @@ public class CdxTool {
             try (WarcReader reader = new WarcReader(Paths.get(arg))) {
                 WarcRecord record = reader.next().orElse(null);
                 while (record != null) {
-                    if ((record instanceof WarcResponse || record instanceof WarcResource) &&
-                            ((WarcCaptureRecord) record).payload().isPresent()) {
-                        WarcPayload payload = ((WarcCaptureRecord) record).payload().get();
-                        MediaType type;
-                        try {
-                            type = payload.type().base();
-                        } catch (IllegalArgumentException e) {
-                            type = MediaType.OCTET_STREAM;
+                    try {
+                        if ((record instanceof WarcResponse || record instanceof WarcResource) &&
+                                ((WarcCaptureRecord) record).payload().isPresent()) {
+                            WarcPayload payload = ((WarcCaptureRecord) record).payload().get();
+                            MediaType type;
+                            try {
+                                type = payload.type().base();
+                            } catch (IllegalArgumentException e) {
+                                type = MediaType.OCTET_STREAM;
+                            }
+                            URI uri = ((WarcCaptureRecord) record).targetURI();
+                            String date = arcDate.format(record.date());
+                            int status = record instanceof WarcResponse ? ((WarcResponse) record).http().status() : 200;
+                            String digest = payload.digest().map(WarcDigest::base32).orElse("-");
+                            long position = reader.position();
+
+                            // advance to the next record so we can calculate the length
+                            record = reader.next().orElse(null);
+                            long length = reader.position() - position;
+
+                            System.out.printf("%s %s %s %s %d %s - - %d %d %s%n", uri, date, uri, type, status, digest, length, position, arg);
+                        } else {
+                            record = reader.next().orElse(null);
                         }
-                        URI uri = ((WarcCaptureRecord) record).targetURI();
-                        String date = arcDate.format(record.date());
-                        int status = record instanceof WarcResponse ? ((WarcResponse) record).http().status() : 200;
-                        String digest = payload.digest().map(WarcDigest::base32).orElse("-");
-                        long position = reader.position();
-
-                        // advance to the next record so we can calculate the length
-                        record = reader.next().orElse(null);
-                        long length = reader.position() - position;
-
-                        System.out.printf("%s %s %s %s %d %s - - %d %d %s%n", uri, date, uri, type, status, digest, length, position, arg);
-                    } else {
+                    } catch (ParsingException e) {
+                        System.err.println("ParsingException at record " + reader.position() + ": " + e.getMessage());
                         record = reader.next().orElse(null);
                     }
                 }
