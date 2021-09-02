@@ -136,7 +136,7 @@ arc_url_byte = url_byte | "[" | "]";
 arc_url = (lower+ ":" arc_url_byte*) $push %handle_arc_url;
 arc_ip = (digit{1,3} "." digit{1,3} "." digit{1,3} "." digit{1,3}) $push %handle_arc_ip;
 arc_date = digit{14} $push %handle_arc_date;
-arc_mime = ("no-type" | (token "/" token ( OWS ";" OWS parameter )*)) $push %handle_arc_mime;
+arc_mime = (token ("/" token ( OWS ";" OWS parameter )*)?)? $push %handle_arc_mime;
 arc_length = digit+ $push %handle_arc_length %handle_arc;
 arc_header = arc_url " " arc_ip " " arc_date " " arc_mime " " arc_length "\n";
 
