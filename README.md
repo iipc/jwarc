@@ -317,13 +317,12 @@ Note: revisit records never have a payload so
 
 | Criteria            | jwarc       | [JWAT]          | [webarchive-commons]  |
 |---------------------|-------------|-----------------|---------------|
-| Battle tested       | Somewhat    | ✔               | ✔             |
 | License             | Apache 2    | Apache 2        | Apache 2      |
 | Parser based on     | Ragel FSM   | Hand-rolled FSM | Apache HTTP   |
 | Push parsing        | Low level   | ✘               | ✘             |
 | Folded headers †    | ✔           | ✔               | ✔             | 
 | [Encoded words] †   | ✘           | ✘ (disabled)    | ✘             |
-| Validation          | ✘           | ✔               | ✘             |
+| Validation          | The basics  | ✔               | ✘             |
 | Strict parsing  ‡   | ✔           | ✘               | ✘             |
 | Lenient parsing     | HTTP only   | ✔               | ✔             |
 | Multi-value headers | ✔           | ✔               | ✘             |
