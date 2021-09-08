@@ -4,7 +4,7 @@ matrix:
   - os: linux
     env: PLATFORM=linux-amd64 GRAALHOME=
   - os: osx
-    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
+    env: PLATFORM=darwin-amd64 GRAALHOME=Contents/Home
 
 before_deploy:
 - GRAAL_VERSION=21.2.0
