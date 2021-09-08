@@ -16,7 +16,7 @@ before_deploy:
 - mkdir deploy jwarc-$VERSION-$PLATFORM
 - mv target/jwarc jwarc-$VERSION-$PLATFORM
 - cp SOURCE graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/{THIRD_PARTY_LICENSE.txt,LICENSE_NATIVEIMAGE.txt} jwarc-$VERSION-$PLATFORM
-- cp SOURCE graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/LICENSE.txt jwarc-$VERSION-$PLATFORM/GRAALVM_LICENSE.txt
+- cp graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/LICENSE.txt jwarc-$VERSION-$PLATFORM/GRAALVM_LICENSE.txt
 - tar -zcvf deploy/jwarc-$VERSION-$PLATFORM.tar.gz jwarc-$VERSION-$PLATFORM
 - 'if [ "$PLATFORM" == linux-amd64 ]; then mv -v target/*.jar deploy; fi'
 
