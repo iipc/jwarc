@@ -149,9 +149,9 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.oracle.substratevm</groupId>
+                        <groupId>org.graalvm.nativeimage</groupId>
                         <artifactId>native-image-maven-plugin</artifactId>
-                        <version>1.0.0-rc12</version>
+                        <version>21.2.0</version>
                         <executions>
                             <execution>
                                 <goals>

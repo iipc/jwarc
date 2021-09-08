@@ -2,19 +2,20 @@ language: java
 matrix:
   include:
   - os: linux
-    env: PLATFORM=linux-amd64 GRAALHOME= SUNEC=jre/lib/amd64/libsunec.so
+    env: PLATFORM=linux-amd64 GRAALHOME=
   - os: osx
-    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home SUNEC=jre/lib/libsunec.dylib
+    env: PLATFORM=macos-amd64 GRAALHOME=Contents/Home
 
 before_deploy:
-- GRAAL=graalvm-ce-1.0.0-rc13
+- GRAAL_VERSION=21.2.0
 - 'VERSION=${TRAVIS_TAG/#v/}'
-- wget https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/$GRAAL-$PLATFORM.tar.gz
-- tar -zxf $GRAAL-$PLATFORM.tar.gz
-- JAVA_HOME=$PWD/$GRAAL/$GRAALHOME mvn clean package -Pnative-image
+- wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-$GRAAL_VERSION/graalvm-ce-java11-$PLATFORM-$GRAAL_VERSION.tar.gz
+- tar -zxf graalvm-ce-java11-$PLATFORM-$GRAAL_VERSION.tar.gz.tar.gz
+- JAVA_HOME=$PWD/graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME mvn clean package -Pnative-image
 - mkdir deploy jwarc-$VERSION-$PLATFORM
 - mv target/jwarc jwarc-$VERSION-$PLATFORM
-- cp SOURCE $GRAAL/$GRAALHOME/THIRD_PARTY_README $GRAAL/$GRAALHOME/3rd_party_licenses.txt $GRAAL/$GRAALHOME/$SUNEC jwarc-$VERSION-$PLATFORM
+- cp SOURCE graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/{THIRD_PARTY_LICENSE.txt,LICENSE_NATIVEIMAGE.txt} jwarc-$VERSION-$PLATFORM
+- cp SOURCE graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/LICENSE.txt jwarc-$VERSION-$PLATFORM/GRAALVM_LICENSE.txt
 - tar -zcvf deploy/jwarc-$VERSION-$PLATFORM.tar.gz jwarc-$VERSION-$PLATFORM
 - 'if [ "$PLATFORM" == linux-amd64 ]; then mv -v target/*.jar deploy; fi'
 
