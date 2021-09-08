@@ -10,7 +10,8 @@ before_deploy:
 - GRAAL_VERSION=21.2.0
 - 'VERSION=${TRAVIS_TAG/#v/}'
 - wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-$GRAAL_VERSION/graalvm-ce-java11-$PLATFORM-$GRAAL_VERSION.tar.gz
-- tar -zxf graalvm-ce-java11-$PLATFORM-$GRAAL_VERSION.tar.gz.tar.gz
+- tar -zxf graalvm-ce-java11-$PLATFORM-$GRAAL_VERSION.tar.gz
+- $PWD/graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME/bin/gu install native-image
 - JAVA_HOME=$PWD/graalvm-ce-java11-$GRAAL_VERSION/$GRAALHOME mvn clean package -Pnative-image
 - mkdir deploy jwarc-$VERSION-$PLATFORM
 - mv target/jwarc jwarc-$VERSION-$PLATFORM
