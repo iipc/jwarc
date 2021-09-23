@@ -82,6 +82,7 @@ public class ValidateTool extends WarcTool {
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         while ((i = body.read(buffer)) > -1) {
             size += i;
+            buffer.flip();
             consumer.accept(buffer);
             buffer.compact();
         }
@@ -156,7 +157,7 @@ public class ValidateTool extends WarcTool {
                 }
                 length = plength.get();
             } else {
-                length = readBody(payload.get().body(), b -> b.rewind());
+                length = readBody(payload.get().body(), b -> b.position(b.limit()));
             }
             if (contentLength > 0 && contentLength != length) {
                 logger.error("invalid HTTP header Content-Length: %d", contentLength);
