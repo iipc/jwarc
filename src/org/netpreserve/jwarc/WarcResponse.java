@@ -72,8 +72,12 @@ public class WarcResponse extends WarcCaptureRecord {
 
     public static class Builder extends AbstractBuilder<WarcResponse, Builder> {
         public Builder(URI targetURI) {
+            this(targetURI.toString());
+        }
+
+        public Builder(String targetURI) {
             super("response");
-            setHeader("WARC-Target-URI", targetURI.toString());
+            setHeader("WARC-Target-URI", targetURI);
         }
 
         public Builder body(HttpResponse httpResponse) throws IOException {
