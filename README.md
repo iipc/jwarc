@@ -1,4 +1,4 @@
-# jwarc [![](https://travis-ci.com/iipc/jwarc.svg?branch=master)](https://travis-ci.com/iipc/jwarc) [![](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc) [![](https://www.javadoc.io/badge/org.netpreserve/jwarc.svg)](https://www.javadoc.io/doc/org.netpreserve/jwarc)
+# jwarc [![](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/org.netpreserve/jwarc) [![](https://www.javadoc.io/badge/org.netpreserve/jwarc.svg)](https://www.javadoc.io/doc/org.netpreserve/jwarc)
 A Java library for reading and writing WARC files. This library includes a high level API modeling
 the standard record types as individual classes with typed accessors. The API is exensible and you can register
 extension record types and accessors for extension header fields.
