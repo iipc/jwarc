@@ -51,8 +51,12 @@ public class WarcRequest extends WarcCaptureRecord {
 
     public static class Builder extends AbstractBuilder<WarcRequest, Builder> {
         public Builder(URI targetURI) {
+            this(targetURI.toString());
+        }
+
+        public Builder(String targetURI) {
             super("request");
-            setHeader("WARC-Target-URI", targetURI.toString());
+            setHeader("WARC-Target-URI", targetURI);
         }
 
         @Override
