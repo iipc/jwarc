@@ -287,11 +287,11 @@ public class HttpParser extends MessageParser {
             }
             buffer.compact();
             int n = channel.read(buffer);
+            buffer.flip();
             if (n < 0) {
                 parse(null);
                 break;
             }
-            buffer.flip();
         }
     }
 

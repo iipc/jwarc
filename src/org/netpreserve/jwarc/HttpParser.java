@@ -142,6 +142,9 @@ public class HttpParser extends MessageParser {
         initialState = cs;
     }
 
+    /**
+     * Runs the parser on a buffer of data. Passing null as the buffer indicates the end of input.
+     */
     @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
     public void parse(ByteBuffer data) {
         int p;
@@ -159,7 +162,7 @@ public class HttpParser extends MessageParser {
         }
 
         
-// line 163 "HttpParser.java"
+// line 166 "HttpParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -299,7 +302,7 @@ case 1:
     endOfText = 0;
 }
 	break;
-// line 303 "HttpParser.java"
+// line 306 "HttpParser.java"
 			}
 		}
 	}
@@ -346,7 +349,7 @@ case 4:
     endOfText = 0;
 }
 	break;
-// line 350 "HttpParser.java"
+// line 353 "HttpParser.java"
 		}
 	}
 	}
@@ -356,7 +359,7 @@ case 5:
 	break; }
 	}
 
-// line 258 "HttpParser.rl"
+// line 261 "HttpParser.rl"
 
         if (data != null) {
             position += p - data.position();
@@ -386,11 +389,11 @@ case 5:
             }
             buffer.compact();
             int n = channel.read(buffer);
+            buffer.flip();
             if (n < 0) {
                 parse(null);
                 break;
             }
-            buffer.flip();
         }
     }
 
@@ -402,7 +405,7 @@ case 5:
     }
 
     
-// line 406 "HttpParser.java"
+// line 409 "HttpParser.java"
 private static byte[] init__http_actions_0()
 {
 	return new byte [] {
@@ -654,5 +657,5 @@ static final int http_en_http_request_lenient = 68;
 static final int http_en_http_response_lenient = 1;
 
 
-// line 303 "HttpParser.rl"
+// line 306 "HttpParser.rl"
 }
