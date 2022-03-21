@@ -15,7 +15,7 @@ action end_of_text { endOfText = bufPos; }
 action handle_method  { method = new String(buf, 0, bufPos, US_ASCII); bufPos = 0; }
 action handle_reason  { reason = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
 action handle_target  { target = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
-action finish { finished = true; }
+action finish { finished = true; fbreak; }
 
 action fold {
     if (bufPos > 0) {
@@ -94,11 +94,17 @@ field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' 
 field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
 field_value_folded_lenient = LWS (TEXT_lenient OWS)? >fold $push;
 field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
-named_field_lenient = (field_name_lenient OWS)? ":" >handle_name field_value_lenient CRLF_lenient %handle_value;
-named_fields_lenient = named_field_lenient* CRLF_lenient;
 
-http_request_lenient := request_line_lenient named_fields_lenient @finish;
-http_response_lenient := status_line_lenient named_fields_lenient @finish;
+named_field_lenient = (field_name_lenient OWS)? ":" >handle_name field_value_lenient CRLF_lenient %handle_value;
+named_fields_normal = named_field_lenient* CRLF_lenient @finish;
+
+named_field_unterminated = (field_name_lenient OWS)? ":" >handle_name field_value_lenient %handle_value;
+named_fields_unterminated = named_field_lenient* named_field_unterminated? %finish;
+
+named_fields_lenient = named_fields_normal | named_fields_unterminated;
+
+http_request_lenient := request_line_lenient named_fields_lenient;
+http_response_lenient := status_line_lenient named_fields_lenient;
 
 }%%
 
@@ -232,15 +238,31 @@ public class HttpParser extends MessageParser {
         initialState = cs;
     }
 
+    /**
+     * Runs the parser on a buffer of data. Passing null as the buffer indicates the end of input.
+     */
     @SuppressWarnings({"UnusedAssignment", "ConstantConditions", "ConditionalBreakInInfiniteLoop"})
     public void parse(ByteBuffer data) {
-        int p = data.position();
-        int pe = data.limit();
+        int p;
+        int pe;
+        int eof;
+
+        if (data == null) {
+            p = 0;
+            pe = 0;
+            eof = 0;
+        } else {
+            p = data.position();
+            pe = data.limit();
+            eof = -1;
+        }
 
         %% write exec;
 
-        position += p - data.position();
-        data.position(p);
+        if (data != null) {
+            position += p - data.position();
+            data.position(p);
+        }
     }
 
     public void parse(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
@@ -265,7 +287,10 @@ public class HttpParser extends MessageParser {
             }
             buffer.compact();
             int n = channel.read(buffer);
-            if (n < 0) throw new EOFException("state=" + cs);
+            if (n < 0) {
+                parse(null);
+                break;
+            }
             buffer.flip();
         }
     }

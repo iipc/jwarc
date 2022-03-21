@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.util.Optional;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.Assert.*;
 
 public class HttpParserTest {
@@ -92,13 +92,33 @@ public class HttpParserTest {
         assertEquals(Optional.of("yes"), httpParser.headers().sole("<span class=\"nonsense\">nonsense</span>"));
         parse("HTTP/1.1 200 OK\n: yes  \n\n");
         assertEquals(Optional.of("yes"), httpParser.headers().sole(""));
+        parse("HTTP/1.1 200\r\nKey: value");
+        assertEquals(Optional.of("value"), httpParser.headers().sole("Key"));
+        parse("HTTP/1.1 200\r\nKey: value\r\nkey2: value2\r\n");
+        assertEquals(Optional.of("value2"), httpParser.headers().sole("key2"));
     }
 
-    private void parse(String message) throws IOException {
+    @Test
+    public void shouldStopBeforeBody() throws IOException {
+        httpParser.lenientResponse();
+        assertEquals(6, parse("HTTP/1.1 200\r\nContent-Length: 0\r\n\r\n[body]"));
+        assertEquals(6, parse("HTTP/1.1 200\r\nContent-Length: 0\n\n[body]"));
+        httpParser.strictResponse();
+        assertEquals(6, parse("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n[body]"));
+        httpParser.strictRequest();
+        assertEquals(6, parse("GET / HTTP/1.1\r\n\r\n[body]"));
+        httpParser.lenientRequest();
+        assertEquals(6, parse("GET / HTTP/1.1\r\n\r\n[body]"));
+        assertEquals(6, parse("GET /\n\n[body]"));
+    }
+
+    private int parse(String message) throws IOException {
         httpParser.reset();
-        httpParser.parse(Channels.newChannel(new ByteArrayInputStream(new byte[0])), wrap(message));
+        ByteBuffer buffer = wrap(message);
+        httpParser.parse(Channels.newChannel(new ByteArrayInputStream(new byte[0])), buffer);
         assertFalse(httpParser.isError());
         assertTrue(httpParser.isFinished());
+        return buffer.remaining();
     }
 
     private void parseShouldFail(String message) throws IOException {
@@ -108,6 +128,6 @@ public class HttpParserTest {
     }
 
     private ByteBuffer wrap(String message) {
-        return ByteBuffer.wrap(message.getBytes(UTF_8));
+        return ByteBuffer.wrap(message.getBytes(ISO_8859_1));
     }
 }
