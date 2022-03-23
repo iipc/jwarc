@@ -5,10 +5,8 @@
 
 package org.netpreserve.jwarc.cdx;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -17,7 +15,11 @@ public class CdxReader implements Iterable<CdxRecord>, Closeable {
     private final BufferedReader reader;
     private CdxFormat format;
 
-    public CdxReader(BufferedReader reader) {
+    public CdxReader(InputStream stream) {
+        this(new BufferedReader(new InputStreamReader(stream, StandardCharsets.US_ASCII)));
+    }
+
+    CdxReader(BufferedReader reader) {
         this.reader = reader;
     }
 
