@@ -58,7 +58,7 @@ public class StatsTool {
 
         public void print() {
             if (rows.isEmpty()) return;
-            int maxKeyLength = Math.min(name.length(), rows.keySet().stream().mapToInt(String::length).max().orElse(10));
+            int maxKeyLength = Math.max(name.length(), rows.keySet().stream().mapToInt(String::length).max().orElse(10));
             System.out.printf("%-" + maxKeyLength + "s %10s %10s %10s%n", name, "COUNT", "TOTSIZE", "AVGSIZE");
             rows.values().stream().sorted(comparing(e -> -e.count)).forEachOrdered(row ->
                     System.out.printf("%-" + maxKeyLength + "s %10d %10d %10d%n",
