@@ -20,7 +20,7 @@ public class CdxFormat {
     private final byte[] fieldIndices;
 
     public CdxFormat(String legend) {
-        String[] fields = legend.replaceFirst("^CDX ", "").split(" ");
+        String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
         fieldIndices = new byte[128];
         Arrays.fill(fieldIndices, (byte) -1);

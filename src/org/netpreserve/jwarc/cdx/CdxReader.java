@@ -28,7 +28,7 @@ public class CdxReader implements Iterable<CdxRecord>, Closeable {
             if (line.isEmpty() || line.startsWith("#")) {
                 continue; // ignore comments
             }
-            if (line.startsWith("CDX ")) {
+            if (line.startsWith(" CDX ") || line.startsWith("CDX ")) {
                 format = new CdxFormat(line);
                 continue;
             }
