@@ -20,6 +20,7 @@ import static java.time.ZoneOffset.UTC;
 
 public class CdxTool {
     public static void main(String[] args) throws IOException {
+        boolean printHeader = true;
         CdxFormat cdxFormat = CdxFormat.CDX11;
         List<Path> files = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
@@ -48,7 +49,11 @@ public class CdxTool {
                         System.out.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
                         System.out.println();
                         System.out.println("  -f, --format LEGEND  CDX format may be CDX9, CDX11 or a custom legend");
+                        System.out.println("      --no-header      Don't print the CDX header line");
                         return;
+                    case "--no-header":
+                        printHeader = false;
+                        break;
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
@@ -58,6 +63,10 @@ public class CdxTool {
             } else {
                 files.add(Paths.get(args[i]));
             }
+        }
+
+        if (printHeader) {
+            System.out.println(" CDX " + cdxFormat.legend());
         }
 
         for (Path file: files) {
