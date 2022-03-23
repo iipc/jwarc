@@ -59,7 +59,9 @@ public class CdxReader implements Iterable<CdxRecord>, Closeable {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return next;
+                CdxRecord record = next;
+                next = null;
+                return record;
             }
         };
     }
