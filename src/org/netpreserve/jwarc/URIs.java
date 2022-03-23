@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.DOTALL;
 
-class URIs {
+public class URIs {
     private final static Pattern URL_REGEX = Pattern.compile("\\A" +
             "(?:([a-zA-Z][^:]*):)?" + // scheme
             "[/\\\\\\r\\n\\t]*" + // slashes

@@ -6,6 +6,7 @@
 package org.netpreserve.jwarc.cdx;
 
 import org.netpreserve.jwarc.MediaType;
+import org.netpreserve.jwarc.URIs;
 
 import java.io.IOException;
 import java.net.URI;
@@ -52,7 +53,7 @@ public class CdxRecord {
 
     public URI targetURI() {
         String value = target();
-        return value == null ? null : URI.create(value);
+        return value == null ? null : URIs.parseLeniently(value);
     }
 
     /**
