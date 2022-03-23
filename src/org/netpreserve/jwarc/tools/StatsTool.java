@@ -58,7 +58,7 @@ public class StatsTool {
 
         public void print() {
             if (rows.isEmpty()) return;
-            int maxKeyLength = rows.keySet().stream().mapToInt(String::length).max().orElse(10);
+            int maxKeyLength = Math.min(name.length(), rows.keySet().stream().mapToInt(String::length).max().orElse(10));
             System.out.printf("%-" + maxKeyLength + "s %10s %10s %10s%n", name, "COUNT", "TOTSIZE", "AVGSIZE");
             rows.values().stream().sorted(comparing(e -> -e.count)).forEachOrdered(row ->
                     System.out.printf("%-" + maxKeyLength + "s %10d %10d %10d%n",
@@ -68,7 +68,7 @@ public class StatsTool {
     }
 
     List<Table> tables = Arrays.asList(
-            new Table("RECORD", WarcRecord::type, r -> "resource"),
+            new Table("RECORD", WarcRecord::type, r -> "cdx"),
             new Table("MIME", record -> {
                 if (record instanceof WarcResponse || record instanceof WarcResource) {
                     try {
