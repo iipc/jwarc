@@ -56,13 +56,13 @@ public class StatsTool {
             rows.computeIfAbsent(key, Row::new).add(record.size());
         }
 
-        public void print() {
+        public void print(Function<Long,String> sizeFormatter) {
             if (rows.isEmpty()) return;
             int maxKeyLength = Math.max(name.length(), rows.keySet().stream().mapToInt(String::length).max().orElse(10));
             System.out.printf("%-" + maxKeyLength + "s %10s %10s %10s%n", name, "COUNT", "TOTSIZE", "AVGSIZE");
             rows.values().stream().sorted(comparing(e -> -e.count)).forEachOrdered(row ->
-                    System.out.printf("%-" + maxKeyLength + "s %10d %10d %10d%n",
-                            row.key, row.count, row.totalSize, row.totalSize / row.count));
+                    System.out.printf("%-" + maxKeyLength + "s %10d %10s %10s%n",
+                            row.key, row.count, sizeFormatter.apply(row.totalSize), sizeFormatter.apply(row.totalSize / row.count)));
             System.out.println();
         }
     }
@@ -91,20 +91,39 @@ public class StatsTool {
 
     public static void main(String[] args) throws IOException {
         StatsTool statsTool = new StatsTool();
+        Function<Long,String> sizeFormatter = String::valueOf;
 
         for (String arg: args) {
-            if (arg.endsWith(".cdx")) {
+            if (arg.startsWith("-")) {
+                switch (arg) {
+                    case "-h":
+                    case "--human-readable":
+                        sizeFormatter = StatsTool::humanByteSize;
+                        break;
+                    case "--help":
+                        System.out.println("Usage: jwarc stats [warc-or-cdx-files...]");
+                        System.out.println();
+                        System.out.println("Options:");
+                        System.out.println("  -h, --human-readable  Print sizes in powers of 1024 (e.g. 13.1 MB)");
+                        break;
+                    default:
+                        System.err.println("Unrecognized option: " + arg);
+                        System.err.println("Try `jwarc stats --help` for usage information");
+                        System.exit(1);
+                        break;
+                }
+            } else if (arg.endsWith(".cdx")) {
                 statsTool.loadCdxFile(Paths.get(arg));
             } else {
                 statsTool.loadWarcFile(Paths.get(arg));
             }
         }
 
-        statsTool.print();
+        statsTool.print(sizeFormatter);
     }
 
-    private void print() {
-        tables.forEach(Table::print);
+    private void print(Function<Long,String> sizeFormatter) {
+        tables.forEach(table -> table.print(sizeFormatter));
     }
 
     private void loadCdxFile(Path path) throws IOException {
@@ -134,5 +153,11 @@ public class StatsTool {
                 }
             }
         }
+    }
+
+    private static String humanByteSize(long n) {
+        if (n < 0) return "-" + humanByteSize(-n);
+        int i = n == 0 ? 0 : (63 - Long.numberOfLeadingZeros(n)) / 10;
+        return String.format("%.1f %sB", (double)n / (1L << i * 10), " KMGTPE".charAt(i));
     }
 }
