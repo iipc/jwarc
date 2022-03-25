@@ -8,10 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
@@ -92,6 +89,7 @@ public class StatsTool {
     public static void main(String[] args) throws IOException {
         StatsTool statsTool = new StatsTool();
         Function<Long,String> sizeFormatter = String::valueOf;
+        List<Path> files = new ArrayList<>();
 
         for (String arg: args) {
             if (arg.startsWith("-")) {
@@ -105,20 +103,25 @@ public class StatsTool {
                         System.out.println();
                         System.out.println("Options:");
                         System.out.println("  -h, --human-readable  Print sizes in powers of 1024 (e.g. 13.1 MB)");
-                        break;
+                        return;
                     default:
                         System.err.println("Unrecognized option: " + arg);
                         System.err.println("Try `jwarc stats --help` for usage information");
                         System.exit(1);
                         break;
                 }
-            } else if (arg.endsWith(".cdx")) {
-                statsTool.loadCdxFile(Paths.get(arg));
             } else {
-                statsTool.loadWarcFile(Paths.get(arg));
+                files.add(Paths.get(arg));
             }
         }
 
+        for (Path file : files) {
+            if (file.getFileName().toString().endsWith(".cdx")) {
+                statsTool.loadCdxFile(file);
+            } else {
+                statsTool.loadWarcFile(file);
+            }
+        }
         statsTool.print(sizeFormatter);
     }
 
