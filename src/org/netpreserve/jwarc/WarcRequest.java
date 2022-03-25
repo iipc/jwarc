@@ -36,9 +36,7 @@ public class WarcRequest extends WarcCaptureRecord {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 LengthedBody lengthed = (LengthedBody) body;
                 http = HttpRequest.parse(lengthed.discardPushbackOnRead(), buffer, Channels.newChannel(baos));
-                byte[] headerBytes = baos.toByteArray();
-                http.serializedHeader = headerBytes;
-                lengthed.pushback(headerBytes);
+                lengthed.pushback(baos.toByteArray());
             } else {
                 http = HttpRequest.parse(body, buffer);
             }
