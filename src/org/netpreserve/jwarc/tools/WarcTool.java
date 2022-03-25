@@ -67,6 +67,7 @@ public class WarcTool {
         System.out.println("Commands:");
         System.out.println();
         System.out.println("  cdx         List records in CDX format");
+        System.out.println("  dedupe      Deduplicate records by looking up a CDX server");
         System.out.println("  extract     Extract record by offset");
         System.out.println("  fetch       Download a URL recording the request and response");
         System.out.println("  filter      Copy records that match a given filter expression");
