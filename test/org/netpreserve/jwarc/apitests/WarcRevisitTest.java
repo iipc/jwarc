@@ -53,6 +53,17 @@ public class WarcRevisitTest {
     }
 
     @Test
+    public void buildingWithoutRefersToRecordId() {
+        WarcRevisit revisit = new WarcRevisit.Builder(URI.create("http://example.org/"),
+                WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_1)
+                .refersTo((URI)null, URI.create("http://example.org/other"), Instant.parse("2016-09-19T17:20:24Z"))
+                .build();
+        assertEquals(Optional.empty(), revisit.refersTo());
+        assertEquals(Optional.of(URI.create("http://example.org/other")), revisit.refersToTargetURI());
+        assertEquals(Optional.of(Instant.parse("2016-09-19T17:20:24Z")), revisit.refersToDate());
+    }
+
+    @Test
     public void builder() throws IOException {
         URI target = URI.create("http://example.org/");
         Instant date = Instant.now();
