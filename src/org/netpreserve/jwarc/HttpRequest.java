@@ -6,15 +6,12 @@
 package org.netpreserve.jwarc;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class HttpRequest extends HttpMessage {
     private final String method;
@@ -83,6 +80,7 @@ public class HttpRequest extends HttpMessage {
         ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
         parser.parse(channel, buffer, Channels.newChannel(headerBuffer));
         byte[] headerBytes = headerBuffer.toByteArray();
+        if (headerBytes.length == 0) throw new EOFException();
         if (copyTo != null) {
             copyTo.write(ByteBuffer.wrap(headerBytes));
             copyTo.write(buffer.duplicate());
