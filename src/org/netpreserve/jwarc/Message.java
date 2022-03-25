@@ -23,6 +23,7 @@ public abstract class Message {
     private final MessageVersion version;
     private final MessageHeaders headers;
     private final MessageBody body;
+    byte[] serializedHeader;
 
     Message(MessageVersion version, MessageHeaders headers, MessageBody body) {
         this.version = version;
@@ -75,13 +76,16 @@ public abstract class Message {
      * Serializes the message header.
      */
     public byte[] serializeHeader() {
-        try {
-            StringBuilder sb = new StringBuilder();
-            serializeHeaderTo(sb);
-            return sb.toString().getBytes(headerCharset());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        if (serializedHeader == null) {
+            try {
+                StringBuilder sb = new StringBuilder();
+                serializeHeaderTo(sb);
+                serializedHeader = sb.toString().getBytes(headerCharset());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
+        return serializedHeader;
     }
 
     @SuppressWarnings("unchecked")
