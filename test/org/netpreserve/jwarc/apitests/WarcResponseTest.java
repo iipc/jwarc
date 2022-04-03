@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc.apitests;
@@ -22,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
 
 public class WarcResponseTest {
-    private static String warc = "WARC/1.1\r\n" +
+    static String warc = "WARC/1.1\r\n" +
             "WARC-Type: response\r\n" +
             "WARC-Target-URI: http://www.archive.org/images/logoc.jpg\r\n" +
             "WARC-Warcinfo-ID: <urn:uuid:d7ae5c10-e6b3-4d27-967d-34780c58ba39>\r\n" +

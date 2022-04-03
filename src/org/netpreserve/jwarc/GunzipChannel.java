@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
@@ -182,5 +182,12 @@ class GunzipChannel implements ReadableByteChannel {
 
     public long inputPosition() {
         return inputPosition;
+    }
+
+    public void reset() {
+        inflater.reset();
+        buffer.clear();
+        inputPosition = 0;
+        seenHeader = false;
     }
 }

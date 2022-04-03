@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
@@ -30,10 +30,11 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private final HashMap<String, WarcRecord.Constructor> types;
     private final WarcParser parser = new WarcParser();
     private final ReadableByteChannel channel;
+    private final ReadableByteChannel underlyingChannel;
     private final ByteBuffer buffer;
     private final WarcCompression compression;
     private WarcRecord record;
-    private final long startPosition;
+    private long startPosition;
     private long position;
     private long headerLength;
     private boolean blockDigestCalculation = false;
@@ -66,6 +67,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             if (n < 0) {
                 if (!buffer.hasRemaining()) {
                     this.channel = channel;
+                    underlyingChannel = channel;
                     this.buffer = buffer;
                     compression = WarcCompression.NONE;
                     return;
@@ -86,6 +88,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             this.buffer = buffer;
             compression = WarcCompression.NONE;
         }
+        underlyingChannel = channel;
     }
 
 
@@ -275,6 +278,32 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      */
     public long position() {
         return position;
+    }
+
+    /**
+     * Seeks to the record at the given position in the underlying channel.
+     *
+     * @param newPosition byte offset of the beginning of the record to seek to
+     * @throws IOException                   if an I/O error occurs
+     * @throws IllegalArgumentException      if the position is negative
+     * @throws UnsupportedOperationException if the underlying channel does not support seeking
+     */
+    public void position(long newPosition) throws IOException {
+        if (!(underlyingChannel instanceof SeekableByteChannel)) {
+            throw new UnsupportedOperationException("underlying channel is not seekable");
+        }
+        ((SeekableByteChannel) underlyingChannel).position(newPosition);
+        position = newPosition;
+        startPosition = newPosition;
+        buffer.clear();
+        buffer.flip();
+        if (record != null) {
+            record.body().close();
+            record = null;
+        }
+        if (compression == WarcCompression.GZIP) {
+            ((GunzipChannel)channel).reset();
+        }
     }
 
     /**

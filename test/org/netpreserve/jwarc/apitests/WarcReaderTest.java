@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc.apitests;
@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.Assert.*;
 
 public class WarcReaderTest {
@@ -159,6 +160,7 @@ public class WarcReaderTest {
         Path temp = Files.createTempFile("jwarc", ".tmp");
         try {
             Files.write(temp, data);
+            Files.write(temp, data, APPEND);
             try (WarcReader reader = new WarcReader(temp)) {
                 WarcResponse response = (WarcResponse)reader.next().get();
                 byte[] buf = new byte[8192];
@@ -168,6 +170,20 @@ public class WarcReaderTest {
                     total += n;
                 }
                 assertEquals(20289, total);
+
+                reader.position(0L);
+                assertEquals(0L, reader.position());
+                WarcResponse response2 = (WarcResponse)reader.next().get();
+                assertEquals(response.id(), response2.id());
+
+                WarcResponse response3 = (WarcResponse)reader.next().get();
+                assertEquals(data.length, reader.position());
+                assertEquals(response.id(), response3.id());
+
+                reader.position(data.length);
+                WarcResponse response4 = (WarcResponse)reader.next().get();
+                assertEquals(data.length, reader.position());
+                assertEquals(response.id(), response4.id());
             }
         } finally {
             Files.deleteIfExists(temp);
