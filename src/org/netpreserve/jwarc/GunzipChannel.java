@@ -187,6 +187,7 @@ class GunzipChannel implements ReadableByteChannel {
     public void reset() {
         inflater.reset();
         buffer.clear();
+        buffer.flip();
         inputPosition = 0;
         seenHeader = false;
     }
