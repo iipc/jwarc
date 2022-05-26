@@ -5,10 +5,7 @@
 
 package org.netpreserve.jwarc.cdx;
 
-import org.netpreserve.jwarc.MediaType;
-import org.netpreserve.jwarc.WarcCaptureRecord;
-import org.netpreserve.jwarc.WarcDigest;
-import org.netpreserve.jwarc.WarcResponse;
+import org.netpreserve.jwarc.*;
 
 import java.time.format.DateTimeFormatter;
 
@@ -28,6 +25,7 @@ public final class CdxFields {
     public static final byte MIME_TYPE = 'm';
     public static final byte REDIRECT = 'r';
     public static final byte RESPONSE_CODE = 's';
+    public static final byte NORMALIZED_SURT = 'N';
     public static final byte COMPRESSED_RECORD_SIZE = 'S';
     public static final byte COMPRESSED_ARC_FILE_OFFSET = 'V';
 
@@ -46,6 +44,8 @@ public final class CdxFields {
                     return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
                 case ORIGINAL_URL:
                     return escape(record.target());
+                case NORMALIZED_SURT:
+                    return escape(URIs.toNormalizedSurt(record.target()));
                 case REDIRECT:
                     if (record instanceof WarcResponse) {
                         return ((WarcResponse)record).http().headers().first("Location").map(CdxFields::escape).orElse("-");

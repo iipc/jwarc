@@ -21,7 +21,7 @@ public class CdxFormatTest {
                 .payloadDigest("sha1", "AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7")
                 .body(httpResponse)
                 .build();
-        assertEquals("- 20220302214434 http://example.org/ text/html 404 AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7 - - 456 123 example.warc.gz",
+        assertEquals("org,example)/ 20220302214434 http://example.org/ text/html 404 AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7 - - 456 123 example.warc.gz",
                 CdxFormat.CDX11.format(response, "example.warc.gz", 123, 456));
     }
 }
