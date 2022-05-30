@@ -59,8 +59,11 @@ public class CdxFormat {
             throw new UncheckedIOException(e);
         }
     }
-
     public String format(WarcCaptureRecord record, String filename, long position, long size) {
+        return format(record, filename, position, size, null);
+    }
+
+    public String format(WarcCaptureRecord record, String filename, long position, long size, String urlkey) {
         StringBuilder builder = new StringBuilder();
         for (byte fieldName : fieldNames) {
             if (builder.length() > 0) builder.append(' ');
@@ -74,6 +77,13 @@ public class CdxFormat {
                     break;
                 case CdxFields.COMPRESSED_RECORD_SIZE:
                     value = String.valueOf(size);
+                    break;
+                case CdxFields.NORMALIZED_SURT:
+                    if (urlkey != null) {
+                        value = urlkey;
+                    } else {
+                        value = CdxFields.format(fieldName, record);
+                    }
                     break;
                 default:
                     value = CdxFields.format(fieldName, record);

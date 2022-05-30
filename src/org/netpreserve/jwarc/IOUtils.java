@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -120,5 +121,17 @@ public final class IOUtils {
         } else {
             throw new IllegalArgumentException("Unsupported URI scheme: " + scheme);
         }
+    }
+
+    public static byte[] readNBytes(InputStream stream, int n) throws IOException {
+        byte[] buffer = new byte[n];
+        for (int remaining = n; remaining > 0;) {
+            int read = stream.read(buffer, buffer.length - remaining, remaining);
+            if (read < 0) {
+                return Arrays.copyOf(buffer, buffer.length - remaining);
+            }
+            remaining -= read;
+        }
+        return buffer;
     }
 }

@@ -7,20 +7,19 @@ package org.netpreserve.jwarc.tools;
 
 import org.netpreserve.jwarc.*;
 import org.netpreserve.jwarc.cdx.CdxFormat;
+import org.netpreserve.jwarc.cdx.CdxRequestEncoder;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.time.ZoneOffset.UTC;
 
 public class CdxTool {
     public static void main(String[] args) throws IOException {
         boolean printHeader = true;
+        boolean postAppend = false;
         CdxFormat cdxFormat = CdxFormat.CDX11;
         List<Path> files = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
@@ -54,6 +53,10 @@ public class CdxTool {
                     case "--no-header":
                         printHeader = false;
                         break;
+                    case "-p":
+                    case "--post-append":
+                        postAppend = true;
+                        break;
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
@@ -80,12 +83,33 @@ public class CdxTool {
                                 ((WarcCaptureRecord) record).payload().isPresent()) {
                             long position = reader.position();
                             WarcCaptureRecord capture = (WarcCaptureRecord) record;
+                            URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
 
                             // advance to the next record so we can calculate the length
                             record = reader.next().orElse(null);
                             long length = reader.position() - position;
 
-                            System.out.println(cdxFormat.format(capture, filename, position, length));
+                            String urlKey = null;
+                            if (postAppend) {
+                                // check for a corresponding request record
+                                while (urlKey == null && record instanceof WarcCaptureRecord
+                                        && ((WarcCaptureRecord) record).concurrentTo().contains(id)) {
+                                    if (record instanceof WarcRequest) {
+                                        HttpRequest httpRequest = ((WarcRequest) record).http();
+                                        String encodedRequest = CdxRequestEncoder.encode(httpRequest);
+                                        if (encodedRequest != null) {
+                                            String rawUrlKey = capture.target() +
+                                                    (capture.target().contains("?") ? '&' : '?')
+                                                    + encodedRequest;
+                                            urlKey = URIs.toNormalizedSurt(rawUrlKey);
+                                        }
+                                    }
+
+                                    record = reader.next().orElse(null);
+                                }
+                            }
+
+                            System.out.println(cdxFormat.format(capture, filename, position, length, urlKey));
                         } else {
                             record = reader.next().orElse(null);
                         }

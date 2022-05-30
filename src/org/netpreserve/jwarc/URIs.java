@@ -119,7 +119,7 @@ public class URIs {
         return prev;
     }
 
-    private static String percentEncodeIllegals(String s) {
+    public static String percentEncodeIllegals(String s) {
         StringBuilder out = new StringBuilder();
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         for (byte rawByte : bytes) {
