@@ -25,7 +25,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExtractTool {
 
-    private static enum ExtractAction { RECORD, HEADERS, PAYLOAD; };
+    private enum ExtractAction { RECORD, HEADERS, PAYLOAD }
 
     private static void writeWarcHeaders(WritableByteChannel out, WarcRecord record) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -88,11 +88,11 @@ public class ExtractTool {
     }
 
     private static void usage(int exitValue) {
-        System.err.println("");
+        System.err.println();
         System.err.println("ExtractTool [-h] [--payload | --headers] filename offset ...");
-        System.err.println("");
+        System.err.println();
         System.err.println("Options:");
-        System.err.println("");
+        System.err.println();
         System.err.println(" --headers\toutput only record (and HTTP) headers");
         System.err.println(" --payload\toutput only record payload, if necessary");
         System.err.println("          \tdecode transfer and/or content encoding");
