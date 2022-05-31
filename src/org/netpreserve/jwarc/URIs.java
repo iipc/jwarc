@@ -75,7 +75,7 @@ public class URIs {
         }
         if (query != null) {
             output.append('?');
-            String[] params = normalizePercentEncoding(query).toLowerCase(Locale.ROOT).split("&");
+            String[] params = normalizePercentEncoding(query).toLowerCase(Locale.ROOT).split("&", -1);
             Arrays.sort(params);
             output.append(String.join("&", params));
         }
