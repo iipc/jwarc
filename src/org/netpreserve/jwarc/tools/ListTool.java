@@ -1,7 +1,6 @@
 package org.netpreserve.jwarc.tools;
 
-import org.netpreserve.jwarc.WarcReader;
-import org.netpreserve.jwarc.WarcRecord;
+import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -11,7 +10,19 @@ public class ListTool {
         for (String arg : args) {
             try (WarcReader reader = new WarcReader(Paths.get(arg))) {
                 for (WarcRecord record : reader) {
-                    System.out.println(record);
+                    String url = "-";
+                    if (record instanceof WarcTargetRecord) {
+                        url = ((WarcTargetRecord) record).target();
+                    }
+
+                    String methodOrStatus = "-";
+                    if (record instanceof WarcRequest) {
+                        methodOrStatus = ((WarcRequest) record).http().method();
+                    } else if (record instanceof WarcResponse) {
+                        methodOrStatus = String.valueOf(((WarcResponse) record).http().status());
+                    }
+
+                    System.out.format("%10d %-10s %-4s %s\n", reader.position(), record.type(), methodOrStatus, url);
                 }
             }
         }
