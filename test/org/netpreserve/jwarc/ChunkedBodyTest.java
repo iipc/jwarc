@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -38,6 +39,7 @@ public class ChunkedBodyTest {
     @Test(expected = ParsingException.class)
     public void testErr() throws IOException {
         new ChunkedBody(Channels.newChannel(new ByteArrayInputStream(new byte[0])), ByteBuffer.allocate(16))
+                .strict()
                 .read(ByteBuffer.allocate(32));
     }
 
@@ -89,5 +91,19 @@ public class ChunkedBodyTest {
         }
         assertFalse(initBuf.hasRemaining());
         assertEquals(bodyString, new String(Arrays.copyOf(buf.array(), buf.position()), US_ASCII));
+    }
+
+    @Test
+    public void testLenientMode() throws IOException {
+        String string = "33hello world!";
+        byte[] body = string.getBytes(US_ASCII);
+        ReadableByteChannel chan = Channels.newChannel(new ByteArrayInputStream(body));
+        ByteBuffer buf = ByteBuffer.allocate(100);
+        ByteBuffer initBuf = ByteBuffer.allocate(100);
+        initBuf.flip();
+        ChunkedBody decoder = new ChunkedBody(chan, initBuf);
+        int n = decoder.read(buf);
+        buf.flip();
+        assertEquals(string, US_ASCII.decode(buf).toString());
     }
 }

@@ -17,6 +17,8 @@ class ChunkedBody extends MessageBody {
     private long remaining = 0;
     private long chunkLength = -1;
     private boolean finished;
+    private boolean strict;
+    private boolean passthrough;
 
     public ChunkedBody(ReadableByteChannel channel, ByteBuffer buffer) {
         this.channel = channel;
@@ -35,7 +37,25 @@ class ChunkedBody extends MessageBody {
         return position;
     }
 
+    public ChunkedBody strict() {
+        strict = true;
+        return this;
+    }
+
     public int read(ByteBuffer dst) throws IOException {
+        if (passthrough) {
+            if (buffer.hasRemaining()) {
+                int n = IOUtils.transfer(buffer, dst);
+                position += n;
+                return n;
+            }
+            int n = channel.read(dst);
+            if (n > 0) {
+                position += n;
+            }
+            return n;
+        }
+
         while (chunkLength != 0) {
             if (!buffer.hasRemaining()) {
                 // optimisation: let large reads bypass our buffer
@@ -67,12 +87,15 @@ class ChunkedBody extends MessageBody {
             chunkLength = -1;
             parse();
             remaining = chunkLength;
+            if (passthrough) {
+                return read(dst);
+            }
         }
         return -1;
     }
 
     
-// line 115 "ChunkedBody.rl"
+// line 138 "ChunkedBody.rl"
 
 
     private int cs = chunked_start;
@@ -82,7 +105,7 @@ class ChunkedBody extends MessageBody {
         int p = buffer.position();
         int pe = buffer.limit();
         
-// line 86 "ChunkedBody.java"
+// line 109 "ChunkedBody.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -163,18 +186,18 @@ case 1:
 			switch ( _chunked_actions[_acts++] )
 			{
 	case 0:
-// line 76 "ChunkedBody.rl"
+// line 99 "ChunkedBody.rl"
 	{ tmp = tmp * 16 + Character.digit(buffer.get(p), 16); }
 	break;
 	case 1:
-// line 77 "ChunkedBody.rl"
+// line 100 "ChunkedBody.rl"
 	{ if (tmp != 0) { chunkLength = tmp; tmp = 0; { p += 1; _goto_targ = 5; if (true)  continue _goto;} } }
 	break;
 	case 2:
-// line 78 "ChunkedBody.rl"
+// line 101 "ChunkedBody.rl"
 	{ chunkLength = 0; }
 	break;
-// line 178 "ChunkedBody.java"
+// line 201 "ChunkedBody.java"
 			}
 		}
 	}
@@ -194,16 +217,21 @@ case 5:
 	break; }
 	}
 
-// line 124 "ChunkedBody.rl"
-        buffer.position(p);
+// line 147 "ChunkedBody.rl"
         if (cs == chunked_error) {
-            throw new ParsingException("chunked encoding at position " + p + ": "
-                    + getErrorContext(buffer, (int) p, 40));
+            if (strict) {
+                throw new ParsingException("chunked encoding at position " + p + ": "
+                        + getErrorContext(buffer, (int) p, 40));
+            } else {
+                passthrough = true;
+            }
+        } else {
+            buffer.position(p);
         }
     }
 
     
-// line 207 "ChunkedBody.java"
+// line 235 "ChunkedBody.java"
 private static byte[] init__chunked_actions_0()
 {
 	return new byte [] {
@@ -352,5 +380,5 @@ static final int chunked_error = 0;
 static final int chunked_en_chunks = 1;
 
 
-// line 132 "ChunkedBody.rl"
+// line 160 "ChunkedBody.rl"
 }

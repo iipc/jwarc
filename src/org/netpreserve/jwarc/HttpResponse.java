@@ -79,7 +79,11 @@ public class HttpResponse extends HttpMessage {
         if (withoutBody) {
             body = MessageBody.empty();
         } else if (headers.contains("Transfer-Encoding", "chunked")) {
-            body = new ChunkedBody(channel, buffer);
+            ChunkedBody chunkedBody = new ChunkedBody(channel, buffer);
+            if (strict) {
+                chunkedBody.strict();
+            }
+            body = chunkedBody;
         } else {
             if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
                 LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
