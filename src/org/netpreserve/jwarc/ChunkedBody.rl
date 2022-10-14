@@ -15,6 +15,8 @@ class ChunkedBody extends MessageBody {
     private long remaining = 0;
     private long chunkLength = -1;
     private boolean finished;
+    private boolean strict;
+    private boolean passthrough;
 
     public ChunkedBody(ReadableByteChannel channel, ByteBuffer buffer) {
         this.channel = channel;
@@ -33,7 +35,25 @@ class ChunkedBody extends MessageBody {
         return position;
     }
 
+    public ChunkedBody strict() {
+        strict = true;
+        return this;
+    }
+
     public int read(ByteBuffer dst) throws IOException {
+        if (passthrough) {
+            if (buffer.hasRemaining()) {
+                int n = IOUtils.transfer(buffer, dst);
+                position += n;
+                return n;
+            }
+            int n = channel.read(dst);
+            if (n > 0) {
+                position += n;
+            }
+            return n;
+        }
+
         while (chunkLength != 0) {
             if (!buffer.hasRemaining()) {
                 // optimisation: let large reads bypass our buffer
@@ -65,6 +85,9 @@ class ChunkedBody extends MessageBody {
             chunkLength = -1;
             parse();
             remaining = chunkLength;
+            if (passthrough) {
+                return read(dst);
+            }
         }
         return -1;
     }
@@ -121,10 +144,15 @@ class ChunkedBody extends MessageBody {
         int p = buffer.position();
         int pe = buffer.limit();
         %% write exec;
-        buffer.position(p);
         if (cs == chunked_error) {
-            throw new ParsingException("chunked encoding at position " + p + ": "
-                    + getErrorContext(buffer, (int) p, 40));
+            if (strict) {
+                throw new ParsingException("chunked encoding at position " + p + ": "
+                        + getErrorContext(buffer, (int) p, 40));
+            } else {
+                passthrough = true;
+            }
+        } else {
+            buffer.position(p);
         }
     }
 

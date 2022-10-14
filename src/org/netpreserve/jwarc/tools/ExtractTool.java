@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2020 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2020-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc.tools;
@@ -15,15 +15,17 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExtractTool {
 
-    private static enum ExtractAction { RECORD, HEADERS, PAYLOAD; };
+    private enum ExtractAction { RECORD, HEADERS, PAYLOAD }
 
     private static void writeWarcHeaders(WritableByteChannel out, WarcRecord record) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -86,11 +88,11 @@ public class ExtractTool {
     }
 
     private static void usage(int exitValue) {
-        System.err.println("");
-        System.err.println("ExtractTool [-h] [--payload | --headers] filename offset");
-        System.err.println("");
+        System.err.println();
+        System.err.println("ExtractTool [-h] [--payload | --headers] filename offset ...");
+        System.err.println();
         System.err.println("Options:");
-        System.err.println("");
+        System.err.println();
         System.err.println(" --headers\toutput only record (and HTTP) headers");
         System.err.println(" --payload\toutput only record payload, if necessary");
         System.err.println("          \tdecode transfer and/or content encoding");
@@ -100,7 +102,7 @@ public class ExtractTool {
     public static void main(String[] args) throws IOException {
         ExtractAction action = ExtractAction.RECORD;
         Path warcFile = null;
-        long offset = -1;
+        List<Long> offsets = new ArrayList<>();
         for (String arg : args) {
             switch (arg) {
             case "-h":
@@ -119,42 +121,45 @@ public class ExtractTool {
                         System.err.println("Cannot read WARC file: " + warcFile);
                         usage(1);
                     }
-                } else if (offset == -1) {
+                } else if (arg.startsWith("-")) {
+                    System.err.println("Unknown argument: " + arg);
+                    usage(1);
+                } else {
                     try {
-                        offset = Long.parseLong(arg);
+                        offsets.add(Long.parseLong(arg));
                     } catch (NumberFormatException e) {
                         System.err.println(e.getMessage());
                         usage(1);
                     }
-                } else {
-                    System.err.println("Unknown argument: " + arg);
-                    usage(1);
                 }
             }
         }
-        if (warcFile == null || offset == -1) {
+        if (warcFile == null || offsets.isEmpty()) {
             usage(1);
         }
-        try (FileChannel channel = FileChannel.open(warcFile);
-                WarcReader reader = new WarcReader(channel.position(offset))) {
-            Optional<WarcRecord> record = reader.next();
-            if (!record.isPresent()) {
-                System.err.println("No record found at position " + offset);
-                System.exit(1);
-            }
-            WritableByteChannel out = Channels.newChannel(System.out);
-            switch (action) {
-            case RECORD:
-                writeWarcHeaders(out, record.get());
-                writeBody(out, record.get().body());
-                break;
-            case HEADERS:
-                writeWarcHeaders(out, record.get());
-                writeHttpHeaders(out, record.get());
-                break;
-            case PAYLOAD:
-                writePayload(out, record.get());
-                break;
+        for (long offset : offsets) {
+            try (FileChannel channel = FileChannel.open(warcFile);
+                 WarcReader reader = new WarcReader(channel.position(offset))) {
+                Optional<WarcRecord> record = reader.next();
+                if (!record.isPresent()) {
+                    System.err.println("No record found at position " + offset);
+                    System.exit(1);
+                }
+                WritableByteChannel out = Channels.newChannel(System.out);
+                switch (action) {
+                    case RECORD:
+                        writeWarcHeaders(out, record.get());
+                        writeBody(out, record.get().body());
+                        out.write(ByteBuffer.wrap("\r\n\r\n".getBytes(US_ASCII)));
+                        break;
+                    case HEADERS:
+                        writeWarcHeaders(out, record.get());
+                        writeHttpHeaders(out, record.get());
+                        break;
+                    case PAYLOAD:
+                        writePayload(out, record.get());
+                        break;
+                }
             }
         }
     }

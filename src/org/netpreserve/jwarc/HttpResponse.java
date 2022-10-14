@@ -5,8 +5,10 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -56,6 +58,7 @@ public class HttpResponse extends HttpMessage {
     }
 
     private static HttpResponse parse(ReadableByteChannel channel, WritableByteChannel copyTo, boolean strict, boolean withoutBody) throws IOException {
+        ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
         ByteBuffer buffer = ByteBuffer.allocate(8192);
         buffer.flip();
         HttpParser parser = new HttpParser();
@@ -64,8 +67,10 @@ public class HttpResponse extends HttpMessage {
         } else {
             parser.lenientResponse();
         }
-        parser.parse(channel, buffer, copyTo);
+        parser.parse(channel, buffer, Channels.newChannel(headerBuffer));
+        byte[] headerBytes = headerBuffer.toByteArray();
         if (copyTo != null) {
+            copyTo.write(ByteBuffer.wrap(headerBytes));
             copyTo.write(buffer.duplicate());
         }
         MessageHeaders headers = parser.headers();
@@ -74,7 +79,11 @@ public class HttpResponse extends HttpMessage {
         if (withoutBody) {
             body = MessageBody.empty();
         } else if (headers.contains("Transfer-Encoding", "chunked")) {
-            body = new ChunkedBody(channel, buffer);
+            ChunkedBody chunkedBody = new ChunkedBody(channel, buffer);
+            if (strict) {
+                chunkedBody.strict();
+            }
+            body = chunkedBody;
         } else {
             if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
                 LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
@@ -90,7 +99,9 @@ public class HttpResponse extends HttpMessage {
             }
             body = LengthedBody.create(channel, buffer, contentLength);
         }
-        return new HttpResponse(parser.status(), parser.reason(), parser.version(), headers, body);
+        HttpResponse response = new HttpResponse(parser.status(), parser.reason(), parser.version(), headers, body);
+        response.serializedHeader = headerBytes;
+        return response;
     }
 
 

@@ -6,14 +6,12 @@
 package org.netpreserve.jwarc;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class HttpRequest extends HttpMessage {
     private final String method;
@@ -79,14 +77,20 @@ public class HttpRequest extends HttpMessage {
         } else {
             parser.lenientRequest();
         }
-        parser.parse(channel, buffer, copyTo);
+        ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
+        parser.parse(channel, buffer, Channels.newChannel(headerBuffer));
+        byte[] headerBytes = headerBuffer.toByteArray();
+        if (headerBytes.length == 0) throw new EOFException();
         if (copyTo != null) {
+            copyTo.write(ByteBuffer.wrap(headerBytes));
             copyTo.write(buffer.duplicate());
         }
         MessageHeaders headers = parser.headers();
         long contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(-1L);
         LengthedBody body = LengthedBody.create(channel, buffer, contentLength);
-        return new HttpRequest(parser.method(), parser.target(), parser.version(), headers, body);
+        HttpRequest request = new HttpRequest(parser.method(), parser.target(), parser.version(), headers, body);
+        request.serializedHeader = headerBytes;
+        return request;
     }
 
     public static class Builder extends AbstractBuilder<HttpRequest, Builder> {

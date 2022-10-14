@@ -58,6 +58,7 @@ public class MediaType extends MessageParser {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
     }
     %% write data nofinal noerror noentry;
+    public static final MediaType JSON = MediaType.parse("application/json");
     public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");
     public static MediaType HTTP = MediaType.parse("application/http");
@@ -65,6 +66,7 @@ public class MediaType extends MessageParser {
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
     public static MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
     public static MediaType WARC_FIELDS = MediaType.parse("application/warc-fields");
+    public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
 
     private final String type;
     private final String subtype;

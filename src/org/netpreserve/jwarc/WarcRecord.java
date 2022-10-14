@@ -27,11 +27,11 @@ public class WarcRecord extends Message {
     }
 
     static String formatId(UUID recordId) {
-        return "<urn:uuid:" + recordId + ">";
+        return recordId == null ? null : "<urn:uuid:" + recordId + ">";
     }
 
     static String formatId(URI recordId) {
-        return "<" + recordId + ">";
+        return recordId == null ? null : "<" + recordId + ">";
     }
 
     /**

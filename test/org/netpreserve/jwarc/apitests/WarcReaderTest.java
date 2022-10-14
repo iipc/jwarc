@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc.apitests;
@@ -23,10 +23,13 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.APPEND;
 import static org.junit.Assert.*;
 
 public class WarcReaderTest {
@@ -159,15 +162,39 @@ public class WarcReaderTest {
         Path temp = Files.createTempFile("jwarc", ".tmp");
         try {
             Files.write(temp, data);
+            try (GZIPOutputStream stream = new GZIPOutputStream(Files.newOutputStream(temp, APPEND))) {
+                stream.write(WarcResponseTest.warc.getBytes(UTF_8));
+            }
             try (WarcReader reader = new WarcReader(temp)) {
-                WarcResponse response = (WarcResponse)reader.next().get();
-                byte[] buf = new byte[8192];
-                InputStream stream = response.http().body().stream();
-                int total = 0;
-                for (int n = stream.read(buf); n >= 0; n = stream.read(buf)) {
-                    total += n;
+                {
+                    WarcResponse response = (WarcResponse) reader.next().get();
+                    byte[] buf = new byte[8192];
+                    InputStream stream = response.http().body().stream();
+                    int total = 0;
+                    for (int n = stream.read(buf); n >= 0; n = stream.read(buf)) {
+                        total += n;
+                    }
+                    assertEquals(20289, total);
                 }
-                assertEquals(20289, total);
+
+                assertEquals("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0",
+                        reader.next().get().id().toString());
+                assertEquals(data.length, reader.position());
+                assertFalse(reader.next().isPresent());
+
+                reader.position(0L);
+                assertEquals("urn:uuid:ececb7b0-ed4d-4d27-9ae8-2676df51cf7d",
+                        reader.next().get().id().toString());
+                assertEquals("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0",
+                        reader.next().get().id().toString());
+                assertFalse(reader.next().isPresent());
+
+                reader.position(data.length);
+                assertEquals("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0",
+                        reader.next().get().id().toString());
+                reader.position(data.length);
+                assertEquals("urn:uuid:92283950-ef2f-4d72-b224-f54c6ec90bb0",
+                        reader.next().get().id().toString());
             }
         } finally {
             Files.deleteIfExists(temp);

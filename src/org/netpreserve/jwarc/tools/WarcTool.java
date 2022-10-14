@@ -45,6 +45,9 @@ public class WarcTool {
             case "serve":
                 ServeTool.main(rest);
                 break;
+            case "stats":
+                StatsTool.main(rest);
+                break;
             case "validate":
                 ValidateTool.main(rest);
                 break;
@@ -64,6 +67,7 @@ public class WarcTool {
         System.out.println("Commands:");
         System.out.println();
         System.out.println("  cdx         List records in CDX format");
+        System.out.println("  dedupe      Deduplicate records by looking up a CDX server");
         System.out.println("  extract     Extract record by offset");
         System.out.println("  fetch       Download a URL recording the request and response");
         System.out.println("  filter      Copy records that match a given filter expression");
@@ -73,6 +77,7 @@ public class WarcTool {
         System.out.println("  saveback    Saves wayback-style replayed pages as WARC records");
         System.out.println("  screenshot  Take a screenshot of each page in the given WARCs");
         System.out.println("  serve       Serve WARC files with a basic replay server/proxy");
+        System.out.println("  stats       Print statistics about WARC and CDX files");
         System.out.println("  validate    Validate WARC or ARC files");
         System.out.println("  version     Print version information");
     }
