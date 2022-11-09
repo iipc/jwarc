@@ -146,7 +146,11 @@ command-line option.
     java -jar jwarc.jar recorder > example.warc
 
     chromium --proxy-server=http://localhost:8080 --ignore-certificate-errors
- 
+
+Record a command that obeys the http(s)_proxy and CURL_CA_BUNDLE environment variables:
+
+    java -jar jwarc.jar recorder -o example.warc curl http://example.org/
+
 Capture a page by recording headless Chrome:
 
     export BROWSER=/opt/google/chrome/chrome

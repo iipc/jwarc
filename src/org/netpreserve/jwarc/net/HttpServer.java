@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 abstract class HttpServer {
     final ServerSocket serverSocket;
     private final CertificateAuthority ca;
@@ -43,7 +45,6 @@ abstract class HttpServer {
     public void listen() {
         ExecutorService threadPool = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable);
-            thread.setDaemon(true);
             thread.setName("HttpServer worker");
             return thread;
         });
@@ -56,6 +57,13 @@ abstract class HttpServer {
             // shutdown
         } finally {
             threadPool.shutdown();
+            try {
+                if (!threadPool.awaitTermination(1, SECONDS)) {
+                    threadPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                threadPool.shutdownNow();
+            }
         }
     }
 
