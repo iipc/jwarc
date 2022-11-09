@@ -2,7 +2,6 @@ package org.netpreserve.jwarc.net;
 
 import org.netpreserve.jwarc.HttpRequest;
 import org.netpreserve.jwarc.HttpResponse;
-import org.netpreserve.jwarc.MediaType;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
@@ -13,7 +12,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -24,9 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.nio.charset.StandardCharsets.*;
-import static org.netpreserve.jwarc.MediaType.HTML_UTF8;
 
 abstract class HttpServer {
     final ServerSocket serverSocket;
@@ -145,6 +140,10 @@ abstract class HttpServer {
             if (!matcher.matches()) continue;
             route.handler.handle(new HttpExchange(socket, request, matcher));
         }
+    }
+
+    public CertificateAuthority certificateAuthority() {
+        return ca;
     }
 
     private static class Route {

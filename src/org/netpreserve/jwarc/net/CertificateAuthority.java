@@ -2,15 +2,12 @@ package org.netpreserve.jwarc.net;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.security.*;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class CertificateAuthority {
+public class CertificateAuthority {
     private final KeyPair caKeyPair;
     final KeyPair subKeyPair;
     final X509Certificate caCert;
@@ -75,5 +72,9 @@ class CertificateAuthority {
         else if (len < 256) return new byte[]{(byte) 0x81, (byte) len};
         else if (len < 65536) return new byte[]{(byte) 0x82, (byte) (len >> 8), (byte) len};
         else throw new IllegalArgumentException("too large");
+    }
+
+    public X509Certificate certificate() {
+        return caCert;
     }
 }
