@@ -5,7 +5,10 @@ import java.io.ByteArrayInputStream;
 import java.security.*;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class CertificateAuthority {
     private final KeyPair caKeyPair;
@@ -33,21 +36,42 @@ public class CertificateAuthority {
         byte[] serialBytes = {0x2, 0x4, (byte) (serial >> 24), (byte) (serial >> 16), (byte) (serial >> 8), (byte) serial};
         byte[] validity = {0x30, 0x1e, 0x17, 0xd, 0x31, 0x39, 0x30, 0x32, 0x31, 0x31, 0x30, 0x37, 0x31, 0x37, 0x33,
                 0x30, 0x5a, 0x17, 0xd, 0x33, 0x34, 0x30, 0x32, 0x31, 0x31, 0x30, 0x37, 0x31, 0x37, 0x33, 0x30, 0x5a};
-        byte[] constraints;
+        byte[] extensions;
         if (isCA) {
-            constraints = new byte[]{(byte) 0xA3, 0x16, 0x30, 0x14, 0x30, 0x12, 0x06, 0x03, 0x55, 0x1D, 0x13, 0x01, 0x01,
+            extensions = new byte[]{(byte) 0xA3, 0x16, 0x30, 0x14, 0x30, 0x12, 0x06, 0x03, 0x55, 0x1D, 0x13, 0x01, 0x01,
                     (byte) 0xFF, 0x04, 0x08, 0x30, 0x06, 0x01, 0x01, (byte) 0xFF, 0x02, 0x01, 0x0C};
         } else {
-            constraints = new byte[]{};
+            byte[] subjectAltNameExtension = derSequence(new byte[]{0x06, 0x03, 0x55, 0x1D, 0x11},
+                    tag(0x04, derSequence(tag(0x82, subject.getName().split("=")[1].getBytes(US_ASCII)))));
+            extensions = tag(0xA3, derSequence(subjectAltNameExtension));
         }
         byte[] rawCert = derSequence(preamble, serialBytes, algorithm, issuer.getEncoded(), validity,
-                subject.getEncoded(), subjectKey.getEncoded(), constraints);
+                subject.getEncoded(), subjectKey.getEncoded(), extensions);
         Signature signature = Signature.getInstance("SHA256withECDSA");
         signature.initSign(issuerKey);
         signature.update(rawCert);
         byte[] sigBytes = signature.sign();
         byte[] cert = derSequence(rawCert, algorithm, new byte[]{0x3, (byte) (sigBytes.length + 1), 0x0}, sigBytes);
         return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(cert));
+    }
+
+    private static byte[] tag(int tag, byte[] value) {
+        byte[] length = derLength(value.length);
+        return concat(new byte[]{(byte) tag}, length, value);
+    }
+
+    private static byte[] concat(byte[]... arrays) {
+        int length = 0;
+        for (byte[] array : arrays) {
+            length += array.length;
+        }
+        byte[] out = new byte[length];
+        int offset = 0;
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, out, offset, array.length);
+            offset += array.length;
+        }
+        return out;
     }
 
     private static byte[] derSequence(byte[]... arrays) {
@@ -76,5 +100,11 @@ public class CertificateAuthority {
 
     public X509Certificate certificate() {
         return caCert;
+    }
+
+    public static void main(String[] args) throws GeneralSecurityException {
+        X509Certificate cert = new CertificateAuthority(new X500Principal("CN=ca"))
+                .issue(new X500Principal("CN=www.example.org"));
+        System.out.println(Base64.getEncoder().encodeToString(cert.getEncoded()));
     }
 }
