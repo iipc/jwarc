@@ -146,5 +146,11 @@ public class WarcRevisit extends WarcCaptureRecord {
             setHeader("WARC-Refers-To-Date", date.toString());
             return refersTo(recordId);
         }
+
+        public Builder refersTo(URI recordId, String targetURI, Instant date) {
+            setHeader("WARC-Refers-To-Target-URI", targetURI);
+            setHeader("WARC-Refers-To-Date", date.toString());
+            return refersTo(recordId);
+        }
     }
 }
