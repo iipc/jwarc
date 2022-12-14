@@ -20,6 +20,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,6 +37,7 @@ public class WarcWriter implements Closeable {
     private final WritableByteChannel channel;
     private final WarcCompression compression;
     private final ByteBuffer buffer = ByteBuffer.allocate(8192);
+    private final String digestAlgorithm = "SHA-1";
 
     private AtomicLong position = new AtomicLong(0);
 
@@ -99,17 +102,23 @@ public class WarcWriter implements Closeable {
     public void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
-            Instant date = Instant.now();
+            byte[] httpRequestBytes = httpRequest.serializeHeader();
+            MessageDigest requestBlockDigest = MessageDigest.getInstance(digestAlgorithm);
+            requestBlockDigest.update(httpRequestBytes);
+
+            MessageDigest responseBlockDigest = MessageDigest.getInstance(digestAlgorithm);
             InetAddress ip;
+            Instant date = Instant.now();
             try (Socket socket = IOUtils.connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
                 ip = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
-                socket.getOutputStream().write(httpRequest.serializeHeader());
+                socket.getOutputStream().write(httpRequestBytes);
                 InputStream inputStream = socket.getInputStream();
                 byte[] buf = new byte[8192];
                 while (true) {
                     int n = inputStream.read(buf);
                     if (n < 0) break;
                     tempFile.write(ByteBuffer.wrap(buf, 0, n));
+                    responseBlockDigest.update(buf, 0, n);
                     try {
                         if (copyTo != null) copyTo.write(buf, 0, n);
                     } catch (IOException e) {
@@ -117,21 +126,53 @@ public class WarcWriter implements Closeable {
                     }
                 }
             }
+
             tempFile.position(0);
-            WarcRequest request = new WarcRequest.Builder(uri)
-                    .date(date)
-                    .body(httpRequest)
-                    .ipAddress(ip)
-                    .build();
-            WarcResponse response = new WarcResponse.Builder(uri)
+            MessageDigest responsePayloadDigest = tryCalculatingPayloadDigest(tempFile);
+
+            tempFile.position(0);
+            WarcResponse.Builder responseBuilder = new WarcResponse.Builder(uri)
+                    .blockDigest(new WarcDigest(responseBlockDigest))
                     .date(date)
                     .body(MediaType.HTTP_RESPONSE, tempFile, tempFile.size())
-                    .concurrentTo(request.id())
-                    .ipAddress(ip)
+                    .ipAddress(ip);
+            if (responsePayloadDigest != null) {
+                responseBuilder.payloadDigest(new WarcDigest(responsePayloadDigest));
+            }
+            WarcResponse response = responseBuilder.build();
+            write(response);
+            WarcRequest request = new WarcRequest.Builder(uri)
+                    .blockDigest(new WarcDigest(requestBlockDigest))
+                    .date(date)
+                    .body(httpRequest)
+                    .concurrentTo(response.id())
                     .build();
             write(request);
-            write(response);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
         }
+    }
+
+    private MessageDigest tryCalculatingPayloadDigest(FileChannel channel) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
+        try {
+            HttpResponse httpResponse = HttpResponse.parse(channel);
+            byte[] buffer = new byte[8192];
+            InputStream steam = httpResponse.body().stream();
+            long payloadLength = 0;
+            while (true) {
+                int n = steam.read(buffer);
+                if (n < 0) break;
+                digest.update(buffer, 0, n);
+                payloadLength += n;
+            }
+            if (payloadLength == 0) {
+                return null;
+            }
+        } catch (Exception e) {
+           return null;
+        }
+        return digest;
     }
 
     /**
