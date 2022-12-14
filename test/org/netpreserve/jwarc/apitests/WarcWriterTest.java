@@ -75,7 +75,7 @@ public class WarcWriterTest {
 
 
     @Test
-    public void gzippedWarc() throws IOException, URISyntaxException {
+    public void gzippedWarc() throws IOException {
         // write gzipped WARC file to memory
         String body = "<html><head/><body>Test</body></html>";
         byte[] bodyBytes = body.getBytes(StandardCharsets.US_ASCII);

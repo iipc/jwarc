@@ -39,7 +39,7 @@ public class WarcWriter implements Closeable {
     private final ByteBuffer buffer = ByteBuffer.allocate(8192);
     private final String digestAlgorithm = "SHA-1";
 
-    private AtomicLong position = new AtomicLong(0);
+    private final AtomicLong position = new AtomicLong(0);
 
     public WarcWriter(WritableByteChannel channel, WarcCompression compression) throws IOException {
         this.compression = compression;
@@ -97,7 +97,7 @@ public class WarcWriter implements Closeable {
      * @param uri to download
      * @param httpRequest request to send
      * @param copyTo if not null will receive a copy of the (raw) http response bytes
-     * @throws IOException
+     * @throws IOException if an IO error occurred
      */
     public void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
