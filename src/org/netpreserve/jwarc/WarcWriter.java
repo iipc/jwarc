@@ -29,8 +29,6 @@ import static java.nio.file.StandardOpenOption.*;
 
 /**
  * Writes records to a WARC file.
- * <p>
- * Compression is not yet implemented.
  */
 public class WarcWriter implements Closeable {
     private static final byte[] TRAILER = new byte[]{'\r', '\n', '\r', '\n'};
