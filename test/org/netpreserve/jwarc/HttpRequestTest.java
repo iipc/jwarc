@@ -24,4 +24,9 @@ public class HttpRequestTest {
         assertEquals(Optional.of("example.org"), request.headers().first("Host"));
         assertEquals(header, new String(request.serializeHeader(), US_ASCII));
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidVersionShouldThrow() {
+        new HttpRequest.Builder("GET", "/").version(MessageVersion.WARC_1_0);
+    }
 }

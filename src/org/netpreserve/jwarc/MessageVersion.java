@@ -28,6 +28,12 @@ public final class MessageVersion {
         return protocol;
     }
 
+    void requireProtocol(String expectedProtocol) {
+        if (!protocol.equals(expectedProtocol)) {
+            throw new IllegalArgumentException("Expected a version of " + expectedProtocol + " but got " + this);
+        }
+    }
+
     public int getMajor() {
         return major;
     }

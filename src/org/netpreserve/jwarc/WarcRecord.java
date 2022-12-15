@@ -158,6 +158,12 @@ public class WarcRecord extends Message {
             return addHeader("WARC-Segment-Number", String.valueOf(segmentNumber));
         }
 
+        @Override
+        public B version(MessageVersion version) {
+            version.requireProtocol("WARC");
+            return super.version(version);
+        }
+
         protected R build(Constructor<R> constructor) {
             if (date != null) {
                 if (version.equals(MessageVersion.WARC_1_0)) {
