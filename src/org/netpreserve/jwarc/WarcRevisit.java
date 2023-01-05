@@ -122,6 +122,12 @@ public class WarcRevisit extends WarcCaptureRecord {
             setHeader("WARC-Profile", profile.toString());
         }
 
+        public Builder(String targetURI, URI profile) {
+            super("revisit");
+            setHeader("WARC-Target-URI", targetURI);
+            setHeader("WARC-Profile", profile.toString());
+        }
+
         @Override
         public WarcRevisit build() {
             return build(WarcRevisit::new);
