@@ -5,34 +5,77 @@
 
 package org.netpreserve.jwarc.apitests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.Test;
+import org.netpreserve.jwarc.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
-import org.junit.Test;
-import org.netpreserve.jwarc.HttpResponse;
-import org.netpreserve.jwarc.MediaType;
-import org.netpreserve.jwarc.WarcCompression;
-import org.netpreserve.jwarc.WarcReader;
-import org.netpreserve.jwarc.WarcRecord;
-import org.netpreserve.jwarc.WarcResponse;
-import org.netpreserve.jwarc.WarcWriter;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class WarcWriterTest {
 
     @Test
-    public void gzippedWarc() throws IOException, URISyntaxException {
+    public void fetch() throws IOException, NoSuchAlgorithmException, URISyntaxException {
+        byte[] body = "Hello world!".getBytes(StandardCharsets.UTF_8);
+        MessageDigest bodyDigest = MessageDigest.getInstance("SHA-1");
+        bodyDigest.update(body);
+
+        // get loopback address
+        HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/", exchange -> {
+            exchange.getResponseHeaders().add("Test-Header", "present");
+            exchange.sendResponseHeaders(256, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            WarcWriter warcWriter = new WarcWriter(Channels.newChannel(out));
+            URI uri = new URI("http", null, server.getAddress().getHostString(),
+                    server.getAddress().getPort(), "/", null, null);
+            warcWriter.fetch(uri);
+
+            WarcReader warcReader = new WarcReader(new ByteArrayInputStream(out.toByteArray()));
+            warcReader.calculateBlockDigest();
+
+            WarcResponse response = (WarcResponse) warcReader.next()
+                    .orElseThrow(() -> new RuntimeException("Missing response record"));
+            assertEquals(256, response.http().status());
+            assertEquals("present", response.http().headers().first("Test-Header").orElse(null));
+            assertTrue(response.blockDigest().isPresent());
+            assertEquals(response.calculatedBlockDigest(), response.blockDigest());
+            assertEquals(new WarcDigest(bodyDigest).toString(), response.payloadDigest().map(Object::toString).orElse(null));
+
+            WarcRequest request = (WarcRequest) warcReader.next()
+                    .orElseThrow(() -> new RuntimeException("Missing request record"));
+            assertTrue(request.blockDigest().isPresent());
+            assertEquals(request.calculatedBlockDigest(), request.blockDigest());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+
+    @Test
+    public void gzippedWarc() throws IOException {
         // write gzipped WARC file to memory
         String body = "<html><head/><body>Test</body></html>";
         byte[] bodyBytes = body.getBytes(StandardCharsets.US_ASCII);

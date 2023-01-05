@@ -23,5 +23,11 @@ public abstract class HttpMessage extends Message {
         public AbstractBuilder() {
             super(MessageVersion.HTTP_1_1);
         }
+
+        @Override
+        public B version(MessageVersion version) {
+            version.requireProtocol("HTTP");
+            return super.version(version);
+        }
     }
 }

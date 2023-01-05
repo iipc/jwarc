@@ -15,4 +15,9 @@ public class WarcRecordTest {
         WarcResource warc11Record = new WarcResource.Builder().date(date).version(MessageVersion.WARC_1_1).build();
         assertEquals(466148000, warc11Record.date().getNano());
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidVersionShouldThrow() {
+        new Warcinfo.Builder().version(MessageVersion.HTTP_1_0);
+    }
 }
