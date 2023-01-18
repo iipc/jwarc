@@ -108,6 +108,7 @@ public class WarcWriter implements Closeable {
             InetAddress ip;
             Instant date = Instant.now();
             try (Socket socket = IOUtils.connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
+                socket.setTcpNoDelay(true);
                 ip = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
                 socket.getOutputStream().write(httpRequestBytes);
                 InputStream inputStream = socket.getInputStream();
