@@ -79,14 +79,14 @@ public class WarcWriter implements Closeable {
     /**
      * Downloads a remote resource recording the request and response as WARC records.
      */
-    public void fetch(URI uri) throws IOException {
+    public FetchResult fetch(URI uri) throws IOException {
         HttpRequest httpRequest = new HttpRequest.Builder("GET", uri.getRawPath())
                 .version(MessageVersion.HTTP_1_0) // until we support chunked encoding
                 .addHeader("Host", uri.getHost())
                 .addHeader("User-Agent", "jwarc")
                 .addHeader("Connection", "close")
                 .build();
-        fetch(uri, httpRequest, null);
+        return fetch(uri, httpRequest, null);
     }
 
     /**
@@ -97,7 +97,7 @@ public class WarcWriter implements Closeable {
      * @param copyTo if not null will receive a copy of the (raw) http response bytes
      * @throws IOException if an IO error occurred
      */
-    public void fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
+    public FetchResult fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
             byte[] httpRequestBytes = httpRequest.serializeHeader();
@@ -139,6 +139,7 @@ public class WarcWriter implements Closeable {
                 responseBuilder.payloadDigest(new WarcDigest(responsePayloadDigest));
             }
             WarcResponse response = responseBuilder.build();
+            response.http(); // force HTTP header to be parsed before body is consumed so that caller can use it
             write(response);
             WarcRequest request = new WarcRequest.Builder(uri)
                     .blockDigest(new WarcDigest(requestBlockDigest))
@@ -146,7 +147,9 @@ public class WarcWriter implements Closeable {
                     .body(httpRequest)
                     .concurrentTo(response.id())
                     .build();
+            request.http(); // force HTTP header to be parsed before body is consumed so that caller can use it
             write(request);
+            return new FetchResult(request, response);
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
         }

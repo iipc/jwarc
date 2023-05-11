@@ -51,7 +51,10 @@ public class WarcWriterTest {
             WarcWriter warcWriter = new WarcWriter(Channels.newChannel(out));
             URI uri = new URI("http", null, server.getAddress().getHostString(),
                     server.getAddress().getPort(), "/", null, null);
-            warcWriter.fetch(uri);
+            FetchResult result = warcWriter.fetch(uri);
+
+            assertEquals(256, result.response().http().status());
+            assertEquals("/", result.request().http().target());
 
             WarcReader warcReader = new WarcReader(new ByteArrayInputStream(out.toByteArray()));
             warcReader.calculateBlockDigest();
