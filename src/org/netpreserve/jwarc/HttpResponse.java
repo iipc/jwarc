@@ -85,19 +85,8 @@ public class HttpResponse extends HttpMessage {
             }
             body = chunkedBody;
         } else {
-            if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
-                LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
-                contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
-            } else if (channel instanceof LengthedBody) {
-                LengthedBody lengthed = (LengthedBody) channel;
-                contentLength = lengthed.size() - lengthed.position() + buffer.remaining();
-            } else if (channel instanceof SeekableByteChannel) {
-                SeekableByteChannel seekable = (SeekableByteChannel) channel;
-                contentLength = seekable.size() - seekable.position() + buffer.remaining();
-            } else {
-                contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(0L);
-            }
-            body = LengthedBody.create(channel, buffer, contentLength);
+            body = LengthedBody.createFromContentLength(channel, buffer, headers.first("Content-Length")
+                    .map(Long::parseLong).orElse(null));
         }
         HttpResponse response = new HttpResponse(parser.status(), parser.reason(), parser.version(), headers, body);
         response.serializedHeader = headerBytes;

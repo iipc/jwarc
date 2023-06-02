@@ -49,13 +49,21 @@ public class ExtractTool {
         MessageBody payload;
         List<String> contentEncodings = Collections.emptyList();
         if (record instanceof WarcResponse) {
-            HttpResponse response = ((WarcResponse) record).http();
-            payload = response.body();
-            contentEncodings = response.headers().all("Content-Encoding");
+            if (record.contentType().base().equals(MediaType.HTTP)) {
+                HttpResponse response = ((WarcResponse) record).http();
+                payload = response.body();
+                contentEncodings = response.headers().all("Content-Encoding");
+            } else {
+                payload = ((WarcResponse) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
+            }
         } else if (record instanceof WarcRequest) {
-            HttpRequest request = ((WarcRequest) record).http();
-            payload = request.body();
-            contentEncodings = request.headers().all("Content-Encoding");
+            if (record.contentType().base().equals(MediaType.HTTP)) {
+                HttpRequest request = ((WarcRequest) record).http();
+                payload = request.body();
+                contentEncodings = request.headers().all("Content-Encoding");
+            } else {
+                payload = ((WarcRequest) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
+            }
         } else {
             payload = record.body();
         }

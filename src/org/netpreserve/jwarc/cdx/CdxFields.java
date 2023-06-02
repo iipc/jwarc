@@ -53,10 +53,13 @@ public final class CdxFields {
                     break;
                 case RESPONSE_CODE:
                     if (record instanceof WarcResponse) {
-                        return Integer.toString(((WarcResponse)record).http().status());
-                    } else {
-                        return "200";
+                        if (record.contentType().base().equals(MediaType.HTTP)) {
+                            return Integer.toString(((WarcResponse) record).http().status());
+                        } else if (record.contentType().base().equals(MediaType.GEMINI)) {
+                            return String.format("%02d", ((WarcResponse) record).gemini().statusHttpEquivalent());
+                        }
                     }
+                    return "200";
                 default:
             }
         } catch (Exception e) {

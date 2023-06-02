@@ -159,7 +159,9 @@ static final int media_type_start = 1;
 
 
 // line 61 "MediaType.rl"
-	public static final MediaType JSON = MediaType.parse("application/json");
+    public static final MediaType GEMINI = MediaType.parse("application/gemini");
+    public static final MediaType GEMTEXT = MediaType.parse("text/gemini");
+    public static final MediaType JSON = MediaType.parse("application/json");
     public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");
     public static MediaType HTTP = MediaType.parse("application/http");
@@ -167,7 +169,7 @@ static final int media_type_start = 1;
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
     public static MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
     public static MediaType WARC_FIELDS = MediaType.parse("application/warc-fields");
-	public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
+    public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
 
     private final String type;
     private final String subtype;
@@ -191,14 +193,14 @@ static final int media_type_start = 1;
         StringBuilder buf = new StringBuilder();
 
         
-// line 193 "MediaType.java"
+// line 197 "MediaType.java"
 	{
 	cs = media_type_start;
 	}
 
-// line 91 "MediaType.rl"
+// line 95 "MediaType.rl"
         
-// line 200 "MediaType.java"
+// line 204 "MediaType.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -338,7 +340,7 @@ case 1:
 // line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 340 "MediaType.java"
+// line 344 "MediaType.java"
 			}
 		}
 	}
@@ -387,7 +389,7 @@ case 4:
 // line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 389 "MediaType.java"
+// line 393 "MediaType.java"
 		}
 	}
 	}
@@ -397,7 +399,7 @@ case 5:
 	break; }
 	}
 
-// line 92 "MediaType.rl"
+// line 96 "MediaType.rl"
 
         String type = string.substring(0, typeEnd);
         String subtype = string.substring(typeEnd + 1, subtypeEnd);

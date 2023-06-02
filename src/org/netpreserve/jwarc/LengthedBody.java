@@ -5,6 +5,7 @@
 
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,8 @@ import java.nio.channels.*;
  * A message body with a known length.
  */
 public class LengthedBody extends MessageBody {
+    static final LengthedBody EMPTY = LengthedBody.create(Channels.newChannel(new ByteArrayInputStream(new byte[0])),
+            ByteBuffer.allocate(0), 0);
     private final ReadableByteChannel channel;
     final ByteBuffer buffer;
     private final long size;
@@ -33,6 +36,24 @@ public class LengthedBody extends MessageBody {
             return new Seekable((SeekableByteChannel) channel, buffer, size);
         }
         return new LengthedBody(channel, buffer, size);
+    }
+
+    static LengthedBody createFromContentLength(ReadableByteChannel channel, ByteBuffer buffer, Long contentLengthHeader) throws IOException {
+        long length;
+        if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
+            LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
+            length = lengthed.size() - lengthed.position() + buffer.remaining();
+        } else if (channel instanceof LengthedBody) {
+            LengthedBody lengthed = (LengthedBody) channel;
+            length = lengthed.size() - lengthed.position() + buffer.remaining();
+        } else if (channel instanceof SeekableByteChannel) {
+            SeekableByteChannel seekable = (SeekableByteChannel) channel;
+            length = seekable.size() - seekable.position() + buffer.remaining();
+        } else {
+            if (contentLengthHeader == null) throw new IllegalArgumentException("unable to determine length");
+            length = contentLengthHeader;
+        }
+        return new LengthedBody(channel, buffer, length);
     }
 
     synchronized void pushback(byte[] pushback) {

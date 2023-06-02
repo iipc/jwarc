@@ -8,12 +8,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 public abstract class MessageBody extends MessageParser implements ReadableByteChannel {
+
     MessageBody() {
     }
 
-    static MessageBody empty() {
-        return LengthedBody.create(Channels.newChannel(new ByteArrayInputStream(new byte[0])),
-                ByteBuffer.allocate(0), 0);
+    public static MessageBody empty() {
+        return LengthedBody.EMPTY;
     }
 
     public long size() throws IOException {

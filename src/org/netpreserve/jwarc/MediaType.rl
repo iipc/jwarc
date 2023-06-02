@@ -58,6 +58,8 @@ public class MediaType extends MessageParser {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
     }
     %% write data nofinal noerror noentry;
+    public static final MediaType GEMINI = MediaType.parse("application/gemini");
+    public static final MediaType GEMTEXT = MediaType.parse("text/gemini");
     public static final MediaType JSON = MediaType.parse("application/json");
     public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");

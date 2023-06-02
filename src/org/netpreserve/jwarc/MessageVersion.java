@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import java.util.Objects;
 
 public final class MessageVersion {
+    public static final MessageVersion GEMINI = new MessageVersion("gemini");
     public static final MessageVersion HTTP_1_0 = new MessageVersion("HTTP", 1, 0);
     public static final MessageVersion HTTP_1_1 = new MessageVersion("HTTP", 1, 1);
     public static final MessageVersion WARC_1_0 = new MessageVersion("WARC", 1, 0);
@@ -17,6 +18,12 @@ public final class MessageVersion {
     private final String protocol;
     private final int major;
     private final int minor;
+
+    public MessageVersion(String protocol) {
+        this.protocol = protocol;
+        major = 0;
+        minor = 0;
+    }
 
     public MessageVersion(String protocol, int major, int minor) {
         this.protocol = protocol;
@@ -59,6 +66,7 @@ public final class MessageVersion {
 
     @Override
     public String toString() {
+        if (major == 0 && minor == 0) return protocol;
         return protocol + "/" + major + "." + minor;
     }
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 public class WarcResponse extends WarcCaptureRecord {
 
     private HttpResponse http;
+    private GeminiResponse gemini;
 
     WarcResponse(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
@@ -42,9 +43,23 @@ public class WarcResponse extends WarcCaptureRecord {
         return http;
     }
 
+    public GeminiResponse gemini() throws IOException {
+        if (gemini == null) {
+            MessageBody body = body();
+            if (body.position() != 0) throw new IllegalStateException("gemini() cannot be called after reading from body");
+            ByteBuffer buffer = ByteBuffer.allocate(8192);
+            buffer.flip();
+            gemini = GeminiResponse.parse(body, buffer);
+            if (body instanceof LengthedBody) {
+                ((LengthedBody)body).pushback(gemini.serializeHeader());
+            }
+        }
+        return gemini;
+    }
+
     @Override
     public MediaType payloadType() throws IOException {
-        return http().contentType();
+        return payload().map(WarcPayload::type).orElse(MediaType.OCTET_STREAM);
     }
 
     public Optional<WarcPayload> payload() throws IOException {
@@ -54,6 +69,24 @@ public class WarcResponse extends WarcCaptureRecord {
                 @Override
                 public MediaType type() {
                     return http.contentType();
+                }
+
+                @Override
+                Optional<MediaType> identifiedType() {
+                    return identifiedPayloadType();
+                }
+
+                @Override
+                public Optional<WarcDigest> digest() {
+                    return payloadDigest();
+                }
+            });
+        } else if (contentType().base().equals(MediaType.GEMINI)) {
+            return Optional.of(new WarcPayload(gemini().body()) {
+
+                @Override
+                public MediaType type() {
+                    return gemini.contentType();
                 }
 
                 @Override
