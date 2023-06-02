@@ -16,10 +16,12 @@ public class ListTool {
                     }
 
                     String methodOrStatus = "-";
-                    if (record instanceof WarcRequest) {
-                        methodOrStatus = ((WarcRequest) record).http().method();
-                    } else if (record instanceof WarcResponse) {
-                        methodOrStatus = String.valueOf(((WarcResponse) record).http().status());
+                    if (record.contentType().base().equals(MediaType.HTTP)) {
+                        if (record instanceof WarcRequest) {
+                            methodOrStatus = ((WarcRequest) record).http().method();
+                        } else if (record instanceof WarcResponse) {
+                            methodOrStatus = String.valueOf(((WarcResponse) record).http().status());
+                        }
                     }
 
                     System.out.format("%10d %-10s %-4s %s\n", reader.position(), record.type(), methodOrStatus, url);
