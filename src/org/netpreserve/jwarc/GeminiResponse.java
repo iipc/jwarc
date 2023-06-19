@@ -33,7 +33,7 @@ public class GeminiResponse extends Message {
     }
 
     /**
-     * Returns the HTTP equivalent of the status code. (e.g. 20 -> 200, 51 -> 404)
+     * Returns the HTTP equivalent of the status code. (e.g. 20 -&gt; 200, 51 -&gt; 404)
      */
     public int statusHttpEquivalent() {
         switch (status) {
