@@ -168,6 +168,7 @@ static final int media_type_start = 1;
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
     public static MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
+	public static MediaType PLAIN_TEXT = MediaType.parse("text/plain");
     public static MediaType WARC_FIELDS = MediaType.parse("application/warc-fields");
     public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
 

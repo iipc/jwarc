@@ -33,7 +33,9 @@ public class CdxRequestEncoder {
         if (baseContentType.equals(MediaType.WWW_FORM_URLENCODED)) {
             encodeFormBody(stream, out);
         } else if (baseContentType.equals(MediaType.JSON)) {
-            encodeJsonBody(stream, out);
+            encodeJsonBody(stream, out, false);
+        } else if (baseContentType.equals(MediaType.PLAIN_TEXT)) {
+            encodeJsonBody(stream, out, true);
         } else {
             encodeBinaryBody(stream, out);
         }
@@ -59,7 +61,7 @@ public class CdxRequestEncoder {
         }
     }
 
-    private static void encodeJsonBody(InputStream stream, StringBuilder output) throws IOException {
+    private static void encodeJsonBody(InputStream stream, StringBuilder output, boolean binaryFallback) throws IOException {
         stream.mark(BUFFER_SIZE);
         JsonParser parser = new JsonFactory().createParser(stream);
         Map<String,Long> nameCounts = new HashMap<>();
@@ -125,11 +127,13 @@ public class CdxRequestEncoder {
                 }
             }
         } catch (JsonParseException e) {
-            try {
-                stream.reset();
-                encodeBinaryBody(stream, output);
-            } catch (IOException e2) {
-                // give up
+            if (binaryFallback) {
+                try {
+                    stream.reset();
+                    encodeBinaryBody(stream, output);
+                } catch (IOException e2) {
+                    // give up
+                }
             }
         }
     }
