@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.netpreserve</groupId>
     <artifactId>jwarc</artifactId>
-    <version>0.23.0</version>
+    <version>0.23.1-SNAPSHOT</version>
 
     <name>jwarc</name>
     <description>Java library for reading and writing WARC files with a typed API</description>
