@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -47,26 +48,44 @@ public class CdxRequestEncoderTest {
             new Case("__wb_method=POST&a=2",
                     MediaType.PLAIN_TEXT, "{\"a\":2}"),
             new Case("__wb_method=POST&__wb_post_data=bm90IGpzb24=",
-                    MediaType.PLAIN_TEXT, "not json")
+                    MediaType.PLAIN_TEXT, "not json"),
+            new Case("__wb_method=POST&" + ("bigtext=" +
+                    String.join("+", Collections.nCopies(1000, "this+is+very+long"))).substring(0, 4096),
+                    MediaType.JSON, "{\"bigtext\": \"" +
+                    String.join(" ", Collections.nCopies(1000, "this is very long")) + "\"}", "x=1"),
     };
 
     public static class Case {
         final String expected;
         final MediaType requestType;
         final byte[] requestBody;
+        final String queryString;
 
         public Case(String expected, MediaType requestType, String requestBody) {
             this(expected, requestType, requestBody.getBytes(UTF_8));
         }
 
+        public Case(String expected, MediaType requestType, String requestBody, String queryString) {
+            this(expected, requestType, requestBody.getBytes(UTF_8), queryString);
+        }
+
         public Case(String expected, MediaType requestType, byte[] requestBody) {
+            this(expected, requestType, requestBody, null);
+        }
+
+        public Case(String expected, MediaType requestType, byte[] requestBody, String queryString) {
             this.expected = expected;
             this.requestType = requestType;
             this.requestBody = requestBody;
+            this.queryString = queryString;
         }
 
         public HttpRequest request() {
-            return new HttpRequest.Builder("POST", "/foo")
+            String target = "/foo";
+            if (queryString != null) {
+                target += "?" + queryString;
+            }
+            return new HttpRequest.Builder("POST", target)
                     .body(requestType, requestBody)
                     .build();
         }
@@ -114,8 +133,10 @@ public class CdxRequestEncoderTest {
                 String[] params = queryString.split("&");
                 Arrays.sort(params);
                 String sortedQueryString = String.join("&", params);
-                String expectedKey = URIs.toNormalizedSurt("http://example" + cases[i].request().target() + "?" +
-                        cases[i].expected).replaceFirst(".*\\?", "");
+                String target = cases[i].request().target();
+                String expectedSurt = URIs.toNormalizedSurt("http://example" + target +
+                        (target.contains("?") ? "&" : "?") + cases[i].expected);
+                String expectedKey = expectedSurt.replaceFirst(".*\\?", "");
                 assertEquals("Case " + i, expectedKey, sortedQueryString);
             }
         } finally {

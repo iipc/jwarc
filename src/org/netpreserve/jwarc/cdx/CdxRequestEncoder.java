@@ -28,18 +28,19 @@ public class CdxRequestEncoder {
         StringBuilder out = new StringBuilder();
         out.append("__wb_method=");
         out.append(httpRequest.method());
+        int maxLength = out.length() + 1 + QUERY_STRING_LIMIT;
         MediaType baseContentType = httpRequest.contentType().base();
         InputStream stream = new BufferedInputStream(httpRequest.body().stream(), BUFFER_SIZE);
         if (baseContentType.equals(MediaType.WWW_FORM_URLENCODED)) {
             encodeFormBody(stream, out);
         } else if (baseContentType.equals(MediaType.JSON)) {
-            encodeJsonBody(stream, out, false);
+            encodeJsonBody(stream, out, maxLength, false);
         } else if (baseContentType.equals(MediaType.PLAIN_TEXT)) {
-            encodeJsonBody(stream, out, true);
+            encodeJsonBody(stream, out, maxLength, true);
         } else {
             encodeBinaryBody(stream, out);
         }
-        return out.substring(0, Math.min(out.length(), QUERY_STRING_LIMIT));
+        return out.substring(0, Math.min(out.length(), maxLength));
     }
 
     static void encodeBinaryBody(InputStream stream, StringBuilder out) throws IOException {
@@ -61,14 +62,14 @@ public class CdxRequestEncoder {
         }
     }
 
-    private static void encodeJsonBody(InputStream stream, StringBuilder output, boolean binaryFallback) throws IOException {
+    private static void encodeJsonBody(InputStream stream, StringBuilder output, int maxLength, boolean binaryFallback) throws IOException {
         stream.mark(BUFFER_SIZE);
         JsonParser parser = new JsonFactory().createParser(stream);
         Map<String,Long> nameCounts = new HashMap<>();
         Deque<String> nameStack = new ArrayDeque<>();
         String name = null;
         try {
-            while (parser.nextToken() != null && output.length() < QUERY_STRING_LIMIT) {
+            while (parser.nextToken() != null && output.length() < maxLength) {
                 switch (parser.currentToken()) {
                     case FIELD_NAME:
                         name = parser.getCurrentName();
