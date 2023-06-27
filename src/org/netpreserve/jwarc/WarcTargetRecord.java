@@ -56,6 +56,14 @@ public abstract class WarcTargetRecord extends WarcRecord {
     }
 
     /**
+    * Return the payload digest value directly
+    */
+   public Optional<String> payloadDigestUnchanged() {
+       return headers().sole("WARC-Payload-Digest");
+   }
+
+    
+    /**
      * A content-type that was identified by an independent check (not just what the server said).
      */
     public Optional<MediaType> identifiedPayloadType() {

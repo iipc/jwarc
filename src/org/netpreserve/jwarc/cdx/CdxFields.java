@@ -32,12 +32,21 @@ public final class CdxFields {
     private static String escape(String str) {
         return str == null ? null : str.replace(" ", "%20");
     }
-
+    
     public static String format(byte field, WarcCaptureRecord record) {
+        return format(field,record,false);
+    }
+      
+    public static String format(byte field, WarcCaptureRecord record, boolean digestUnchanged) {
         try {
             switch (field) {
                 case CHECKSUM:
-                    return record.payloadDigest().map(WarcDigest::base32).orElse("-");
+                    if (digestUnchanged) {
+                        return record.payloadDigestUnchanged().get();        
+                    }
+                    else {
+                      return record.payloadDigest().map(WarcDigest::base32).orElse("-");
+                    }
                 case DATE:
                     return DATE_FORMAT.format(record.date());
                 case MIME_TYPE:
