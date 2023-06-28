@@ -5,12 +5,14 @@
 
 package org.netpreserve.jwarc.cdx;
 
-import org.netpreserve.jwarc.WarcCaptureRecord;
+import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Objects;
+
+import static org.netpreserve.jwarc.cdx.CdxFields.*;
 
 public class CdxFormat {
     public static final String CDX9_LEGEND = "N b a m s k r V g";
@@ -78,31 +80,64 @@ public class CdxFormat {
         for (byte fieldName : fieldNames) {
             if (builder.length() > 0) builder.append(' ');
             String value;
-            switch (fieldName) {
-                case CdxFields.FILENAME:
-                    value = filename;
-                    break;
-                case CdxFields.COMPRESSED_ARC_FILE_OFFSET:
-                    value = String.valueOf(position);
-                    break;
-                case CdxFields.COMPRESSED_RECORD_SIZE:
-                    value = String.valueOf(size);
-                    break;
-                case CdxFields.NORMALIZED_SURT:
-                    if (urlkey != null) {
-                        value = urlkey;
-                    } else {
-                        value = CdxFields.format(fieldName, record,digestUnchanged);
-                    }
-                    break;
-                default:
-                    value = CdxFields.format(fieldName, record,digestUnchanged);
+            try {
+                value = formatField(fieldName, record, filename, position, size, urlkey);
+            } catch (Exception e) {
+                value = "-";
             }
             builder.append(value);
         }
         return builder.toString();
     }
-    
+
+    String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {
+        switch (fieldName) {
+            case CHECKSUM:
+                return record.payloadDigest()
+                        .map(digestUnchanged ? WarcDigest::raw : WarcDigest::base32)
+                        .orElse("-");
+            case COMPRESSED_ARC_FILE_OFFSET:
+                return position < 0 ? "-" : String.valueOf(position);
+            case COMPRESSED_RECORD_SIZE:
+                return size < 0 ? "-" : String.valueOf(size);
+            case DATE:
+                return CdxFields.DATE_FORMAT.format(record.date());
+            case FILENAME:
+                return filename;
+            case MIME_TYPE:
+                return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
+            case NORMALIZED_SURT:
+                if (urlkey != null) {
+                    return urlkey;
+                } else {
+                    return escape(URIs.toNormalizedSurt(record.target()));
+                }
+            case ORIGINAL_URL:
+                return escape(record.target());
+            case REDIRECT:
+                if (record instanceof WarcResponse) {
+                    return ((WarcResponse) record).http().headers().first("Location").map(CdxFormat::escape).orElse("-");
+                } else {
+                    return "-";
+                }
+            case RESPONSE_CODE:
+                if (record instanceof WarcResponse) {
+                    if (record.contentType().base().equals(MediaType.HTTP)) {
+                        return Integer.toString(((WarcResponse) record).http().status());
+                    } else if (record.contentType().base().equals(MediaType.GEMINI)) {
+                        return String.format("%02d", ((WarcResponse) record).gemini().statusHttpEquivalent());
+                    }
+                }
+                return "200";
+            default:
+                throw new IllegalArgumentException("Unknown CDX field: " + (char) fieldName);
+        }
+    }
+
+    private static String escape(String str) {
+        return str == null ? null : str.replace(" ", "%20");
+    }
+
     public static class Builder {
         private String legend;
         private boolean digestUnchanged = false;
