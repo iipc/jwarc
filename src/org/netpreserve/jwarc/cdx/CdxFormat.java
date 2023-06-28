@@ -18,7 +18,8 @@ public class CdxFormat {
 
     private final byte[] fieldNames;
     private final byte[] fieldIndices;
-
+    private boolean digestUnchanged=false;
+    
     public CdxFormat(String legend) {
         String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
@@ -82,14 +83,18 @@ public class CdxFormat {
                     if (urlkey != null) {
                         value = urlkey;
                     } else {
-                        value = CdxFields.format(fieldName, record);
+                        value = CdxFields.format(fieldName, record,digestUnchanged);
                     }
                     break;
                 default:
-                    value = CdxFields.format(fieldName, record);
+                    value = CdxFields.format(fieldName, record,digestUnchanged);
             }
             builder.append(value);
         }
         return builder.toString();
+    }
+    
+    public void setDigestUnchanged(boolean digestUnchanged) {
+        this.digestUnchanged=digestUnchanged;
     }
 }

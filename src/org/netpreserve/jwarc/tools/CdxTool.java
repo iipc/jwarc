@@ -57,6 +57,10 @@ public class CdxTool {
                     case "--post-append":
                         postAppend = true;
                         break;
+                    case "-d":
+                    case "--digest-unchanged":
+                        cdxFormat.setDigestUnchanged(true);
+                        break;                                                                              
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
