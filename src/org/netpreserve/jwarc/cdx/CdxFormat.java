@@ -10,17 +10,26 @@ import org.netpreserve.jwarc.WarcCaptureRecord;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class CdxFormat {
-    public static final CdxFormat CDX9 = new CdxFormat("N b a m s k r V g");
-    public static final CdxFormat CDX10 = new CdxFormat("N b a m s k r M V g");
-    public static final CdxFormat CDX11 = new CdxFormat("N b a m s k r M S V g");
+    public static final String CDX9_LEGEND = "N b a m s k r V g";
+    public static final String CDX10_LEGEND = "N b a m s k r M V g";
+    public static final String CDX11_LEGEND = "N b a m s k r M S V g";
+    public static final CdxFormat CDX9 = new CdxFormat(CDX9_LEGEND);
+    public static final CdxFormat CDX10 = new CdxFormat(CDX10_LEGEND);
+    public static final CdxFormat CDX11 = new CdxFormat(CDX11_LEGEND);
 
     private final byte[] fieldNames;
     private final byte[] fieldIndices;
-    private boolean digestUnchanged=false;
-    
+    private final boolean digestUnchanged;
+
     public CdxFormat(String legend) {
+        this(legend, false);
+    }
+
+    private CdxFormat(String legend, boolean digestUnchanged) {
+        this.digestUnchanged = digestUnchanged;
         String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
         fieldIndices = new byte[128];
@@ -94,7 +103,26 @@ public class CdxFormat {
         return builder.toString();
     }
     
-    public void setDigestUnchanged(boolean digestUnchanged) {
-        this.digestUnchanged=digestUnchanged;
+    public static class Builder {
+        private String legend;
+        private boolean digestUnchanged = false;
+
+        public Builder() {
+            this.legend = CDX11_LEGEND;
+        }
+
+        public Builder legend(String legend) {
+            this.legend = Objects.requireNonNull(legend);
+            return this;
+        }
+
+        public Builder digestUnchanged() {
+            digestUnchanged = true;
+            return this;
+        }
+
+        public CdxFormat build() {
+            return new CdxFormat(legend, digestUnchanged);
+        }
     }
 }

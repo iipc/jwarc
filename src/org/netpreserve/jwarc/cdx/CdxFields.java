@@ -41,8 +41,7 @@ public final class CdxFields {
         try {
             switch (field) {
                 case CHECKSUM:
-                    return record.payloadDigest()
-                            .map(digestUnchanged ? WarcDigest::raw : WarcDigest::base32)
+                    return record.payloadDigest().map(digestUnchanged ? WarcDigest::raw : WarcDigest::base32)
                             .orElse("-");
                 case DATE:
                     return DATE_FORMAT.format(record.date());
