@@ -11,12 +11,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class WarcDigestTest {
 
     private byte[] contentBytes = "hello world".getBytes();
+
+    @Test
+    public void testParsing() {
+        WarcDigest digest = new WarcDigest("Sha1:FKXGYNOJJ7H3IFO35FPUBC445EPOQRXN");
+        assertEquals("Sha1:FKXGYNOJJ7H3IFO35FPUBC445EPOQRXN", digest.raw());
+        assertEquals("sha1", digest.algorithm());
+        assertEquals("sha1:FKXGYNOJJ7H3IFO35FPUBC445EPOQRXN", digest.prefixedBase32());
+    }
 
     @Test
     public void testSha1() throws NoSuchAlgorithmException {
