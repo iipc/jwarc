@@ -9,7 +9,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.netpreserve</groupId>
     <artifactId>jwarc</artifactId>
-    <version>0.23.2-SNAPSHOT</version>
+    <version>0.24.2-SNAPSHOT</version>
 
     <name>jwarc</name>
     <description>Java library for reading and writing WARC files with a typed API</description>
@@ -57,12 +57,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.13.2</version>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -147,30 +141,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>native-image</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.nativeimage</groupId>
-                        <artifactId>native-image-maven-plugin</artifactId>
-                        <version>21.2.0</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>native-image</goal>
-                                </goals>
-                                <phase>package</phase>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <buildArgs>-H:Name=jwarc -H:IncludeResources=.*[.](properties|js) --enable-https</buildArgs>
-                            <mainClass>org.netpreserve.jwarc.tools.WarcTool</mainClass>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

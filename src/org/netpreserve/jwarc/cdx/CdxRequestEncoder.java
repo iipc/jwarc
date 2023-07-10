@@ -1,15 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2023 National Library of Australia and the jwarc contributors
+ */
 package org.netpreserve.jwarc.cdx;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import org.netpreserve.jwarc.HttpRequest;
 import org.netpreserve.jwarc.IOUtils;
 import org.netpreserve.jwarc.MediaType;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.MalformedInputException;
@@ -64,22 +63,23 @@ public class CdxRequestEncoder {
 
     private static void encodeJsonBody(InputStream stream, StringBuilder output, int maxLength, boolean binaryFallback) throws IOException {
         stream.mark(BUFFER_SIZE);
-        JsonParser parser = new JsonFactory().createParser(stream);
+        JsonTokenizer tokenizer = new JsonTokenizer(new BufferedReader(new InputStreamReader(stream, UTF_8)),
+                QUERY_STRING_LIMIT, QUERY_STRING_LIMIT);
         Map<String,Long> nameCounts = new HashMap<>();
         Deque<String> nameStack = new ArrayDeque<>();
         String name = null;
         try {
-            while (parser.nextToken() != null && output.length() < maxLength) {
-                switch (parser.currentToken()) {
+            while (tokenizer.nextToken() != null && output.length() < maxLength) {
+                switch (tokenizer.currentToken()) {
                     case FIELD_NAME:
-                        name = parser.getCurrentName();
+                        name = tokenizer.stringValue();
                         break;
-                    case VALUE_FALSE:
-                    case VALUE_TRUE:
-                    case VALUE_NUMBER_FLOAT:
-                    case VALUE_STRING:
-                    case VALUE_NUMBER_INT:
-                    case VALUE_NULL:
+                    case FALSE:
+                    case TRUE:
+                    case NUMBER_FLOAT:
+                    case STRING:
+                    case NUMBER_INT:
+                    case NULL:
                         if (name != null) {
                             long serial = nameCounts.compute(name, (key, value) -> value == null ? 1 : value + 1);
                             String key = name;
@@ -90,24 +90,24 @@ public class CdxRequestEncoder {
                             output.append(percentPlusEncode(key));
                             output.append('=');
                             String encodedValue;
-                            switch (parser.currentToken()) {
-                                case VALUE_NULL:
+                            switch (tokenizer.currentToken()) {
+                                case NULL:
                                     encodedValue = "None"; // using Python names for pywb compatibility
                                     break;
-                                case VALUE_FALSE:
+                                case FALSE:
                                     encodedValue = "False";
                                     break;
-                                case VALUE_TRUE:
+                                case TRUE:
                                     encodedValue = "True";
                                     break;
-                                case VALUE_NUMBER_INT:
-                                    encodedValue = String.valueOf(parser.getLongValue());
+                                case NUMBER_INT:
+                                    encodedValue = String.valueOf(Long.parseLong(tokenizer.stringValue()));
                                     break;
-                                case VALUE_NUMBER_FLOAT:
-                                    encodedValue = String.valueOf(parser.getDoubleValue());
+                                case NUMBER_FLOAT:
+                                    encodedValue = String.valueOf(Double.parseDouble(tokenizer.stringValue()));
                                     break;
                                 default:
-                                    encodedValue = percentPlusEncode(parser.getValueAsString());
+                                    encodedValue = percentPlusEncode(tokenizer.stringValue());
                             }
                             output.append(encodedValue);
                         }
@@ -124,10 +124,10 @@ public class CdxRequestEncoder {
                     case END_ARRAY:
                         break;
                     default:
-                        throw new IllegalStateException("Unexpected: " + parser.currentToken());
+                        throw new IllegalStateException("Unexpected: " + tokenizer.currentToken());
                 }
             }
-        } catch (JsonParseException e) {
+        } catch (JsonException | NumberFormatException e) {
             if (binaryFallback) {
                 try {
                     stream.reset();

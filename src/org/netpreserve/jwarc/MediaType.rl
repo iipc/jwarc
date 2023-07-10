@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2023 National Library of Australia and the jwarc contributors
  */
 
 // recompile: ragel -J MediaType.rl -o MediaType.java
@@ -67,9 +67,11 @@ public class MediaType extends MessageParser {
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
     public static MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
+    public static MediaType PLAIN_TEXT = MediaType.parse("text/plain");
     public static MediaType WARC_FIELDS = MediaType.parse("application/warc-fields");
     public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
 
+    private final String raw;
     private final String type;
     private final String subtype;
     private final Map<String,String> parameters;
@@ -97,13 +99,21 @@ public class MediaType extends MessageParser {
         String type = string.substring(0, typeEnd);
         String subtype = string.substring(typeEnd + 1, subtypeEnd);
         Map<String,String> parameters = Collections.unmodifiableMap(map);
-        return new MediaType(type, subtype, parameters);
+        return new MediaType(string, type, subtype, parameters);
     }
 
-    private MediaType(String type, String subtype, Map<String,String> parameters) {
+    private MediaType(String raw, String type, String subtype, Map<String,String> parameters) {
+        this.raw = raw;
         this.type = type;
         this.subtype = subtype;
         this.parameters = parameters;
+    }
+
+    /**
+     * The original unparsed media type string.
+     */
+    public String raw() {
+        return raw;
     }
 
     public String type() {
@@ -170,7 +180,7 @@ public class MediaType extends MessageParser {
      * The base type and subtype without any parameters.
      */
     public MediaType base() {
-        return new MediaType(type, subtype, Collections.emptyMap());
+        return new MediaType(null, type, subtype, Collections.emptyMap());
     }
 
     private static boolean validToken(String s) {

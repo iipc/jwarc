@@ -54,7 +54,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
     public Optional<WarcDigest> payloadDigest() {
         return headers().sole("WARC-Payload-Digest").map(WarcDigest::new);
     }
-
+    
     /**
      * A content-type that was identified by an independent check (not just what the server said).
      */

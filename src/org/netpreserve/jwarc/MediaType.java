@@ -2,7 +2,7 @@
 // line 1 "MediaType.rl"
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2023 National Library of Australia and the jwarc contributors
  */
 
 // recompile: ragel -J MediaType.rl -o MediaType.java
@@ -168,10 +168,11 @@ static final int media_type_start = 1;
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
     public static MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
-	public static MediaType PLAIN_TEXT = MediaType.parse("text/plain");
+    public static MediaType PLAIN_TEXT = MediaType.parse("text/plain");
     public static MediaType WARC_FIELDS = MediaType.parse("application/warc-fields");
     public static final MediaType WWW_FORM_URLENCODED = MediaType.parse("application/x-www-form-urlencoded");
 
+    private final String raw;
     private final String type;
     private final String subtype;
     private final Map<String,String> parameters;
@@ -194,14 +195,14 @@ static final int media_type_start = 1;
         StringBuilder buf = new StringBuilder();
 
         
-// line 197 "MediaType.java"
+// line 199 "MediaType.java"
 	{
 	cs = media_type_start;
 	}
 
-// line 95 "MediaType.rl"
+// line 97 "MediaType.rl"
         
-// line 204 "MediaType.java"
+// line 206 "MediaType.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -341,7 +342,7 @@ case 1:
 // line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 344 "MediaType.java"
+// line 346 "MediaType.java"
 			}
 		}
 	}
@@ -390,7 +391,7 @@ case 4:
 // line 48 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 393 "MediaType.java"
+// line 395 "MediaType.java"
 		}
 	}
 	}
@@ -400,18 +401,26 @@ case 5:
 	break; }
 	}
 
-// line 96 "MediaType.rl"
+// line 98 "MediaType.rl"
 
         String type = string.substring(0, typeEnd);
         String subtype = string.substring(typeEnd + 1, subtypeEnd);
         Map<String,String> parameters = Collections.unmodifiableMap(map);
-        return new MediaType(type, subtype, parameters);
+        return new MediaType(string, type, subtype, parameters);
     }
 
-    private MediaType(String type, String subtype, Map<String,String> parameters) {
+    private MediaType(String raw, String type, String subtype, Map<String,String> parameters) {
+        this.raw = raw;
         this.type = type;
         this.subtype = subtype;
         this.parameters = parameters;
+    }
+
+    /**
+     * The original unparsed media type string.
+     */
+    public String raw() {
+        return raw;
     }
 
     public String type() {
@@ -478,7 +487,7 @@ case 5:
      * The base type and subtype without any parameters.
      */
     public MediaType base() {
-        return new MediaType(type, subtype, Collections.emptyMap());
+        return new MediaType(null, type, subtype, Collections.emptyMap());
     }
 
     private static boolean validToken(String s) {

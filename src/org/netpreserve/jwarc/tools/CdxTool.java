@@ -20,8 +20,8 @@ public class CdxTool {
     public static void main(String[] args) throws IOException {
         boolean printHeader = true;
         boolean postAppend = false;
-        CdxFormat cdxFormat = CdxFormat.CDX11;
         List<Path> files = new ArrayList<>();
+        CdxFormat.Builder cdxFormatBuilder = new CdxFormat.Builder();
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
                 switch (args[i]) {
@@ -30,16 +30,16 @@ public class CdxTool {
                         String format = args[++i];
                         switch (format) {
                             case "CDX9":
-                                cdxFormat = CdxFormat.CDX9;
+                                cdxFormatBuilder.legend(CdxFormat.CDX9_LEGEND);
                                 break;
                             case "CDX10":
-                                cdxFormat = CdxFormat.CDX10;
+                                cdxFormatBuilder.legend(CdxFormat.CDX10_LEGEND);
                                 break;
                             case "CDX11":
-                                cdxFormat = CdxFormat.CDX11;
+                                cdxFormatBuilder.legend(CdxFormat.CDX11_LEGEND);
                                 break;
                             default:
-                                cdxFormat = new CdxFormat(format);
+                                cdxFormatBuilder.legend(format);
                                 break;
                         }
                         break;
@@ -57,6 +57,10 @@ public class CdxTool {
                     case "--post-append":
                         postAppend = true;
                         break;
+                    case "-d":
+                    case "--digest-unchanged":
+                        cdxFormatBuilder.digestUnchanged();
+                        break;
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
@@ -68,6 +72,7 @@ public class CdxTool {
             }
         }
 
+        CdxFormat cdxFormat = cdxFormatBuilder.build();
         if (printHeader) {
             System.out.println(" CDX " + cdxFormat.legend());
         }
