@@ -145,30 +145,6 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>native-image</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.nativeimage</groupId>
-                        <artifactId>native-image-maven-plugin</artifactId>
-                        <version>21.2.0</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>native-image</goal>
-                                </goals>
-                                <phase>package</phase>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <buildArgs>-H:Name=jwarc -H:IncludeResources=.*[.](properties|js) --enable-https</buildArgs>
-                            <mainClass>org.netpreserve.jwarc.tools.WarcTool</mainClass>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
 
 </project>
