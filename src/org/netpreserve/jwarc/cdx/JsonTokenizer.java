@@ -191,9 +191,15 @@ class JsonTokenizer {
                     return STRING;
                 case '\\':
                     int escapedChar;
-                    switch (read()) {
+                    c = read();
+                    switch (c) {
                         case -1:
                             throw new JsonException("Unterminated string");
+                        case '"':
+                        case '\\':
+                        case '/':
+                            escapedChar = c;
+                            break;
                         case 'b':
                             escapedChar = '\b';
                             break;

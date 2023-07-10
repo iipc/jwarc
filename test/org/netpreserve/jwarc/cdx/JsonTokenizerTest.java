@@ -68,7 +68,7 @@ public class JsonTokenizerTest {
         assertEquals(singletonList(NUMBER_FLOAT), tokenize("1.0e+0"));
         assertEquals(singletonList(NUMBER_FLOAT), tokenize("1.0e-0"));
         assertEquals(Arrays.asList(START_ARRAY, 0.0, -0.0, 1.0, 5, END_ARRAY), tokenizeValues("[0.0, -0.0, 1.0, 5]"));
-        assertEquals(singletonList(" \t\r\n\0ሴ"), tokenizeValues("\" \\t\\r\\n\\u0000\\u1234\""));
+        assertEquals(singletonList(" \t\r\n\0ሴ\"\\/"), tokenizeValues("\" \\t\\r\\n\\u0000\\u1234\\\"\\\\\\/\""));
     }
 
 }
