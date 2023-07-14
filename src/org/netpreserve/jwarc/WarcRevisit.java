@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.netpreserve.jwarc.WarcResponse.Builder;
+
 /**
  * A WARC record describing a subsequent visitation of content previously archived. Typically used to indicate the
  * content had not changed and therefore a duplicate copy of it was not recorded.
@@ -128,11 +130,20 @@ public class WarcRevisit extends WarcCaptureRecord {
             setHeader("WARC-Profile", profile.toString());
         }
 
+        public Builder body(HttpResponse httpResponse) throws IOException { //revisit still have HTTP header, but no payload
+            return body(MediaType.HTTP_RESPONSE, httpResponse);
+        }
+        
         @Override
         public WarcRevisit build() {
             return build(WarcRevisit::new);
         }
 
+        public Builder(String targetURI) {
+            super("revisit");
+            setHeader("WARC-Target-URI", targetURI);
+        }
+        
         public Builder refersTo(URI recordId) {
             return setHeader("WARC-Refers-To", WarcRecord.formatId(recordId));
         }

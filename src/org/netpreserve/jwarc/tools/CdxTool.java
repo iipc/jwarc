@@ -61,6 +61,11 @@ public class CdxTool {
                     case "--digest-unchanged":
                         cdxFormatBuilder.digestUnchanged();
                         break;
+                    case "-r":
+                    case "--revisits-included":
+                        cdxFormatBuilder.revisistsIncluded();
+                        break;
+                    
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
@@ -84,8 +89,9 @@ public class CdxTool {
                 String filename = file.getFileName().toString();
                 while (record != null) {
                     try {
-                        if ((record instanceof WarcResponse || record instanceof WarcResource) &&
-                                ((WarcCaptureRecord) record).payload().isPresent()) {
+                        if ( (record instanceof WarcResponse || record instanceof WarcResource) && 
+                             ((WarcCaptureRecord) record).payload().isPresent()
+                             || (record instanceof WarcRevisit && cdxFormatBuilder.isRevisitsIncluded()) ) {                                 
                             long position = reader.position();
                             WarcCaptureRecord capture = (WarcCaptureRecord) record;
                             URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
@@ -122,6 +128,11 @@ public class CdxTool {
                         System.err.println("ParsingException at record " + reader.position() + ": " + e.getMessage());
                         record = reader.next().orElse(null);
                     }
+               
+                    if (record instanceof WarcRevisit) {
+                        ((WarcRevisit)record).http(); // ensure http header is parsed before advancing. Revisits has no payload, but we still need the HTTP status.
+                   }
+                
                 }
             }
         }

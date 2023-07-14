@@ -22,16 +22,21 @@ public class CdxFormat {
     public static final CdxFormat CDX10 = new CdxFormat(CDX10_LEGEND);
     public static final CdxFormat CDX11 = new CdxFormat(CDX11_LEGEND);
 
+    // PyWb has defined this fake Mime-type value to identify revisit
+    public static final String PYWB_REVISIT_MIMETYPE = "warc/revisit";
+    
     private final byte[] fieldNames;
     private final byte[] fieldIndices;
     private final boolean digestUnchanged;
-
+    private final boolean revisitsIncluded;
+    
     public CdxFormat(String legend) {
-        this(legend, false);
+        this(legend, false, false);
     }
 
-    private CdxFormat(String legend, boolean digestUnchanged) {
+    private CdxFormat(String legend, boolean digestUnchanged, boolean revisitsIncluded) {
         this.digestUnchanged = digestUnchanged;
+        this.revisitsIncluded=revisitsIncluded;
         String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
         fieldIndices = new byte[128];
@@ -90,7 +95,7 @@ public class CdxFormat {
         return builder.toString();
     }
 
-    String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {
+    String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {      
         switch (fieldName) {
             case CHECKSUM:
                 return record.payloadDigest()
@@ -105,7 +110,12 @@ public class CdxFormat {
             case FILENAME:
                 return filename;
             case MIME_TYPE:
-                return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
+                if (revisitsIncluded && ( record instanceof WarcRevisit) ) {
+                    return PYWB_REVISIT_MIMETYPE;    
+                }
+                else {
+                    return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
+                }                       
             case NORMALIZED_SURT:
                 if (urlkey != null) {
                     return urlkey;
@@ -121,8 +131,11 @@ public class CdxFormat {
                     return "-";
                 }
             case RESPONSE_CODE:
-                if (record instanceof WarcResponse) {
-                    if (record.contentType().base().equals(MediaType.HTTP)) {
+                if (record instanceof WarcResponse || record instanceof WarcRevisit) {                                              
+                    if (record instanceof WarcRevisit) {                                                                                    
+                        return Integer.toString(((WarcRevisit) record).http().status());
+                    }                    
+                    else if (record.contentType().base().equals(MediaType.HTTP)) {
                         return Integer.toString(((WarcResponse) record).http().status());
                     } else if (record.contentType().base().equals(MediaType.GEMINI)) {
                         return String.format("%02d", ((WarcResponse) record).gemini().statusHttpEquivalent());
@@ -141,7 +154,7 @@ public class CdxFormat {
     public static class Builder {
         private String legend;
         private boolean digestUnchanged = false;
-
+        private boolean revisitsIncluded = false;
         public Builder() {
             this.legend = CDX11_LEGEND;
         }
@@ -156,8 +169,17 @@ public class CdxFormat {
             return this;
         }
 
+        public Builder revisistsIncluded() {
+            revisitsIncluded = true;
+            return this;
+        }
+                
+        public boolean isRevisitsIncluded() {
+            return revisitsIncluded;
+        }
+
         public CdxFormat build() {
-            return new CdxFormat(legend, digestUnchanged);
+            return new CdxFormat(legend, digestUnchanged, revisitsIncluded);
         }
     }
 }
