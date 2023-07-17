@@ -31,7 +31,7 @@ public final class CdxFields {
 
     public static String format(byte field, WarcCaptureRecord record) {
         try {
-            return CdxFormat.CDX11.formatField(field, record, "-", -1, -1, null);
+            return CdxFormat.CDX11.formatField(field, record, null , -1, -1, null);
         } catch (Exception e) {
             return "-";
         }
