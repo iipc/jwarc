@@ -65,7 +65,10 @@ public class CdxTool {
                     case "--revisits-included":
                         cdxFormatBuilder.revisistsIncluded();
                         break;
-                    
+                    case "-w":
+                    case "--warc-full-path":
+                        cdxFormatBuilder.fullFilePath();
+                        break;                         
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
@@ -86,7 +89,7 @@ public class CdxTool {
             try (WarcReader reader = new WarcReader(file)) {
                 reader.onWarning(System.err::println);
                 WarcRecord record = reader.next().orElse(null);
-                String filename = file.getFileName().toString();
+                
                 while (record != null) {
                     try {
                         if ( (record instanceof WarcResponse || record instanceof WarcResource) && 
@@ -120,7 +123,7 @@ public class CdxTool {
                                 }
                             }
 
-                            System.out.println(cdxFormat.format(capture, filename, position, length, urlKey));
+                            System.out.println(cdxFormat.format(capture, file, position, length, urlKey));
                         } else {
                             record = reader.next().orElse(null);
                         }
