@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2021 National Library of Australia
+ */
+
 package org.netpreserve.jwarc.cdx;
 
 import java.io.IOException;
