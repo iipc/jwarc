@@ -28,15 +28,13 @@ public class CdxFormat {
     private final byte[] fieldNames;
     private final byte[] fieldIndices;
     private final boolean digestUnchanged;
-    private final boolean revisitsIncluded;
 
     public CdxFormat(String legend) {
-        this(legend, false, false);
+        this(legend, false);
     }
 
-    private CdxFormat(String legend, boolean digestUnchanged, boolean revisitsIncluded) {
+    private CdxFormat(String legend, boolean digestUnchanged) {
         this.digestUnchanged = digestUnchanged;
-        this.revisitsIncluded=revisitsIncluded;
         String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
         fieldIndices = new byte[128];
@@ -110,10 +108,9 @@ public class CdxFormat {
             case FILENAME:
                 return filename == null ? "-" : filename;
             case MIME_TYPE:
-                if (revisitsIncluded && ( record instanceof WarcRevisit) ) {
+                if (record instanceof WarcRevisit) {
                     return PYWB_REVISIT_MIMETYPE;    
-                }
-                else {
+                } else {
                     return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
                 }                       
             case NORMALIZED_SURT:
@@ -154,7 +151,6 @@ public class CdxFormat {
     public static class Builder {
         private String legend;
         private boolean digestUnchanged = false;
-        private boolean revisitsIncluded = false;
 
         public Builder() {
             this.legend = CDX11_LEGEND;
@@ -170,17 +166,8 @@ public class CdxFormat {
             return this;
         }
 
-        public Builder revisistsIncluded() {
-            revisitsIncluded = true;
-            return this;
-        }
-                
-        public boolean isRevisitsIncluded() {
-            return revisitsIncluded;
-        }
-
         public CdxFormat build() {
-            return new CdxFormat(legend, digestUnchanged, revisitsIncluded);
+            return new CdxFormat(legend, digestUnchanged);
         }
     }
 }

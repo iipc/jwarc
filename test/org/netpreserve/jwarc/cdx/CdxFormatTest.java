@@ -58,7 +58,6 @@ public class CdxFormatTest {
         
         CdxFormat cdxFormat = new CdxFormat.Builder()
                 .digestUnchanged() // We want the digest as is.
-                .revisistsIncluded() 
                 .build();
         String payloadDigest="sha256:b04af472c47a8b1b5059b3404caac0e1bfb5a3c07b329be66f65cfab5ee8d3f3";
                 

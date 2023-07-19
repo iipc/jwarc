@@ -6,23 +6,28 @@
 package org.netpreserve.jwarc.tools;
 
 
+import org.netpreserve.jwarc.WarcRecord;
+import org.netpreserve.jwarc.WarcRevisit;
 import org.netpreserve.jwarc.cdx.CdxFormat;
-import org.netpreserve.jwarc.cdx.CdxProcessor;
+import org.netpreserve.jwarc.cdx.CdxWriter;
 
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class CdxTool {
     public static void main(String[] args) throws IOException {
-        boolean printHeader = true;
-        boolean postAppend = false;
-        boolean fullFilePath = false;
+        CdxWriter cdxWriter = new CdxWriter(new OutputStreamWriter(System.out));
         List<Path> files = new ArrayList<>();
         CdxFormat.Builder cdxFormatBuilder = new CdxFormat.Builder();
+        boolean printHeader = true;
+        boolean fullFilePath = false;
+        Predicate<WarcRecord> filter = record -> !(record instanceof WarcRevisit);
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
                 switch (args[i]) {
@@ -56,7 +61,7 @@ public class CdxTool {
                     break;
                 case "-p":
                 case "--post-append":
-                    postAppend = true;
+                    cdxWriter.setPostAppend(true);
                     break;
                 case "-d":
                 case "--digest-unchanged":
@@ -64,7 +69,7 @@ public class CdxTool {
                     break;
                 case "-r":
                 case "--revisits-included":
-                    cdxFormatBuilder.revisistsIncluded();
+                    filter = null;
                     break;
                 case "-w":
                 case "--warc-full-path":
@@ -80,6 +85,12 @@ public class CdxTool {
                 files.add(Paths.get(args[i]));
             }
         }
-        CdxProcessor.process(printHeader, postAppend, fullFilePath, files, cdxFormatBuilder,System.out); //Output to System.out
+
+        cdxWriter.onWarning(System.err::println);
+        cdxWriter.setFormat(cdxFormatBuilder.build());
+        cdxWriter.setRecordFilter(filter);
+
+        if (printHeader) cdxWriter.writeHeaderLine();
+        cdxWriter.process(files, fullFilePath);
     }
 }
