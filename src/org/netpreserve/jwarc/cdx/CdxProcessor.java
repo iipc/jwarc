@@ -25,7 +25,7 @@ import org.netpreserve.jwarc.WarcRevisit;
 public class CdxProcessor {
 
     
-    public static void process(boolean printHeader, boolean postAppend, List<Path> files,                 
+    public static void process(boolean printHeader, boolean postAppend, boolean fullFilePath, List<Path> files,
             CdxFormat.Builder cdxFormatBuilder, PrintStream printStream) throws IOException {       
             CdxFormat cdxFormat = cdxFormatBuilder.build();
                 
@@ -70,8 +70,14 @@ public class CdxProcessor {
                                     record = reader.next().orElse(null);
                                 }
                             }
-                             
-                            String line=cdxFormat.format(capture, file, position, length, urlKey);
+
+                            String filename;
+                            if (fullFilePath) {
+                                filename = file.toAbsolutePath().toString();
+                            } else {
+                                filename = file.getFileName().toString();
+                            }
+                            String line=cdxFormat.format(capture, filename, position, length, urlKey);
                             printStream.println(line);                            
 
                         } else {

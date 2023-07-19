@@ -20,6 +20,7 @@ public class CdxTool {
     public static void main(String[] args) throws IOException {
         boolean printHeader = true;
         boolean postAppend = false;
+        boolean fullFilePath = false;
         List<Path> files = new ArrayList<>();
         CdxFormat.Builder cdxFormatBuilder = new CdxFormat.Builder();
         for (int i = 0; i < args.length; i++) {
@@ -67,7 +68,7 @@ public class CdxTool {
                     break;
                 case "-w":
                 case "--warc-full-path":
-                    cdxFormatBuilder.fullFilePath();
+                    fullFilePath = true;
                     break;                         
                 default:
                     System.err.println("Unrecognized option: " + args[i]);
@@ -79,6 +80,6 @@ public class CdxTool {
                 files.add(Paths.get(args[i]));
             }
         }
-        CdxProcessor.process(printHeader, postAppend, files, cdxFormatBuilder,System.out); //Output to System.out
+        CdxProcessor.process(printHeader, postAppend, fullFilePath, files, cdxFormatBuilder,System.out); //Output to System.out
     }
 }
