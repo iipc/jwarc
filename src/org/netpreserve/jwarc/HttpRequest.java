@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -101,6 +102,17 @@ public class HttpRequest extends HttpMessage {
             super();
             this.method = method;
             this.target = target;
+        }
+
+        /**
+         * Create a new HTTP request builder from a URI.
+         * <p>
+         * The request target will be set to the path and query of the URI.
+         * The Host header will be set to the host and port of the URI.
+         */
+        public Builder(String method, URI uri) {
+            this(method,  uri.getRawQuery() == null ? uri.getRawPath() : uri.getRawPath() + "?" + uri.getRawQuery());
+            setHeader("Host", uri.getPort() == -1 ? uri.getHost() : uri.getHost() + ":" + uri.getPort());
         }
 
         public HttpRequest build() {

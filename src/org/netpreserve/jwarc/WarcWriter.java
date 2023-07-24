@@ -80,13 +80,8 @@ public class WarcWriter implements Closeable {
      * Downloads a remote resource recording the request and response as WARC records.
      */
     public FetchResult fetch(URI uri) throws IOException {
-        String target = uri.getRawPath();
-        if (uri.getRawQuery() != null) {
-            target += "?" + uri.getRawQuery();
-        }
-        HttpRequest httpRequest = new HttpRequest.Builder("GET", target)
+        HttpRequest httpRequest = new HttpRequest.Builder("GET", uri)
                 .version(MessageVersion.HTTP_1_0) // until we support chunked encoding
-                .addHeader("Host", uri.getHost())
                 .addHeader("User-Agent", "jwarc")
                 .addHeader("Connection", "close")
                 .build();
