@@ -93,7 +93,7 @@ status_line_lenient = http_version_lenient " "+ status_code (" " reason_phrase)?
 
 field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' - ':')*) $push;
 field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
-field_value_folded_lenient = LWS (TEXT_lenient OWS)? >fold $push;
+field_value_folded_lenient = LWS_lenient (TEXT_lenient OWS)? >fold $push;
 field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
 
 named_field_lenient = (field_name_lenient OWS)? ":" >handle_name field_value_lenient CRLF_lenient %handle_value;

@@ -52,6 +52,9 @@ public class HttpParserTest {
         parse("GET / HTTP/1.1\nContent-Length: 0\n\n");
         assertEquals("/", httpParser.target());
         assertEquals(Optional.of("0"), httpParser.headers().sole("Content-Length"));
+        assertEquals("/", httpParser.target());
+        parse("GET / HTTP/1.1\nServer: Apache\n mod_foo\nContent-Length: 0\n\n");
+        assertEquals(Optional.of("Apache mod_foo"), httpParser.headers().sole("Server"));
         parse("GET / HTTP/1.1\r\nCookie: abc\1def\r\n\r\n");
         assertEquals(Optional.of("abc\1def"), httpParser.headers().sole("Cookie"));
         parse("GET /#\1 HTTP/1.1\r\nContent-Length: 0\r\n\r\n");
