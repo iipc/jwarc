@@ -77,11 +77,6 @@ action handle_arc_date {
     bufPos = 0;
 }
 
-action handle_arc_mime {
-    // TODO
-    bufPos = 0;
-}
-
 action handle_arc_length {
     setHeader("Content-Length", new String(buf, 0, bufPos, US_ASCII));
     bufPos = 0;
@@ -136,7 +131,7 @@ arc_url_byte = any - "\n" - " ";
 arc_url = (lower+ ":" arc_url_byte*) $push %handle_arc_url;
 arc_ip = (digit{1,3} "." digit{1,3} "." digit{1,3} "." digit{1,3}) $push %handle_arc_ip;
 arc_date = digit{14} $push %handle_arc_date;
-arc_mime = (token ("/" token ( OWS ";" OWS parameter )*)?)? $push %handle_arc_mime;
+arc_mime = (token ("/" token ( OWS ";" OWS parameter )*)?)?;
 arc_mime_lenient = arc_mime | (any - " " - "\n")*;
 arc_length = digit+ $push %handle_arc_length %handle_arc;
 arc_header = arc_url " " arc_ip " " arc_date " " arc_mime_lenient " " arc_length "\n";
