@@ -70,6 +70,7 @@ public class HttpParserTest {
         parseShouldFail("HTTP/1.1 200 OK\nContent-Length: 0\n\n");
         parseShouldFail("HTTP/1.1 200 OK\r\nSet-Cookie: abc\1def\r\n\r\n");
         parseShouldFail("HTTP/1.1 200 OK\nContent-Length  \t: 0  \n\n");
+        parseShouldFail("HTTP/2 200 OK\r\nContent-Lengt: 0\r\n\r\n");
     }
 
     @Test
@@ -96,6 +97,8 @@ public class HttpParserTest {
         assertEquals(Optional.of("value"), httpParser.headers().sole("Key"));
         parse("HTTP/1.1 200\r\nKey: value\r\nkey2: value2\r\n");
         assertEquals(Optional.of("value2"), httpParser.headers().sole("key2"));
+        parse("HTTP/2 200\r\nKey: value\r\nkey2: value2\r\n");
+        assertEquals(new MessageVersion("HTTP", 2, 0), httpParser.version());
     }
 
     @Test
