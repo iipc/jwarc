@@ -39,7 +39,7 @@ public class LengthedBody extends MessageBody {
     }
 
     static LengthedBody createFromContentLength(ReadableByteChannel channel, ByteBuffer buffer, Long contentLengthHeader) throws IOException {
-        long length;
+        long length = -1;
         if (channel instanceof LengthedBody.LengthedReadableByteChannel) {
             LengthedBody.LengthedReadableByteChannel lengthed = (LengthedBody.LengthedReadableByteChannel) channel;
             length = lengthed.size() - lengthed.position() + buffer.remaining();
@@ -49,7 +49,14 @@ public class LengthedBody extends MessageBody {
         } else if (channel instanceof SeekableByteChannel) {
             SeekableByteChannel seekable = (SeekableByteChannel) channel;
             length = seekable.size() - seekable.position() + buffer.remaining();
-        } else {
+        } else if (channel instanceof  MessageBody) {
+            MessageBody body = (MessageBody) channel;
+            long size = body.size();
+            if (size >= 0) {
+                length = body.size() - body.position() + buffer.remaining();
+            }
+        }
+        if (length == -1) {
             if (contentLengthHeader == null) throw new IllegalArgumentException("unable to determine length");
             length = contentLengthHeader;
         }

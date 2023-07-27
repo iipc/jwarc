@@ -14,7 +14,6 @@ import java.security.MessageDigest;
  * is read.
  */
 class DigestingMessageBody extends MessageBody {
-
     private final MessageBody body;
     private final MessageDigest digest;
 
@@ -54,4 +53,8 @@ class DigestingMessageBody extends MessageBody {
         return digest;
     }
 
+    @Override
+    public long size() throws IOException {
+        return body.size();
+    }
 }
