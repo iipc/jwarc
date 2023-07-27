@@ -13,6 +13,7 @@ import java.net.URI;
  *
  * @see WarcWriter#fetch(URI, FetchOptions)
  */
+@SuppressWarnings("UnusedReturnValue")
 public class FetchOptions {
     long maxLength = 0;
     long maxTime = 0;
