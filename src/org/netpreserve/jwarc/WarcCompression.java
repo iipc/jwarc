@@ -5,6 +5,16 @@
 
 package org.netpreserve.jwarc;
 
+import java.nio.file.Path;
+
 public enum WarcCompression {
-    NONE, GZIP
+    NONE, GZIP;
+
+    static WarcCompression forPath(Path path) {
+        if (path.getFileName().toString().endsWith(".gz")) {
+            return GZIP;
+        } else {
+            return NONE;
+        }
+    }
 }

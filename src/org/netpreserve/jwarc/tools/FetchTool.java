@@ -6,6 +6,8 @@ import org.netpreserve.jwarc.WarcWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +15,7 @@ public class FetchTool {
     public static void main(String[] args) throws IOException, URISyntaxException {
         FetchOptions options = new FetchOptions();
         List<URI> urls = new ArrayList<>();
+        Path outputFile = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "-h":
@@ -21,10 +24,12 @@ public class FetchTool {
                     System.out.println("Fetches a URL while writing the request and response as WARC records");
                     System.out.println();
                     System.out.println("Options:");
-                    System.out.println("-A, --user-agent STRING    Sets the User-Agent header");
-                    System.out.println("    --read-timeout MILLIS  Sets the socket read timeout");
-                    System.out.println("    --max-length BYTES     Truncate response after BYTES received");
-                    System.out.println("    --max-time MILLIS      Truncate response after MILLIS elapsed");
+                    System.out.println("  -A, --user-agent STRING    Sets the User-Agent header");
+                    System.out.println("      --read-timeout MILLIS  Sets the socket read timeout");
+                    System.out.println("      --max-length BYTES     Truncate response after BYTES received");
+                    System.out.println("      --max-time MILLIS      Truncate response after MILLIS elapsed");
+                    System.out.println("  -o, --output-file FILE     Write WARC records to FILE instead of stdout");
+                    System.out.println();
                     System.exit(0);
                     break;
                 case "-A":
@@ -40,6 +45,10 @@ public class FetchTool {
                 case "--max-time":
                     options.maxTime(Integer.parseInt(args[++i]));
                     break;
+                case "-o":
+                case "--output-file":
+                    outputFile = Paths.get(args[++i]);
+                    break;
                 default:
                     if (args[i].startsWith("-")) {
                         System.err.println("Unknown option: " + args[i]);
@@ -52,7 +61,7 @@ public class FetchTool {
             System.err.println("No URLs specified. Try: jwarc fetch --help");
             System.exit(1);
         }
-        try (WarcWriter writer = new WarcWriter(System.out)) {
+        try (WarcWriter writer = outputFile == null ? new WarcWriter(System.out) : new WarcWriter(outputFile)) {
             for (URI url : urls) {
                 writer.fetch(url, options);
             }

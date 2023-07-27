@@ -60,6 +60,16 @@ public class WarcWriter implements Closeable {
         this(Channels.newChannel(stream));
     }
 
+    /**
+     * Opens a WARC file for writing. Compression is determined by the file extension.
+     *
+     * @param path the path to the file
+     * @throws IOException if an I/O error occurs
+     */
+    public WarcWriter(Path path) throws IOException {
+        this(FileChannel.open(path, WRITE, CREATE, TRUNCATE_EXISTING), WarcCompression.forPath(path));
+    }
+
     public synchronized void write(WarcRecord record) throws IOException {
         // TODO: buffer headers
         position.addAndGet(channel.write(ByteBuffer.wrap(record.serializeHeader())));

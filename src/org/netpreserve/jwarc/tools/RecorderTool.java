@@ -74,7 +74,7 @@ public class RecorderTool {
         }
 
         ServerSocket serverSocket = new ServerSocket(port);
-        WarcRecorder warcRecorder = new WarcRecorder(serverSocket, new WarcWriter(outputFile == null ? System.out : Files.newOutputStream(outputFile)));
+        WarcRecorder warcRecorder = new WarcRecorder(serverSocket, outputFile == null ? new WarcWriter(System.out) : new WarcWriter(outputFile));
 
         if (caCertificateSaveFile != null) {
             X509Certificate certificate = warcRecorder.certificateAuthority().certificate();

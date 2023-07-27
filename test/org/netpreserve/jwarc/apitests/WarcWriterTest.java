@@ -65,8 +65,6 @@ public class WarcWriterTest {
 
             WarcResponse response = (WarcResponse) warcReader.next()
                     .orElseThrow(() -> new RuntimeException("Missing response record"));
-            System.out.println(new String(response.serializeHeader()));
-            //assertEquals(12, response.http().body().size());
             assertEquals(256, response.http().status());
             assertEquals("present", response.http().headers().first("Test-Header").orElse(null));
             assertTrue(response.blockDigest().isPresent());
