@@ -1,6 +1,5 @@
 package org.netpreserve.jwarc;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -16,6 +15,10 @@ public abstract class MessageBody extends MessageParser implements ReadableByteC
         return LengthedBody.EMPTY;
     }
 
+    /**
+     * Returns the length of the body. This may be less than the Content-Length header if the record was truncated.
+     * Returns -1 if the length cannot be determined (such as when chunked encoding is used).
+     */
     public long size() throws IOException {
         return -1;
     }

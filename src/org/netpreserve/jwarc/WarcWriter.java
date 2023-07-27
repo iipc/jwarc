@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2023 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
@@ -80,23 +80,46 @@ public class WarcWriter implements Closeable {
      * Downloads a remote resource recording the request and response as WARC records.
      */
     public FetchResult fetch(URI uri) throws IOException {
-        HttpRequest httpRequest = new HttpRequest.Builder("GET", uri)
-                .version(MessageVersion.HTTP_1_0) // until we support chunked encoding
-                .addHeader("User-Agent", "jwarc")
-                .addHeader("Connection", "close")
-                .build();
-        return fetch(uri, httpRequest, null);
+        return fetch(uri, new FetchOptions());
     }
 
     /**
      * Downloads a remote resource recording the request and response as WARC records.
      * <p>
-     * @param uri to download
+     * @param uri URL to download
+     * @param options fetch options to use
+     * @throws IOException if an IO error occurred
+     */
+    public FetchResult fetch(URI uri, FetchOptions options) throws IOException {
+        HttpRequest httpRequest = new HttpRequest.Builder("GET", uri)
+                .version(MessageVersion.HTTP_1_0) // until we support chunked encoding
+                .addHeader("User-Agent", options.userAgent)
+                .addHeader("Connection", "close")
+                .build();
+        return fetch(uri, httpRequest, options);
+    }
+
+    /**
+     * Downloads a remote resource recording the request and response as WARC records.
+     * <p>
+     * @param uri URL to download
      * @param httpRequest request to send
      * @param copyTo if not null will receive a copy of the (raw) http response bytes
      * @throws IOException if an IO error occurred
      */
     public FetchResult fetch(URI uri, HttpRequest httpRequest, OutputStream copyTo) throws IOException {
+        return fetch(uri, httpRequest, new FetchOptions().copyTo(copyTo));
+    }
+
+    /**
+     * Downloads a remote resource recording the request and response as WARC records.
+     * <p>
+     * @param uri URL to download
+     * @param httpRequest request to send
+     * @param options fetch options to use
+     * @throws IOException if an IO error occurred
+     */
+    public FetchResult fetch(URI uri, HttpRequest httpRequest, FetchOptions options) throws IOException {
         Path tempPath = Files.createTempFile("jwarc", ".tmp");
         try (FileChannel tempFile = FileChannel.open(tempPath, READ, WRITE, DELETE_ON_CLOSE, TRUNCATE_EXISTING)) {
             byte[] httpRequestBytes = httpRequest.serializeHeader();
@@ -106,21 +129,40 @@ public class WarcWriter implements Closeable {
             MessageDigest responseBlockDigest = MessageDigest.getInstance(digestAlgorithm);
             InetAddress ip;
             Instant date = Instant.now();
+            long startMillis = date.toEpochMilli();
+            WarcTruncationReason truncationReason = null;
             try (Socket socket = IOUtils.connect(uri.getScheme(), uri.getHost(), uri.getPort())) {
                 socket.setTcpNoDelay(true);
+                socket.setSoTimeout(options.readTimeout);
                 ip = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
                 socket.getOutputStream().write(httpRequestBytes);
                 InputStream inputStream = socket.getInputStream();
                 byte[] buf = new byte[8192];
+                long totalLength = 0;
                 while (true) {
-                    int n = inputStream.read(buf);
+                    int len;
+                    if (options.maxLength > 0 && options.maxLength - totalLength < buf.length) {
+                        len = (int)(options.maxLength - totalLength);
+                    } else {
+                        len = buf.length;
+                    }
+                    int n = inputStream.read(buf, 0, len);
                     if (n < 0) break;
+                    totalLength += n;
                     tempFile.write(ByteBuffer.wrap(buf, 0, n));
                     responseBlockDigest.update(buf, 0, n);
                     try {
-                        if (copyTo != null) copyTo.write(buf, 0, n);
+                        if (options.copyTo != null) options.copyTo.write(buf, 0, n);
                     } catch (IOException e) {
                         // ignore
+                    }
+                    if (options.maxTime > 0 && System.currentTimeMillis() - startMillis > options.maxLength) {
+                        truncationReason = WarcTruncationReason.TIME;
+                        break;
+                    }
+                    if (options.maxLength > 0 && totalLength >= options.maxLength) {
+                        truncationReason = WarcTruncationReason.LENGTH;
+                        break;
                     }
                 }
             }
@@ -137,6 +179,7 @@ public class WarcWriter implements Closeable {
             if (responsePayloadDigest != null) {
                 responseBuilder.payloadDigest(new WarcDigest(responsePayloadDigest));
             }
+            if (truncationReason != null) responseBuilder.truncated(truncationReason);
             WarcResponse response = responseBuilder.build();
             response.http(); // force HTTP header to be parsed before body is consumed so that caller can use it
             write(response);

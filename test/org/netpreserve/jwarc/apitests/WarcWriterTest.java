@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2020 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2020-2023 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc.apitests;
@@ -32,9 +32,12 @@ public class WarcWriterTest {
 
     @Test
     public void fetch() throws IOException, NoSuchAlgorithmException, URISyntaxException {
-        byte[] body = "Hello world!".getBytes(StandardCharsets.UTF_8);
-        MessageDigest bodyDigest = MessageDigest.getInstance("SHA-1");
-        bodyDigest.update(body);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] message = "Hello world!\n".getBytes(StandardCharsets.UTF_8);
+        while (baos.size() < 4096) {
+            baos.write(message);
+        }
+        byte[] body = baos.toByteArray();
 
         // get loopback address
         HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
@@ -51,7 +54,8 @@ public class WarcWriterTest {
             WarcWriter warcWriter = new WarcWriter(Channels.newChannel(out));
             URI uri = new URI("http", null, server.getAddress().getHostString(),
                     server.getAddress().getPort(), "/", null, null);
-            FetchResult result = warcWriter.fetch(uri);
+            int maxLength = 512;
+            FetchResult result = warcWriter.fetch(uri, new FetchOptions().maxLength(maxLength));
 
             assertEquals(256, result.response().http().status());
             assertEquals("/", result.request().http().target());
@@ -61,10 +65,19 @@ public class WarcWriterTest {
 
             WarcResponse response = (WarcResponse) warcReader.next()
                     .orElseThrow(() -> new RuntimeException("Missing response record"));
+            System.out.println(new String(response.serializeHeader()));
+            //assertEquals(12, response.http().body().size());
             assertEquals(256, response.http().status());
             assertEquals("present", response.http().headers().first("Test-Header").orElse(null));
             assertTrue(response.blockDigest().isPresent());
             assertEquals(response.calculatedBlockDigest(), response.blockDigest());
+
+            assertEquals(WarcTruncationReason.LENGTH, response.truncated());
+            assertEquals(Optional.of(maxLength), response.headers().sole("Content-Length").map(Integer::parseInt));
+            assertEquals(maxLength, response.body().size());
+            MessageDigest bodyDigest = MessageDigest.getInstance("SHA-1");
+            long payloadSize = response.http().body().size();
+            bodyDigest.update(body, 0, (int) payloadSize);
             assertEquals(new WarcDigest(bodyDigest).toString(), response.payloadDigest().map(Object::toString).orElse(null));
 
             WarcRequest request = (WarcRequest) warcReader.next()
