@@ -166,7 +166,7 @@ public class WarcWriter implements Closeable {
                     } catch (IOException e) {
                         // ignore
                     }
-                    if (options.maxTime > 0 && System.currentTimeMillis() - startMillis > options.maxLength) {
+                    if (options.maxTime > 0 && System.currentTimeMillis() - startMillis > options.maxTime) {
                         truncationReason = WarcTruncationReason.TIME;
                         break;
                     }
