@@ -12,10 +12,12 @@ package org.netpreserve.jwarc;
 public class FetchResult {
     private final WarcRequest request;
     private final WarcResponse response;
+    private final Throwable exception;
 
-    FetchResult(WarcRequest request, WarcResponse response) {
+    FetchResult(WarcRequest request, WarcResponse response, Throwable exception) {
         this.request = request;
         this.response = response;
+        this.exception = exception;
     }
 
     /**
@@ -30,5 +32,13 @@ public class FetchResult {
      */
     public WarcResponse response() {
         return response;
+    }
+
+    /**
+     * If the fetch was interrupted by an exception but truncated records were still written this will return the caught
+     * exception. This can occur if the WarcWriter was closed during the fetch.
+     */
+    public Throwable exception() {
+        return exception;
     }
 }

@@ -62,6 +62,14 @@ public class FetchTool {
             System.exit(1);
         }
         try (WarcWriter writer = outputFile == null ? new WarcWriter(System.out) : new WarcWriter(outputFile)) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    // Ensure current progress is written before exiting.
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, "FetchToolShutdownHook"));
             for (URI url : urls) {
                 writer.fetch(url, options);
             }
