@@ -43,6 +43,11 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.2.2</version>
                 <configuration>
@@ -144,6 +149,18 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <!-- When running a build compiled with jdk9+ on jdk8 we need to set the -release 8 javac option to avoid
+                java.lang.NoSuchMethodError: java.nio.ByteBuffer.flip()Ljava/nio/ByteBuffer;
+             However javac 8 itself doesn't understand the -release option so we have to do so conditionally -->
+        <profile>
+            <id>jdk9-plus</id>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.release>8</maven.compiler.release>
+            </properties>
         </profile>
     </profiles>
 
