@@ -70,7 +70,7 @@ public class CdxWriter implements Closeable {
             try (WarcReader reader = new WarcReader(file)) {
                 String filename = (useAbsolutePaths ? file.toAbsolutePath() : file.getFileName()).toString();
                 reader.onWarning(message -> emitWarning(filename, reader.position(), message));
-                process(reader, file.toAbsolutePath().toString());
+                process(reader, filename);
             }
         }
     }
