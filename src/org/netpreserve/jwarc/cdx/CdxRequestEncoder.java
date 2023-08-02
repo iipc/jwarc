@@ -56,10 +56,21 @@ public class CdxRequestEncoder {
             byte[] body = IOUtils.readNBytes(stream, limit);
             String decodedBody = String.valueOf(UTF_8.newDecoder().decode(ByteBuffer.wrap(body)));
             out.append('&');
-            out.append(URIs.percentPlusDecode(decodedBody));
+            percentEncodeNonPercent(URIs.percentPlusDecode(decodedBody), out);
         } catch (MalformedInputException e) {
             stream.reset();
             encodeBinaryBody(stream, out);
+        }
+    }
+
+    private static void percentEncodeNonPercent(String s, StringBuilder out) {
+        for (byte rawByte : s.getBytes(UTF_8)) {
+            int b = rawByte & 0xff;
+            if (b == '#' || b <= 0x20 || b >= 0x7f) {
+                out.append('%').append(String.format("%02X", b));
+            } else {
+                out.append((char) b);
+            }
         }
     }
 
@@ -150,7 +161,7 @@ public class CdxRequestEncoder {
     public static String percentPlusEncode(String string) {
         StringBuilder output = new StringBuilder();
         Formatter formatter = new Formatter(output);
-        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = string.getBytes(UTF_8);
         for (byte rawByte : bytes) {
             int b = rawByte & 0xff;
             if (percentPlusUnreserved.get(b)) {

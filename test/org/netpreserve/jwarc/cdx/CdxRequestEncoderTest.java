@@ -29,6 +29,8 @@ public class CdxRequestEncoderTest {
                     MediaType.WWW_FORM_URLENCODED, "foo=bar&dir=%2Fbaz"),
             new Case("__wb_method=POST&__wb_post_data=/w==",
                     MediaType.WWW_FORM_URLENCODED, new byte[]{-1}),
+            new Case("__wb_method=POST&snowman=%E2%98%83",
+                    MediaType.WWW_FORM_URLENCODED, "snowman=☃"),
             new Case("__wb_method=POST&a=b&a.2_=2&d=e",
                     MediaType.JSON, "{\"a\": \"b\", \"c\": {\"a\": 2}, \"d\": \"e\"}"),
             new Case("__wb_method=POST",
