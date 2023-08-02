@@ -22,11 +22,11 @@ import java.util.function.Predicate;
 
 public class CdxTool {
     public static void main(String[] args) throws IOException {
-        CdxWriter cdxWriter = new CdxWriter(new OutputStreamWriter(System.out));
         List<Path> files = new ArrayList<>();
         CdxFormat.Builder cdxFormatBuilder = new CdxFormat.Builder();
         boolean printHeader = true;
         boolean fullFilePath = false;
+        boolean postAppend = false;
         Predicate<WarcRecord> filter = record -> !(record instanceof WarcRevisit);
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
@@ -61,7 +61,7 @@ public class CdxTool {
                     break;
                 case "-p":
                 case "--post-append":
-                    cdxWriter.setPostAppend(true);
+                    postAppend = true;
                     break;
                 case "-d":
                 case "--digest-unchanged":
@@ -86,11 +86,14 @@ public class CdxTool {
             }
         }
 
-        cdxWriter.onWarning(System.err::println);
-        cdxWriter.setFormat(cdxFormatBuilder.build());
-        cdxWriter.setRecordFilter(filter);
+        try (CdxWriter cdxWriter = new CdxWriter(new OutputStreamWriter(System.out))) {
+            cdxWriter.onWarning(System.err::println);
+            cdxWriter.setFormat(cdxFormatBuilder.build());
+            cdxWriter.setPostAppend(postAppend);
+            cdxWriter.setRecordFilter(filter);
 
-        if (printHeader) cdxWriter.writeHeaderLine();
-        cdxWriter.process(files, fullFilePath);
+            if (printHeader) cdxWriter.writeHeaderLine();
+            cdxWriter.process(files, fullFilePath);
+        }
     }
 }
