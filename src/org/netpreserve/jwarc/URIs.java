@@ -133,6 +133,10 @@ public class URIs {
         return out.toString();
     }
 
+    public static String percentPlusDecode(String s) {
+        return percentDecode(s.replace('+', ' '));
+    }
+
     private static String percentDecode(String s) {
         ByteBuffer bb = null;
         StringBuilder out = new StringBuilder();

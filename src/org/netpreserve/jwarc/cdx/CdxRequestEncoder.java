@@ -7,9 +7,9 @@ package org.netpreserve.jwarc.cdx;
 import org.netpreserve.jwarc.HttpRequest;
 import org.netpreserve.jwarc.IOUtils;
 import org.netpreserve.jwarc.MediaType;
+import org.netpreserve.jwarc.URIs;
 
 import java.io.*;
-import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 // http://iipc.github.io/warc-specifications/guidelines/cdx-non-get-requests/
 public class CdxRequestEncoder {
-    private static final int QUERY_STRING_LIMIT = 4096;
+    static final int QUERY_STRING_LIMIT = 4096;
     private static final int BUFFER_SIZE = 64 * 1024;
 
     public static String encode(HttpRequest httpRequest) throws IOException {
@@ -49,12 +49,14 @@ public class CdxRequestEncoder {
     }
 
     private static void encodeFormBody(InputStream stream, StringBuilder out) throws IOException {
-        stream.mark(BUFFER_SIZE);
+        // We need to read 3x the query string limit in case the body is fully percent encoded
+        int limit = QUERY_STRING_LIMIT * 3;
+        stream.mark(limit);
         try {
-            byte[] body = IOUtils.readNBytes(stream, QUERY_STRING_LIMIT);
+            byte[] body = IOUtils.readNBytes(stream, limit);
             String decodedBody = String.valueOf(UTF_8.newDecoder().decode(ByteBuffer.wrap(body)));
             out.append('&');
-            out.append(URLDecoder.decode(decodedBody, "utf-8"));
+            out.append(URIs.percentPlusDecode(decodedBody));
         } catch (MalformedInputException e) {
             stream.reset();
             encodeBinaryBody(stream, out);
