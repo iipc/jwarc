@@ -27,7 +27,7 @@ public class CdxTool {
         boolean printHeader = true;
         boolean fullFilePath = false;
         boolean postAppend = false;
-        Predicate<WarcRecord> filter = record -> !(record instanceof WarcRevisit);
+        Predicate<WarcRecord> filter = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
                 switch (args[i]) {
@@ -53,8 +53,12 @@ public class CdxTool {
                 case "--help":
                     System.out.println("Usage: jwarc cdx [--format LEGEND] warc-files...");
                     System.out.println();
-                    System.out.println("  -f, --format LEGEND  CDX format may be CDX9, CDX11 or a custom legend");
-                    System.out.println("      --no-header      Don't print the CDX header line");
+                    System.out.println("  -d, --digest-unchanged   Include records with unchanged digest");
+                    System.out.println("  -f, --format LEGEND      CDX format may be CDX9, CDX11 or a custom legend");
+                    System.out.println("      --no-header          Don't print the CDX header line");
+                    System.out.println("  -p, --post-append        Append the request body to the urlkey field");
+                    System.out.println("      --revisits-excluded  Don't index revisit records");
+                    System.out.println("  -w, --warc-full-path     Use absolute paths for the filename field");
                     return;
                 case "--no-header":
                     printHeader = false;
@@ -70,6 +74,9 @@ public class CdxTool {
                 case "-r":
                 case "--revisits-included":
                     filter = null;
+                    break;
+                case "--revisits-excluded":
+                    filter = record -> !(record instanceof WarcRevisit);
                     break;
                 case "-w":
                 case "--warc-full-path":
