@@ -163,7 +163,7 @@ static final int media_type_start = 1;
     public static final MediaType GEMTEXT = MediaType.parse("text/gemini");
     public static final MediaType JSON = MediaType.parse("application/json");
     public static MediaType HTML = MediaType.parse("text/html");
-    public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8s");
+    public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8");
     public static MediaType HTTP = MediaType.parse("application/http");
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
