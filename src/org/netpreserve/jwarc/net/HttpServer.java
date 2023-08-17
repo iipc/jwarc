@@ -148,6 +148,7 @@ abstract class HttpServer {
             if (!matcher.matches()) continue;
             route.handler.handle(new HttpExchange(socket, request, matcher));
         }
+        new HttpExchange(socket, request, null).send(404, "Not found");
     }
 
     public CertificateAuthority certificateAuthority() {

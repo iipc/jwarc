@@ -197,9 +197,19 @@ public class WarcServer extends HttpServer {
         return da.compareTo(db) < 0 ? a : b;
     }
 
-    private HttpHandler resource(String name) throws IOException {
-        URL url = getClass().getResource(name);
+    static HttpHandler resource(String name) throws IOException {
+        URL url = WarcServer.class.getResource(name);
         if (url == null) throw new NoSuchFileException(name);
+
+        MediaType type;
+        if (name.endsWith(".js")) {
+            type = MediaType.parse("application/javascript");
+        } else if (name.endsWith(".html")) {
+            type = MediaType.HTML_UTF8;
+        } else {
+            throw new IllegalArgumentException("Unable to determine media type for " + name);
+        }
+
         return exchange -> {
             URLConnection conn = url.openConnection();
             long length = conn.getContentLengthLong();
@@ -219,7 +229,7 @@ public class WarcServer extends HttpServer {
 
             try (InputStream stream = conn.getInputStream()) {
                 exchange.send(new HttpResponse.Builder(200, "OK")
-                        .body(MediaType.parse("application/javascript"), Channels.newChannel(stream), length)
+                        .body(type, Channels.newChannel(stream), length)
                         .setHeader("Service-Worker-Allowed", "/")
                         .build());
             }

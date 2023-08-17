@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>WARC Recorder</title>
+<script>
+    navigator.serviceWorker.register('/__jwarc__/recorder-sw.js', {updateViaCache: "none"}).then(function () {
+        console.log('recorder-sw.js registered');
+    }).catch(function (error) {
+        console.log('recorder-sw.js registration failed:', error);
+    });
+</script>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    #urlInput {
+        flex-grow: 1;
+    }
+
+    #frame {
+        width: 100%;
+        height: calc(100vh - 38px);
+        border: none;
+    }
+
+    .toolbar {
+        height: 38px;
+        display: flex;
+        background: #eee;
+        padding: 4px;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        font-size: 20px;
+        margin: 4px;
+    }
+</style>
+
+<nav class="toolbar">
+    <input id="urlInput" placeholder="URL">
+</nav>
+<iframe id="frame">
+</iframe>
+
+<script>
+    const urlInput = document.getElementById("urlInput");
+    const frame = document.getElementById("frame");
+
+    function urlInputKeyDown(event) {
+        if (event.key === "Enter") {
+            let url = event.target.value;
+            if (!url.match(/:\/\//)) {
+                url = "http://" + url;
+                event.target.value = url;
+            }
+            frame.src = "/__jwarc__/record/" + url;
+        }
+    }
+
+    urlInput.addEventListener("keydown", urlInputKeyDown);
+</script>

@@ -53,7 +53,7 @@ public class HttpResponse extends HttpMessage {
         return parse(channel, copyTo, false, false);
     }
 
-    static HttpResponse parseWithoutBody(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
+    public static HttpResponse parseWithoutBody(ReadableByteChannel channel, WritableByteChannel copyTo) throws IOException {
         return parse(channel, copyTo, false, true);
     }
 
