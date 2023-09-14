@@ -21,4 +21,15 @@ public class HttpResponseTest {
         assertEquals("Not Found", response.reason());
         assertEquals(header, new String(response.serializeHeader(), US_ASCII));
     }
+
+    @Test
+    public void parsingBogusContentLengthFolding() throws IOException {
+        String header = "HTTP/1.0 200 OK\r\n" +
+                "Content-Length: 6\r\n" +
+                "   Content-Type: text/html\r\n\r\n";
+        String message = header + "[body]";
+        HttpResponse response = HttpResponse.parse(LengthedBody.create(message.getBytes(US_ASCII)));
+        assertEquals(200, response.status());
+        assertEquals("[body]", new String(IOUtils.readNBytes(response.body().stream(), 10)));
+    }
 }

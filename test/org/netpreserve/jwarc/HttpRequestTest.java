@@ -29,4 +29,16 @@ public class HttpRequestTest {
     public void invalidVersionShouldThrow() {
         new HttpRequest.Builder("GET", "/").version(MessageVersion.WARC_1_0);
     }
+
+    @Test
+    public void invalidContentLengthHeader() throws IOException {
+        String header = "POST / HTTP/1.1\r\n" +
+                "Connection: close\r\n" +
+                "Host:   example.org\n" +
+                "Content-Length: 6 dinosaurs\r\n\r\n";
+        String message = header + "[body]";
+        HttpRequest request = HttpRequest.parse(LengthedBody.create(message.getBytes(US_ASCII)));
+        assertEquals("POST", request.method());
+        assertEquals("[body]", new String(IOUtils.readNBytes(request.body().stream(), 10)));
+    }
 }

@@ -38,6 +38,10 @@ public class LengthedBody extends MessageBody {
         return new LengthedBody(channel, buffer, size);
     }
 
+    static LengthedBody create(byte[] bytes) {
+        return create(Channels.newChannel(new ByteArrayInputStream(new byte[0])), ByteBuffer.wrap(bytes), bytes.length);
+    }
+
     static LengthedBody createFromContentLength(ReadableByteChannel channel, ByteBuffer buffer, Long contentLengthHeader) throws IOException {
         long length = -1;
         if (channel instanceof LengthedBody.LengthedReadableByteChannel) {

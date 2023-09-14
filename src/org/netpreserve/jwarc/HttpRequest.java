@@ -87,8 +87,14 @@ public class HttpRequest extends HttpMessage {
             copyTo.write(buffer.duplicate());
         }
         MessageHeaders headers = parser.headers();
-        long contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(-1L);
-        LengthedBody body = LengthedBody.create(channel, buffer, contentLength);
+        Long contentLength;
+        try {
+            contentLength = headers.first("Content-Length").map(Long::parseLong).orElse(null);
+        } catch (NumberFormatException e) {
+            if (strict) throw new IOException("Invalid Content-Length header", e);
+            contentLength = null;
+        }
+        LengthedBody body = LengthedBody.createFromContentLength(channel, buffer, contentLength);
         HttpRequest request = new HttpRequest(parser.method(), parser.target(), parser.version(), headers, body);
         request.serializedHeader = headerBytes;
         return request;
