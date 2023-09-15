@@ -100,6 +100,12 @@ public class CdxWriter implements Closeable {
                     record = reader.next().orElse(null);
                     long length = reader.position() - position;
 
+                    // skip records without a date, this often occurs in old ARC files with a corrupt date field
+                    if (!capture.headers().first("WARC-Date").isPresent()) {
+                        emitWarning(filename, position, "Skipping record due to missing or invalid date");
+                        continue;
+                    }
+
                     String encodedRequest = null;
                     if (postAppend) {
                         // check for a corresponding request record

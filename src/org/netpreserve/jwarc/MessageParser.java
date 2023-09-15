@@ -6,8 +6,20 @@
 package org.netpreserve.jwarc;
 
 import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
 public class MessageParser {
+    private Consumer<String> warningHandler;
+
+    protected void emitWarning(String message) {
+        if (warningHandler != null) {
+            warningHandler.accept(message);
+        }
+    }
+
+    void onWarning(Consumer<String> warningHandler) {
+        this.warningHandler = warningHandler;
+    }
 
     protected static String getErrorContext(String input, int position, int length) {
         StringBuilder context = new StringBuilder();

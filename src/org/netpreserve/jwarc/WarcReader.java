@@ -363,6 +363,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      */
     public void onWarning(Consumer<String> warningHandler) {
         this.warningHandler = warningHandler;
+        parser.onWarning(warningHandler);
     }
 
     /**
