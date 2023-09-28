@@ -28,13 +28,13 @@ class GzipChannel implements WritableByteChannel {
     static final int CM_DEFLATE = Deflater.DEFLATED;
 
     /** Default gzip header, 10 bytes long */
-    private static final byte[] GZIP_HEADER_ = new byte[] { //
+    private static final byte[] GZIP_HEADER = new byte[] { //
             (byte) GZIP_MAGIC, //
             (byte) (GZIP_MAGIC >> 8), //
             Deflater.DEFLATED, //
             0, 0, 0, 0, 0, 0, 0 };
-    private static final ByteBuffer GZIP_HEADER = ByteBuffer.wrap(GZIP_HEADER_);
 
+    private final ByteBuffer gzipHeader = ByteBuffer.wrap(GZIP_HEADER);
     private boolean headerWritten = false;
     private boolean finished = false;
     private boolean dataWritten = false;
@@ -66,8 +66,8 @@ class GzipChannel implements WritableByteChannel {
     }
 
     private void writeHeader() throws IOException {
-        outputPosition += channel.write(GZIP_HEADER);
-        GZIP_HEADER.rewind();
+        outputPosition += channel.write(gzipHeader);
+        gzipHeader.rewind();
         headerWritten = true;
     }
 
