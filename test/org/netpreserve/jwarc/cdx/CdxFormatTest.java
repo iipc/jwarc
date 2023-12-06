@@ -31,6 +31,26 @@ public class CdxFormatTest {
     }
 
     @Test
+    public void testEscapingSpaces() throws IOException {
+        HttpResponse httpResponse = new HttpResponse.Builder(404, "Not Found")
+                .body(MediaType.HTML, new byte[0])
+                .build();
+        WarcResponse response2 = new WarcResponse.Builder("data:a b")
+                .date(Instant.parse("2022-03-02T21:44:34Z"))
+                .payloadDigest("sha1", "A LNJ7DOPHK477BWWC726H7Y5XBPBNF7")
+                .body(httpResponse)
+                .build();
+        assertEquals("Spaces should be escaped when formatting the urlkey", "a%20b)/",
+                CdxFormat.CDX11.formatField(CdxFields.NORMALIZED_SURT, response2, "foo", 456, 400, null));
+        assertEquals("Spaces should be escaped when formatting the urlkey", "a%20b",
+                CdxFormat.CDX11.formatField(CdxFields.NORMALIZED_SURT, response2, "foo", 456, 400, "a b"));
+        assertEquals("Spaces should be escaped in filename", "a%20b",
+                CdxFormat.CDX11.formatField(CdxFields.FILENAME, response2, "a b", 456, 400, "a b"));
+        assertEquals("Spaces should be escaped in checksum", "A%20LNJ7DOPHK477BWWC726H7Y5XBPBNF7",
+                CdxFormat.CDX11.formatField(CdxFields.CHECKSUM, response2, "a b", 456, 400, "a b"));
+    }
+
+    @Test
     public void testDigestUnchanged() throws Exception {
         Path path=Paths.get("/home/jwarc/example.warc.gz");
         
@@ -94,7 +114,4 @@ public class CdxFormatTest {
         assertEquals("org,example)/ 20220302214434 http://example.org/ text/html 404 "+payloadDigest+" - - 456 123 /home/jwarc/example.warc.gz",                      
                 cdxFormat.format(response, path.toAbsolutePath().toString(), 123, 456));
     }
-
-    
-    
 }

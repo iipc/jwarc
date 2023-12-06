@@ -98,6 +98,7 @@ public class CdxFormat {
             case CHECKSUM:
                 return record.payloadDigest()
                         .map(digestUnchanged ? WarcDigest::raw : WarcDigest::base32)
+                        .map(CdxFormat::escape)
                         .orElse("-");
             case COMPRESSED_ARC_FILE_OFFSET:
                 return position < 0 ? "-" : String.valueOf(position);
@@ -106,7 +107,7 @@ public class CdxFormat {
             case DATE:
                 return CdxFields.DATE_FORMAT.format(record.date());
             case FILENAME:
-                return filename == null ? "-" : filename;
+                return filename == null ? "-" : escape(filename);
             case MIME_TYPE:
                 if (record instanceof WarcRevisit) {
                     return PYWB_REVISIT_MIMETYPE;    
@@ -115,7 +116,7 @@ public class CdxFormat {
                 }                       
             case NORMALIZED_SURT:
                 if (urlkey != null) {
-                    return urlkey;
+                    return escape(urlkey);
                 } else {
                     return escape(URIs.toNormalizedSurt(record.target()));
                 }
@@ -145,7 +146,10 @@ public class CdxFormat {
     }
 
     private static String escape(String str) {
-        return str == null ? null : str.replace(" ", "%20");
+        if (str == null) return null;
+        return str.replace(" ", "%20")
+                .replace("\n", "%0A")
+                .replace("\0", "%00");
     }
 
     public static class Builder {
