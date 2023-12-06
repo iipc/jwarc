@@ -28,7 +28,12 @@ public class CdxRequestEncoder {
         out.append("__wb_method=");
         out.append(httpRequest.method());
         int maxLength = out.length() + 1 + QUERY_STRING_LIMIT;
-        MediaType baseContentType = httpRequest.contentType().base();
+        MediaType baseContentType;
+        try {
+            baseContentType = httpRequest.contentType().base();
+        } catch (IllegalArgumentException e) {
+            baseContentType = MediaType.OCTET_STREAM;
+        }
         InputStream stream = new BufferedInputStream(httpRequest.body().stream(), BUFFER_SIZE);
         if (baseContentType.equals(MediaType.WWW_FORM_URLENCODED)) {
             encodeFormBody(stream, out);

@@ -57,6 +57,8 @@ public class CdxRequestEncoderTest {
                     String.join(" ", Collections.nCopies(1000, "this is very long")) + "\"}", "x=1"),
             new Case("__wb_method=POST&x=%2",
                     MediaType.WWW_FORM_URLENCODED, "x=%2"),
+            new Case("__wb_method=POST&__wb_post_data=eD0lMg==",
+                    "application/x-www-form-urlencoded, text/plain", "x=%2"),
             generateLargeCase()
     };
 
@@ -74,6 +76,7 @@ public class CdxRequestEncoderTest {
     public static class Case {
         final String expected;
         final MediaType requestType;
+        String requestTypeString;
         final byte[] requestBody;
         final String queryString;
 
@@ -96,14 +99,22 @@ public class CdxRequestEncoderTest {
             this.queryString = queryString;
         }
 
+        public Case(String expected, String requestType, String requestBody) {
+            this(expected, MediaType.parse("null/null"), requestBody);
+            requestTypeString = requestType;
+        }
+
         public HttpRequest request() {
             String target = "/foo";
             if (queryString != null) {
                 target += "?" + queryString;
             }
-            return new HttpRequest.Builder("POST", target)
-                    .body(requestType, requestBody)
-                    .build();
+            HttpRequest.Builder builder = new HttpRequest.Builder("POST", target)
+                    .body(requestType, requestBody);
+            if (requestTypeString != null) {
+                builder.setHeader("Content-Type", requestTypeString);
+            }
+            return builder.build();
         }
     }
 
