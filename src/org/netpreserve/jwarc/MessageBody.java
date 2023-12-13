@@ -1,5 +1,6 @@
 package org.netpreserve.jwarc;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -12,7 +13,8 @@ public abstract class MessageBody extends MessageParser implements ReadableByteC
     }
 
     public static MessageBody empty() {
-        return LengthedBody.EMPTY;
+        return LengthedBody.create(Channels.newChannel(new ByteArrayInputStream(new byte[0])),
+                ByteBuffer.allocate(0), 0);
     }
 
     /**

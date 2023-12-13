@@ -16,8 +16,6 @@ import java.nio.channels.*;
  * A message body with a known length.
  */
 public class LengthedBody extends MessageBody {
-    static final LengthedBody EMPTY = LengthedBody.create(Channels.newChannel(new ByteArrayInputStream(new byte[0])),
-            ByteBuffer.allocate(0), 0);
     private final ReadableByteChannel channel;
     final ByteBuffer buffer;
     private final long size;

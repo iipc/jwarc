@@ -7,9 +7,7 @@ package org.netpreserve.jwarc.apitests;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.netpreserve.jwarc.WarcReader;
-import org.netpreserve.jwarc.WarcRecord;
-import org.netpreserve.jwarc.WarcResponse;
+import org.netpreserve.jwarc.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,7 +21,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
@@ -219,5 +216,45 @@ public class WarcReaderTest {
         WarcRecord record = reader.next().orElseThrow(AssertionError::new);
         assertEquals("sha1:PQRC7MUSPWBIV4RPLEQTJ2ETESAGG7AN", record.calculatedBlockDigest()
                 .orElseThrow(AssertionError::new).toString());
+    }
+
+    @Test
+    public void testReadingBackTwice() throws IOException {
+        Path temp = Files.createTempFile("test", ".warc");
+        try {
+            Files.write(temp, ("WARC/1.0\r\n" +
+                    "WARC-Type: revisit\r\n" +
+                    "WARC-Target-URI: https://example.com/\r\n" +
+                    "WARC-Date: 2018-01-01T09:11:04Z\r\n" +
+                    "WARC-Record-ID: <urn:uuid:31cb2de4-9962-11ee-b9d1-0242ac120002>\r\n" +
+                    "Content-Length: 42\r\n" +
+                    "Content-Type: application/http;msgtype=response\r\n" +
+                    "\r\n" +
+                    "HTTP/1.1 200 OK\r\n" +
+                    "Content-Length: 12\r\n" +
+                    "\r\n").getBytes(UTF_8));
+
+            try (WarcReader reader = new WarcReader(temp)) {
+                for (WarcRecord record : reader) {
+                    WarcRevisit revisit = (WarcRevisit) record;
+                    try (MessageBody body = revisit.http().body()) {
+                        byte[] data = IOUtils.readNBytes(body.stream(), 1024);
+                        assertEquals(0, data.length);
+                    }
+                }
+            }
+
+            try (WarcReader reader = new WarcReader(temp)) {
+                for (WarcRecord record : reader) {
+                    WarcRevisit revisit = (WarcRevisit) record;
+                    try (MessageBody body = revisit.http().body()) {
+                        byte[] data = IOUtils.readNBytes(body.stream(), 1024);
+                        assertEquals(0, data.length);
+                    }
+                }
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
     }
 }
