@@ -142,7 +142,7 @@ public class LengthedBody extends MessageBody {
             position += buffer.remaining();
             buffer.clear();
             if (channel.read(buffer) < 0) {
-                throw new EOFException();
+                throw new EOFException("Expected to read " + (size - position) + " more bytes");
             }
             buffer.flip();
         }

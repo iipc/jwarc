@@ -193,18 +193,17 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             while (buffer.remaining() < 1) {
                 buffer.compact();
                 if (channel.read(buffer) < 0) {
-                    throw new EOFException("expected trailing LF");
+                    buffer.flip();
+                    emitWarning("invalid record trailer");
+                    return 0;
                 }
                 buffer.flip();
             }
             int trailer = buffer.get();
-            if (trailer == 'h') {
+            if (trailer != '\n') {
                 emitWarning("invalid record trailer");
                 buffer.position(buffer.position() - 1);
                 return 0;
-            } else if (trailer != '\n') {
-                throw new ParsingException("invalid ARC trailer 0x" + Integer.toHexString(trailer) + ": " +
-                        MessageParser.getErrorContext(buffer, buffer.position() - 1, 40));
             }
             return 1;
         } else {

@@ -18,9 +18,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
@@ -223,16 +225,16 @@ public class WarcReaderTest {
         Path temp = Files.createTempFile("test", ".warc");
         try {
             Files.write(temp, ("WARC/1.0\r\n" +
-                    "WARC-Type: revisit\r\n" +
-                    "WARC-Target-URI: https://example.com/\r\n" +
-                    "WARC-Date: 2018-01-01T09:11:04Z\r\n" +
-                    "WARC-Record-ID: <urn:uuid:31cb2de4-9962-11ee-b9d1-0242ac120002>\r\n" +
-                    "Content-Length: 42\r\n" +
-                    "Content-Type: application/http;msgtype=response\r\n" +
-                    "\r\n" +
-                    "HTTP/1.1 200 OK\r\n" +
-                    "Content-Length: 12\r\n" +
-                    "\r\n").getBytes(UTF_8));
+                               "WARC-Type: revisit\r\n" +
+                               "WARC-Target-URI: https://example.com/\r\n" +
+                               "WARC-Date: 2018-01-01T09:11:04Z\r\n" +
+                               "WARC-Record-ID: <urn:uuid:31cb2de4-9962-11ee-b9d1-0242ac120002>\r\n" +
+                               "Content-Length: 42\r\n" +
+                               "Content-Type: application/http;msgtype=response\r\n" +
+                               "\r\n" +
+                               "HTTP/1.1 200 OK\r\n" +
+                               "Content-Length: 12\r\n" +
+                               "\r\n").getBytes(UTF_8));
 
             try (WarcReader reader = new WarcReader(temp)) {
                 for (WarcRecord record : reader) {
@@ -256,5 +258,86 @@ public class WarcReaderTest {
         } finally {
             Files.deleteIfExists(temp);
         }
+    }
+
+    @Test
+    public void testWarcioArcVersionBlockLengthVariant() throws Exception {
+        String testArc = "filedesc://example.arc 0.0.0.0 20240101000000 text/plain 75\n" +
+                         "1 0 Warcio testcase\n" +
+                         "URL IP-address Archive-date Content-type Archive-length\n" +
+                         "\n" +
+                         "http://example.com/1 1.2.3.4 20240101000001 text/html 0\n" +
+                         "http://example.com/2 4.3.2.1 20240101000002 text/html 1\nx\n\n\n" +
+                         "http://example.com/3 4.3.2.1 20240101000002 text/html 0\n";
+        WarcReader reader = new WarcReader(new ByteArrayInputStream(testArc.getBytes(UTF_8)));
+        WarcRecord record = reader.next().orElseThrow(AssertionError::new);
+        assertEquals(Optional.of("example.arc"), ((Warcinfo)record).filename());
+        record = reader.next().orElseThrow(AssertionError::new);
+        assertEquals("http://example.com/1", ((WarcResponse)record).target());
+        record = reader.next().orElseThrow(AssertionError::new);
+        assertEquals("http://example.com/2", ((WarcResponse)record).target());
+        record = reader.next().orElseThrow(AssertionError::new);
+        assertEquals("http://example.com/3", ((WarcResponse)record).target());
+        assertFalse(reader.next().isPresent());
+    }
+
+    @Test
+    public void testArcFileFormatReferenceExample() throws Exception {
+        // missing linefeeds were added before "Last-modified:" and "<HTML>" to make the HTTP response valid
+        String testArc = "filedesc://IA-001102.arc 0 19960923142103 text/plain 76\n" +
+                         "1 0 Alexa Internet\n" +
+                         "URL IP-address Archive-date Content-type Archive-length\n" +
+                         "\n" +
+                         "http://www.dryswamp.edu:80/index.html 127.10.100.2 19961104142103 text/html 202\n" +
+                         "HTTP/1.0 200 Document follows\n" +
+                         "Date: Mon, 04 Nov 1996 14:21:06 GMT\n" +
+                         "Server: NCSA/1.4.1\n" +
+                         "Content-type: text/html\n" +
+                         "Last-modified: Sat,10 Aug 1996 22:33:11 GMT\n" +
+                         "Content-length: 30\n\n" +
+                         "<HTML>\n" +
+                         "Hello World!!!\n" +
+                         "</HTML>\n" +
+                         "\n" +
+                         "filedesc://IA-001102.arc 0.0.0.0 19960923142103 text/plain 200 - - 0 IA-001102.arc 122\n" +
+                         "2 0 Alexa Internet\n" +
+                         "URL IP-address Archive-date Content-type Result-code Checksum\n" +
+                         "Location Offset Filename Archive-length\n" +
+                         "\n" +
+                         "http://www.dryswamp.edu:80/index.html 127.10.100.2 19961104142103 text/html 200 fac069150613fe55599cc7fa88aa089d - 209 IA-001102.arc 202\n" +
+                         "HTTP/1.0 200 Document follows\n" +
+                         "Date: Mon, 04 Nov 1996 14:21:06 GMT\n" +
+                         "Server: NCSA/1.4.1\n" +
+                         "Content-type: text/html\n" +
+                         "Last-modified: Sat,10 Aug 1996 22:33:11 GMT\n" +
+                         "Content-length: 30\n\n" +
+                         "<HTML>\n" +
+                         "Hello World!!!\n" +
+                         "</HTML>\n";
+        WarcReader reader = new WarcReader(new ByteArrayInputStream(testArc.getBytes(UTF_8)));
+        {
+            Warcinfo record = (Warcinfo) reader.next().orElseThrow(AssertionError::new);
+            assertEquals(Optional.of("IA-001102.arc"), record.filename());
+            assertEquals(Instant.parse("1996-09-23T14:21:03Z"), record.date());
+        }
+        {
+            WarcResponse record = (WarcResponse) reader.next().orElseThrow(AssertionError::new);
+            assertEquals("http://www.dryswamp.edu:80/index.html", record.target());
+            HttpResponse http = record.http();
+            assertEquals(200, http.status());
+            assertEquals(Optional.of("Sat,10 Aug 1996 22:33:11 GMT"), http.headers().sole("Last-modified"));
+            MessageBody payloadBody = record.payload().get().body();
+            String payloadString = new String(IOUtils.readNBytes(payloadBody.stream(), (int)payloadBody.size()), UTF_8);
+            assertEquals("<HTML>\nHello World!!!\n</HTML>", payloadString);
+        }
+        {
+            Warcinfo record = (Warcinfo) reader.next().orElseThrow(AssertionError::new);
+            assertEquals(Optional.of("IA-001102.arc"), record.filename());
+        }
+        {
+            WarcResponse record = (WarcResponse) reader.next().orElseThrow(AssertionError::new);
+            assertEquals("http://www.dryswamp.edu:80/index.html", record.target());
+        }
+        assertFalse(reader.next().isPresent());
     }
 }
