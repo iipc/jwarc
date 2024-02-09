@@ -228,7 +228,7 @@ public class WarcParser extends MessageParser {
             }
             if (isError()) {
                 throw new ParsingException("invalid WARC record at position " + position + ": "
-                        + getErrorContext(buffer, (int) position, 40));
+                        + getErrorContext(buffer, buffer.position(), 40));
             }
             buffer.compact();
             int n = channel.read(buffer);
