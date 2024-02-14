@@ -13,7 +13,7 @@ package org.netpreserve.jwarc;
 import java.util.*;
 
 
-// line 53 "MediaType.rl"
+// line 66 "MediaType.rl"
 
 
 public class MediaType extends MessageParser {
@@ -28,7 +28,12 @@ private static byte[] init__media_type_actions_0()
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
 	    5,    1,    6,    1,    7,    1,    8,    1,    9,    1,   10,    1,
-	   11,    2,    4,    3
+	   11,    1,   12,    2,    0,    3,    2,    1,    3,    2,    4,    3,
+	    2,    5,    4,    2,    6,    3,    2,    7,    5,    2,    8,    4,
+	    2,   13,    3,    2,   14,    3,    3,    4,    1,    3,    3,    5,
+	    4,    3,    3,    8,    5,    4,    3,    9,    5,    4,    3,   10,
+	    5,    4,    3,   11,   13,    3,    3,   12,   14,    3,    4,    0,
+	    5,    4,    3
 	};
 }
 
@@ -39,7 +44,9 @@ private static short[] init__media_type_key_offsets_0()
 {
 	return new short [] {
 	    0,    0,   15,   29,   44,   47,   64,   80,   95,  102,  109,  114,
-	  132,  150
+	  128,  129,  130,  148,  151,  169,  172,  191,  209,  227,  235,  243,
+	  246,  268,  291,  313,  335,  341,  363,  371,  389,  403,  417,  435,
+	  453
 	};
 }
 
@@ -58,10 +65,36 @@ private static char[] init__media_type_trans_keys_0()
 	   45,   46,   48,   57,   65,   90,   94,  122,   34,  124,  126,   33,
 	   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,   34,
 	   92,  127,    0,    8,   10,   31,   34,   92,  127,    0,    8,   10,
-	   31,  127,    0,    8,   10,   31,    9,   32,   33,   59,  124,  126,
-	   35,   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,
-	    9,   32,   33,   59,  124,  126,   35,   39,   42,   43,   45,   46,
-	   48,   57,   65,   90,   94,  122,    9,   32,   59,    0
+	   31,  127,    0,    8,   10,   31,   33,   47,  124,  126,   35,   39,
+	   42,   43,   45,   57,   65,   90,   94,  122,   47,   47,    9,   32,
+	   33,   59,  124,  126,   35,   39,   42,   43,   45,   46,   48,   57,
+	   65,   90,   94,  122,    9,   32,   59,    9,   32,   33,   59,  124,
+	  126,   35,   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,
+	  122,    9,   32,   59,    9,   32,   33,   59,   61,  124,  126,   35,
+	   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,    9,
+	   32,   34,   59,  124,  126,   33,   39,   42,   43,   45,   46,   48,
+	   57,   65,   90,   94,  122,    9,   32,   33,   59,  124,  126,   35,
+	   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,    9,
+	   32,   34,   59,   92,  127,    0,   31,    9,   32,   34,   59,   92,
+	  127,    0,   31,    9,   32,   59,    9,   32,   34,   59,   92,  124,
+	  126,  127,    0,   31,   33,   39,   42,   43,   45,   46,   48,   57,
+	   65,   90,   94,  122,    9,   32,   34,   59,   61,   92,  124,  126,
+	  127,    0,   31,   33,   39,   42,   43,   45,   46,   48,   57,   65,
+	   90,   94,  122,    9,   32,   34,   59,   92,  124,  126,  127,    0,
+	   31,   33,   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,
+	  122,    9,   32,   34,   59,   92,  124,  126,  127,    0,   31,   33,
+	   39,   42,   43,   45,   46,   48,   57,   65,   90,   94,  122,    9,
+	   32,   59,  127,    0,   31,    9,   32,   34,   59,   92,  124,  126,
+	  127,    0,   31,   33,   39,   42,   43,   45,   46,   48,   57,   65,
+	   90,   94,  122,    9,   32,   34,   59,   92,  127,    0,   31,    9,
+	   32,   33,   59,  124,  126,   35,   39,   42,   43,   45,   46,   48,
+	   57,   65,   90,   94,  122,   33,   47,  124,  126,   35,   39,   42,
+	   43,   45,   57,   65,   90,   94,  122,   33,   47,  124,  126,   35,
+	   39,   42,   43,   45,   57,   65,   90,   94,  122,    9,   32,   33,
+	   59,  124,  126,   35,   39,   42,   43,   45,   46,   48,   57,   65,
+	   90,   94,  122,    9,   32,   33,   59,  124,  126,   35,   39,   42,
+	   43,   45,   46,   48,   57,   65,   90,   94,  122,    9,   32,   59,
+	    0
 	};
 }
 
@@ -71,8 +104,10 @@ private static final char _media_type_trans_keys[] = init__media_type_trans_keys
 private static byte[] init__media_type_single_lengths_0()
 {
 	return new byte [] {
-	    0,    3,    4,    3,    3,    5,    4,    3,    3,    3,    1,    6,
-	    6,    3
+	    0,    3,    4,    3,    3,    5,    4,    3,    3,    3,    1,    4,
+	    1,    1,    6,    3,    6,    3,    7,    6,    6,    6,    6,    3,
+	    8,    9,    8,    8,    4,    8,    6,    6,    4,    4,    6,    6,
+	    3
 	};
 }
 
@@ -82,23 +117,27 @@ private static final byte _media_type_single_lengths[] = init__media_type_single
 private static byte[] init__media_type_range_lengths_0()
 {
 	return new byte [] {
-	    0,    6,    5,    6,    0,    6,    6,    6,    2,    2,    2,    6,
-	    6,    0
+	    0,    6,    5,    6,    0,    6,    6,    6,    2,    2,    2,    5,
+	    0,    0,    6,    0,    6,    0,    6,    6,    6,    1,    1,    0,
+	    7,    7,    7,    7,    1,    7,    1,    6,    5,    5,    6,    6,
+	    0
 	};
 }
 
 private static final byte _media_type_range_lengths[] = init__media_type_range_lengths_0();
 
 
-private static byte[] init__media_type_index_offsets_0()
+private static short[] init__media_type_index_offsets_0()
 {
-	return new byte [] {
+	return new short [] {
 	    0,    0,   10,   20,   30,   34,   46,   57,   67,   73,   79,   83,
-	   96,  109
+	   93,   95,   97,  110,  114,  127,  131,  145,  158,  171,  179,  187,
+	  191,  207,  224,  240,  256,  262,  278,  286,  299,  309,  319,  332,
+	  345
 	};
 }
 
-private static final byte _media_type_index_offsets[] = init__media_type_index_offsets_0();
+private static final short _media_type_index_offsets[] = init__media_type_index_offsets_0();
 
 
 private static byte[] init__media_type_indicies_0()
@@ -110,10 +149,30 @@ private static byte[] init__media_type_indicies_0()
 	    6,    6,    6,    6,    6,    6,    6,    6,    6,    0,    7,    8,
 	    7,    7,    7,    7,    7,    7,    7,    7,    0,   10,    9,    9,
 	    9,    9,    9,    9,    9,    9,    0,   12,   13,    0,    0,    0,
-	   11,   15,   16,    0,    0,    0,   14,    0,    0,    0,   17,   18,
-	   18,    3,   19,    3,    3,    3,    3,    3,    3,    3,    3,    0,
-	   20,   20,   21,   22,   21,   21,   21,   21,   21,   21,   21,   21,
-	    0,   23,   23,   24,    0,    0
+	   11,   15,   16,    0,    0,    0,   14,    0,    0,    0,   17,   19,
+	    0,   19,   19,   19,   19,   19,   19,   19,   18,   21,   20,    0,
+	   20,   23,   23,   24,   25,   24,   24,   24,   24,   24,   24,   24,
+	   24,   22,   23,   23,   25,   22,   27,   27,   28,   27,   28,   28,
+	   28,   28,   28,   28,   28,   28,   26,   29,   29,   27,   26,   29,
+	   29,   30,   27,   31,   30,   30,   30,   30,   30,   30,   30,   30,
+	   26,   29,   29,   33,   27,   32,   32,   32,   32,   32,   32,   32,
+	   32,   26,   34,   34,   35,   36,   35,   35,   35,   35,   35,   35,
+	   35,   35,   26,   37,   37,   39,   40,   41,   26,   26,   38,   42,
+	   42,   44,   45,   46,   26,   26,   43,   47,   47,   48,   26,   45,
+	   45,   44,   45,   46,   49,   49,   26,   26,   49,   49,   49,   49,
+	   49,   49,   43,   42,   42,   44,   45,   51,   46,   50,   50,   26,
+	   26,   50,   50,   50,   50,   50,   50,   43,   42,   42,   53,   45,
+	   46,   52,   52,   26,   26,   52,   52,   52,   52,   52,   52,   43,
+	   54,   54,   44,   56,   46,   55,   55,   26,   26,   55,   55,   55,
+	   55,   55,   55,   43,   57,   57,   59,   26,   26,   58,   40,   40,
+	   39,   40,   41,   60,   60,   26,   26,   60,   60,   60,   60,   60,
+	   60,   38,   61,   61,   39,   62,   41,   26,   26,   38,   63,   63,
+	   24,   64,   24,   24,   24,   24,   24,   24,   24,   24,   22,   65,
+	   66,   65,   65,   65,   65,   65,   65,   65,   20,   65,   67,   65,
+	   65,   65,   65,   65,   65,   65,   20,   68,   68,    3,   69,    3,
+	    3,    3,    3,    3,    3,    3,    3,    0,   70,   70,   71,   72,
+	   71,   71,   71,   71,   71,   71,   71,   71,    0,   73,   73,   74,
+	    0,    0
 	};
 }
 
@@ -123,9 +182,13 @@ private static final byte _media_type_indicies[] = init__media_type_indicies_0()
 private static byte[] init__media_type_trans_targs_0()
 {
 	return new byte [] {
-	    0,    2,    3,   11,    4,    5,    6,    6,    7,   12,    8,    9,
-	   13,   10,    9,   13,   10,    8,    4,    5,    4,   12,    5,    4,
-	    5
+	    0,    2,    3,   34,    4,    5,    6,    6,    7,   35,    8,    9,
+	   36,   10,    9,   36,   10,    8,   12,   32,   13,   14,   15,   15,
+	   31,   16,   17,   16,   18,   17,   18,   19,   20,   21,   17,   20,
+	   16,   22,   22,   23,   24,   28,   22,   22,   23,   24,   28,   17,
+	   16,   25,   25,   26,   27,   30,   22,   27,   24,   21,   21,   29,
+	   25,   22,   24,   15,   16,   33,   14,   14,    4,    5,    4,   35,
+	    5,    4,    5
 	};
 }
 
@@ -135,9 +198,13 @@ private static final byte _media_type_trans_targs[] = init__media_type_trans_tar
 private static byte[] init__media_type_trans_actions_0()
 {
 	return new byte [] {
-	    5,    0,   21,    0,    0,    0,   15,    0,   17,   19,   13,    7,
-	    0,    0,   25,    9,    9,   11,   23,   23,    1,    0,    1,    3,
-	    3
+	    5,    0,   23,    0,    0,    0,   17,    0,   19,   21,   15,    9,
+	    0,    0,   36,   11,   11,   13,    0,    0,    0,   48,    0,   51,
+	    0,   51,    0,    7,   17,    7,    0,   19,   21,   15,   27,    0,
+	   27,   33,    9,    0,   33,    0,   58,   36,   11,   58,   11,   30,
+	   30,   62,   36,   66,   70,   42,   82,   36,   82,   39,   13,   39,
+	   45,   54,   54,   78,   78,    0,   74,   23,   25,   25,    1,    0,
+	    1,    3,    3
 	};
 }
 
@@ -147,18 +214,23 @@ private static final byte _media_type_trans_actions[] = init__media_type_trans_a
 private static byte[] init__media_type_eof_actions_0()
 {
 	return new byte [] {
-	    0,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,   23,
-	    1,    3
+	    0,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    7,
+	    7,    7,   51,   51,    7,    7,    7,    7,   27,    7,    7,   30,
+	    7,    7,    7,   27,    7,    7,   30,   78,    7,    7,   25,    1,
+	    3
 	};
 }
 
 private static final byte _media_type_eof_actions[] = init__media_type_eof_actions_0();
 
 
-static final int media_type_start = 1;
+static final int media_type_start = 11;
+
+static final int media_type_en_strict = 1;
+static final int media_type_en_lenient = 11;
 
 
-// line 61 "MediaType.rl"
+// line 74 "MediaType.rl"
     public static final MediaType GEMINI = MediaType.parse("application/gemini");
     public static final MediaType GEMTEXT = MediaType.parse("text/gemini");
     public static final MediaType JSON = MediaType.parse("application/json");
@@ -177,32 +249,54 @@ static final int media_type_start = 1;
     private final String subtype;
     private final Map<String,String> parameters;
     private int hashCode;
+    private boolean valid;
 
     /**
-     * Parses a media type string.
+     * Parses a media type string strictly.
+     * @throws IllegalArgumentException if the string is not a valid media type
      */
-    public static MediaType parse(String string) {
+    public static MediaType parse(String string) throws IllegalArgumentException {
+        return parse(string, false);
+    }
+
+    /**
+     * Parses a media type string leniently.
+     * <p>
+     * This method is more permissive than {@link #parse(String)} and will not throw an exception if the string is
+     * invalid. Instead, the returned media type will have {@link #isValid()} return false. Invalid parameters will be
+     * ignored and will omitted from {@link #toString()}. The method {@link #raw()} can be used to return the original
+     * string.
+     */
+    public static MediaType parseLeniently(String string) {
+        return parse(string, true);
+    }
+
+    private static MediaType parse(String string, boolean lenient) {
         Map<String,String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        int cs;
         int p = 0;
         int pe = string.length();
         int eof = pe;
-        int cs;
-        int typeEnd = 0;
-        int subtypeEnd = 0;
+        int typeEnd = string.length();
+        int subtypeEnd = string.length();
         int nameStart = 0;
         int nameEnd = 0;
         int valueStart = 0;
         StringBuilder buf = new StringBuilder();
+        boolean valid = true;
 
         
-// line 199 "MediaType.java"
+// line 290 "MediaType.java"
 	{
 	cs = media_type_start;
 	}
 
-// line 97 "MediaType.rl"
+// line 129 "MediaType.rl"
+
+        cs = lenient ? media_type_en_lenient : media_type_en_strict;
+
         
-// line 206 "MediaType.java"
+// line 300 "MediaType.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -307,42 +401,56 @@ case 1:
     }
 	break;
 	case 3:
-// line 40 "MediaType.rl"
-	{valueStart = p; }
+// line 35 "MediaType.rl"
+	{
+        valid = false;
+    }
 	break;
 	case 4:
-// line 41 "MediaType.rl"
-	{ buf.append(string, valueStart, p); }
+// line 44 "MediaType.rl"
+	{valueStart = p; }
 	break;
 	case 5:
-// line 42 "MediaType.rl"
-	{ buf.append(string.charAt(p)); }
+// line 45 "MediaType.rl"
+	{ buf.append(string, valueStart, p); }
 	break;
 	case 6:
-// line 43 "MediaType.rl"
-	{ buf.setLength(0); }
+// line 46 "MediaType.rl"
+	{ buf.append(string.charAt(p)); }
 	break;
 	case 7:
-// line 44 "MediaType.rl"
-	{ nameStart = p; }
+// line 47 "MediaType.rl"
+	{ buf.setLength(0); }
 	break;
 	case 8:
-// line 44 "MediaType.rl"
-	{ nameEnd = p; }
+// line 48 "MediaType.rl"
+	{ nameStart = p; }
 	break;
 	case 9:
-// line 45 "MediaType.rl"
-	{ valueStart = p; }
+// line 48 "MediaType.rl"
+	{ nameEnd = p; }
 	break;
 	case 10:
-// line 47 "MediaType.rl"
-	{ typeEnd = p; }
+// line 49 "MediaType.rl"
+	{ valueStart = p; }
 	break;
 	case 11:
-// line 48 "MediaType.rl"
+// line 51 "MediaType.rl"
+	{ typeEnd = p; }
+	break;
+	case 12:
+// line 52 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 346 "MediaType.java"
+	case 13:
+// line 57 "MediaType.rl"
+	{ typeEnd = p; }
+	break;
+	case 14:
+// line 59 "MediaType.rl"
+	{ subtypeEnd = p; }
+	break;
+// line 454 "MediaType.java"
 			}
 		}
 	}
@@ -387,11 +495,21 @@ case 4:
         }
     }
 	break;
-	case 11:
-// line 48 "MediaType.rl"
+	case 3:
+// line 35 "MediaType.rl"
+	{
+        valid = false;
+    }
+	break;
+	case 12:
+// line 52 "MediaType.rl"
 	{ subtypeEnd = p; }
 	break;
-// line 395 "MediaType.java"
+	case 14:
+// line 59 "MediaType.rl"
+	{ subtypeEnd = p; }
+	break;
+// line 513 "MediaType.java"
 		}
 	}
 	}
@@ -401,19 +519,27 @@ case 5:
 	break; }
 	}
 
-// line 98 "MediaType.rl"
+// line 133 "MediaType.rl"
 
-        String type = string.substring(0, typeEnd);
-        String subtype = string.substring(typeEnd + 1, subtypeEnd);
+        String type;
+        String subtype;
+        if (valid) {
+            type = string.substring(0, typeEnd);
+            subtype = string.substring(typeEnd + 1, subtypeEnd);
+        } else {
+            type = string.substring(0, typeEnd);
+            subtype = typeEnd + 1 >= string.length() ? "" : string.substring(typeEnd + 1, subtypeEnd);
+        }
         Map<String,String> parameters = Collections.unmodifiableMap(map);
-        return new MediaType(string, type, subtype, parameters);
+        return new MediaType(string, type, subtype, parameters, valid);
     }
 
-    private MediaType(String raw, String type, String subtype, Map<String,String> parameters) {
+    private MediaType(String raw, String type, String subtype, Map<String,String> parameters, boolean valid) {
         this.raw = raw;
         this.type = type;
         this.subtype = subtype;
         this.parameters = parameters;
+        this.valid = valid;
     }
 
     /**
@@ -433,6 +559,10 @@ case 5:
 
     public Map<String,String> parameters() {
         return parameters;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     /**
@@ -466,7 +596,10 @@ case 5:
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(type).append('/').append(subtype);
+        sb.append(type);
+        if (!subtype.isEmpty()) {
+            sb.append('/').append(subtype);
+        }
         for (Map.Entry<String, String> parameter : parameters.entrySet()) {
             sb.append(';');
             sb.append(parameter.getKey());
@@ -487,7 +620,7 @@ case 5:
      * The base type and subtype without any parameters.
      */
     public MediaType base() {
-        return new MediaType(null, type, subtype, Collections.emptyMap());
+        return new MediaType(null, type, subtype, Collections.emptyMap(), valid);
     }
 
     private static boolean validToken(String s) {

@@ -97,6 +97,6 @@ public class CdxRecord {
 
     public MediaType contentType() {
         String value = get(CdxFields.MIME_TYPE);
-        return value == null ? null : MediaType.parse(value);
+        return value == null ? null : MediaType.parseLeniently(value);
     }
 }

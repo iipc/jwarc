@@ -99,7 +99,7 @@ public class GeminiResponse extends Message {
             if (meta.isEmpty()) {
                 return MediaType.parse("text/gemini; charset=utf-8");
             }
-            return MediaType.parse(meta);
+            return MediaType.parseLeniently(meta);
         } else {
             return MediaType.OCTET_STREAM;
         }

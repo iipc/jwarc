@@ -8,9 +8,7 @@ package org.netpreserve.jwarc.apitests;
 import org.junit.Test;
 import org.netpreserve.jwarc.MediaType;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class MediaTypeTest {
 
@@ -29,6 +27,26 @@ public class MediaTypeTest {
         assertEquals(MediaType.parse("text/html"), MediaType.parse("teXT/htML  ;\tCHARsET=utf-8").base());
         assertTrue(type.base().parameters().isEmpty());
         assertEquals("one", MediaType.parse("text/html;CHARSET=one;charset=two;charset=three").parameters().get("charset"));
+    }
+
+    @Test
+    public void testParseLeniently() {
+        {
+            MediaType mediaType = MediaType.parseLeniently("text/html;ISO-8859-1;a\0=2;ok=ok");
+            assertFalse(mediaType.isValid());
+            assertEquals("text/html;ok=ok", mediaType.toString());
+            assertEquals(1, mediaType.parameters().size());
+            assertEquals("ok", mediaType.parameters().get("ok"));
+            mediaType.raw().equals("text/html;ISO-8859-1;a\0=2;ok=ok");
+        }
+        assertEquals("bog\0us", MediaType.parseLeniently("bog\0us").toString());
+        assertEquals("\0/\0", MediaType.parseLeniently("\0/\0").toString());
+        assertEquals("", MediaType.parseLeniently("").toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void strictParsingShouldThrow() {
+        MediaType.parse("text/html;ISO-8859-1;a\0=2;ok=ok");
     }
 
 }

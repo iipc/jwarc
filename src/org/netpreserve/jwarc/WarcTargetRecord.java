@@ -59,7 +59,7 @@ public abstract class WarcTargetRecord extends WarcRecord {
      * A content-type that was identified by an independent check (not just what the server said).
      */
     public Optional<MediaType> identifiedPayloadType() {
-        return headers().sole("WARC-Identified-Payload-Type").map(MediaType::parse);
+        return headers().sole("WARC-Identified-Payload-Type").map(MediaType::parseLeniently);
     }
 
     /**

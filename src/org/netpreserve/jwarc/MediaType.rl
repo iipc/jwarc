@@ -32,6 +32,10 @@ import java.util.*;
         }
     }
 
+    action mark_invalid {
+        valid = false;
+    }
+
     OWS = (" " | "\t")*;
     tchar = "!" | "#" | "$" | "%" | "&" | "'" | "*" | "+" | "-" | "." |
             "^" | "_" | "`" | "|" | "~" | digit | alpha;
@@ -46,7 +50,16 @@ import java.util.*;
     parameter = name "=" (value_token | quoted_string );
     type = token %{ typeEnd = p; };
     subtype = token %{ subtypeEnd = p; };
-    media_type := (type "/" subtype ( OWS ";" OWS parameter )*) $!parse_error;
+    strict := (type "/" subtype ( OWS ";" OWS parameter )*) $!parse_error;
+
+    parameter_invalid = (any - ";")* %mark_invalid;
+    parameter_lenient = parameter | parameter_invalid;
+    type_invalid = (any - "/") %{ typeEnd = p; } %mark_invalid;
+    type_lenient = type | type_invalid;
+    subtype_invalid = (any - ";")* %{ subtypeEnd = p; } %mark_invalid;
+    subtype_lenient = subtype | subtype_invalid;
+    string_without_slash = (any - "/")* %mark_invalid;
+    lenient := ((type_lenient "/" subtype_lenient ( OWS ";" OWS parameter_lenient )*) | string_without_slash) $!parse_error;
 
     getkey string.charAt(p);
 
@@ -57,7 +70,7 @@ public class MediaType extends MessageParser {
     static {
         "!#$%&'*+-.^_`|~ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".chars().forEach(tokenChars::set);
     }
-    %% write data nofinal noerror noentry;
+    %% write data nofinal noerror;
     public static final MediaType GEMINI = MediaType.parse("application/gemini");
     public static final MediaType GEMTEXT = MediaType.parse("text/gemini");
     public static final MediaType JSON = MediaType.parse("application/json");
@@ -76,37 +89,67 @@ public class MediaType extends MessageParser {
     private final String subtype;
     private final Map<String,String> parameters;
     private int hashCode;
+    private boolean valid;
 
     /**
-     * Parses a media type string.
+     * Parses a media type string strictly.
+     * @throws IllegalArgumentException if the string is not a valid media type
      */
-    public static MediaType parse(String string) {
+    public static MediaType parse(String string) throws IllegalArgumentException {
+        return parse(string, false);
+    }
+
+    /**
+     * Parses a media type string leniently.
+     * <p>
+     * This method is more permissive than {@link #parse(String)} and will not throw an exception if the string is
+     * invalid. Instead, the returned media type will have {@link #isValid()} return false. Invalid parameters will be
+     * ignored and will omitted from {@link #toString()}. The method {@link #raw()} can be used to return the original
+     * string.
+     */
+    public static MediaType parseLeniently(String string) {
+        return parse(string, true);
+    }
+
+    private static MediaType parse(String string, boolean lenient) {
         Map<String,String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        int cs;
         int p = 0;
         int pe = string.length();
         int eof = pe;
-        int cs;
-        int typeEnd = 0;
-        int subtypeEnd = 0;
+        int typeEnd = string.length();
+        int subtypeEnd = string.length();
         int nameStart = 0;
         int nameEnd = 0;
         int valueStart = 0;
         StringBuilder buf = new StringBuilder();
+        boolean valid = true;
 
         %%write init;
+
+        cs = lenient ? media_type_en_lenient : media_type_en_strict;
+
         %%write exec;
 
-        String type = string.substring(0, typeEnd);
-        String subtype = string.substring(typeEnd + 1, subtypeEnd);
+        String type;
+        String subtype;
+        if (valid) {
+            type = string.substring(0, typeEnd);
+            subtype = string.substring(typeEnd + 1, subtypeEnd);
+        } else {
+            type = string.substring(0, typeEnd);
+            subtype = typeEnd + 1 >= string.length() ? "" : string.substring(typeEnd + 1, subtypeEnd);
+        }
         Map<String,String> parameters = Collections.unmodifiableMap(map);
-        return new MediaType(string, type, subtype, parameters);
+        return new MediaType(string, type, subtype, parameters, valid);
     }
 
-    private MediaType(String raw, String type, String subtype, Map<String,String> parameters) {
+    private MediaType(String raw, String type, String subtype, Map<String,String> parameters, boolean valid) {
         this.raw = raw;
         this.type = type;
         this.subtype = subtype;
         this.parameters = parameters;
+        this.valid = valid;
     }
 
     /**
@@ -126,6 +169,10 @@ public class MediaType extends MessageParser {
 
     public Map<String,String> parameters() {
         return parameters;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     /**
@@ -159,7 +206,10 @@ public class MediaType extends MessageParser {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(type).append('/').append(subtype);
+        sb.append(type);
+        if (!subtype.isEmpty()) {
+            sb.append('/').append(subtype);
+        }
         for (Map.Entry<String, String> parameter : parameters.entrySet()) {
             sb.append(';');
             sb.append(parameter.getKey());
@@ -180,7 +230,7 @@ public class MediaType extends MessageParser {
      * The base type and subtype without any parameters.
      */
     public MediaType base() {
-        return new MediaType(null, type, subtype, Collections.emptyMap());
+        return new MediaType(null, type, subtype, Collections.emptyMap(), valid);
     }
 
     private static boolean validToken(String s) {

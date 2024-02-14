@@ -58,7 +58,7 @@ public abstract class Message {
      * Returns "application/octet-stream" if the Content-Type header is missing.
      */
     public MediaType contentType() {
-        return headers.first("Content-Type").map(MediaType::parse).orElse(MediaType.OCTET_STREAM);
+        return headers.first("Content-Type").map(MediaType::parseLeniently).orElse(MediaType.OCTET_STREAM);
     }
 
     void serializeHeaderTo(Appendable output) throws IOException {
