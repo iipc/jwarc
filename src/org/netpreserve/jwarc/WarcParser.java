@@ -79,7 +79,8 @@ public class WarcParser extends MessageParser {
 	 * <ul>
 	 *   <li>permitting ASCII control characters in header field names and values
 	 *   <li>allowing lines to end with LF instead of CRLF
-	 * <ul>
+	 *   <li>permitting multi-digit WARC minor versions like "0.18"
+	 * </ul>
 	 * Calling this method also resets the state of the parser.
 	 */
     public void setLenient(boolean lenient) {
@@ -108,7 +109,7 @@ public class WarcParser extends MessageParser {
         int pe = data.limit();
 
         
-// line 112 "WarcParser.java"
+// line 113 "WarcParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -306,7 +307,7 @@ case 1:
 // line 183 "WarcParser.rl"
 	{ { p += 1; _goto_targ = 5; if (true)  continue _goto;} }
 	break;
-// line 310 "WarcParser.java"
+// line 311 "WarcParser.java"
 			}
 		}
 	}
@@ -326,7 +327,7 @@ case 5:
 	break; }
 	}
 
-// line 271 "WarcParser.rl"
+// line 272 "WarcParser.rl"
 
         position += p - data.position();
         data.position(p);
@@ -380,7 +381,7 @@ case 5:
     }
 
     
-// line 384 "WarcParser.java"
+// line 385 "WarcParser.java"
 private static byte[] init__warc_actions_0()
 {
 	return new byte [] {
@@ -1030,5 +1031,5 @@ static final int warc_en_any_header_lenient = 189;
 static final int warc_en_any_header = 1;
 
 
-// line 324 "WarcParser.rl"
+// line 325 "WarcParser.rl"
 }
