@@ -14,8 +14,9 @@ try (WarcReader reader = new WarcReader(FileChannel.open(Paths.get("example.warc
 }
 ```
 
-It uses a finite state machine parser generated from a strict [grammar](https://github.com/ato/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
-using [Ragel](http://www.colm.net/open-source/ragel/).
+It uses a finite state machine parser generated from a strict [grammar](https://github.com/iipc/jwarc/blob/master/src/org/netpreserve/jwarc/WarcParser.rl)
+using [Ragel](http://www.colm.net/open-source/ragel/). There is an optional lenient mode which can handle some forms of non-compliant WARC records.
+ARC and HTTP parsing is lenient by default.
 
 Gzipped records are automatically decompressed. The parser interprets ARC/1.1 record as if they are a WARC dialect and
 populates the appropriate WARC headers.
@@ -157,6 +158,7 @@ See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more det
        (Iterator) reader.iterator();                              // an iterator over the records
      (WarcRecord) reader.next();                                  // reads the next record
                   reader.registerType("myrecord", MyRecord::new); // registers a new record type
+                  reader.setLenient(true);                        // enables lenient parsing mode
 ```
 
 ### [WarcWriter](https://www.javadoc.io/page/org.netpreserve/jwarc/latest/org/netpreserve/jwarc/WarcWriter.html)
