@@ -68,6 +68,7 @@ public class CdxWriter implements Closeable {
     public void process(List<Path> warcFiles, boolean useAbsolutePaths) throws IOException {
         for (Path file : warcFiles) {
             try (WarcReader reader = new WarcReader(file)) {
+                reader.setLenient(true);
                 String filename = (useAbsolutePaths ? file.toAbsolutePath() : file.getFileName()).toString();
                 reader.onWarning(message -> emitWarning(filename, reader.position(), message));
                 process(reader, filename);

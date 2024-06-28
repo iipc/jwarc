@@ -366,6 +366,21 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     }
 
     /**
+     * Sets the lenient mode for the WarcParser.
+     * <p>
+     * When enabled, this causes the parser to follow the specification less strictly,
+     * allowing reading of non-compliant records by:
+     * <ul>
+     *   <li>permitting ASCII control characters in header field names and values
+     *   <li>allowing lines to end with LF instead of CRLF
+     *   <li>permitting multi-digit WARC minor versions like "0.18"
+     * </ul>
+     */
+    public void setLenient(boolean lenient) {
+        parser.setLenient(lenient);
+    }
+
+    /**
      * Closes the underlying channel.
      */
     @Override

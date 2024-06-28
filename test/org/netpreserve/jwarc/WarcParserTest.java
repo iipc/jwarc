@@ -31,8 +31,24 @@ public class WarcParserTest {
         assertEquals(Optional.empty(), parser.headers().first("WARC-Date"));
     }
 
+    @Test
+    public void testLenientParsing() {
+        WarcParser parser = parse( "WARC/0.18\nHello\u0007:\u0008world\r\n\r\n", true);
+        assertEquals(Optional.of("\u0008world"), parser.headers().sole("Hello\u0007"));
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testStrictParsing() {
+        parse( "WARC/1.0\r\nHello\u0007:\u0008world\r\n\r\n");
+    }
+
     private static WarcParser parse(String input) {
+        return parse(input, false);
+    }
+
+    private static WarcParser parse(String input, boolean lenient) {
         WarcParser parser = new WarcParser();
+        parser.setLenient(lenient);
         parser.parse(ByteBuffer.wrap(input.getBytes(StandardCharsets.ISO_8859_1)));
         assertFalse(parser.isError());
         assertTrue(parser.isFinished());

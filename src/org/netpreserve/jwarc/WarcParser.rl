@@ -137,6 +137,20 @@ named_field = field_name ":" field_value CRLF %handle_value;
 named_fields = named_field* CRLF;
 warc_header = version named_fields;
 
+CRLF_lenient = "\r"* "\n";
+LWS_lenient = CRLF_lenient RWS;
+TEXT_lenient = ((any - '\n' - WS) (any - '\n')*)? (any - '\n' - WS - '\r') %end_of_text;
+
+version_lenient = "WARC/" version_major "." version_minor+ CRLF_lenient ;
+
+field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' - ':')*) $push %handle_name;
+field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
+field_value_folded_lenient = LWS_lenient (TEXT_lenient OWS)? >fold $push;
+field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
+named_field_lenient = field_name_lenient ":" field_value_lenient CRLF_lenient %handle_value;
+named_fields_lenient = named_field_lenient* CRLF_lenient;
+warc_header_lenient = version_lenient named_fields_lenient;
+
 token = (ascii - CTL - separators)+;
 obs_text = 0x80..0xff;
 qdtext = "\t" | " " | 0x21 | 0x23..0x5b | 0x5d..0x7e | obs_text;
@@ -163,7 +177,9 @@ arc_v2_fields = arc_v2_status " " arc_v2_checksum " " arc_v2_location " " arc_v2
 arc_header = "\n"{0,3} arc_url " " arc_ip " " arc_date_lenient " " arc_mime_lenient
              " " (arc_v2_fields " ")? arc_length "\n";
 
+warc_fields_lenient := named_fields_lenient;
 warc_fields := named_fields;
+any_header_lenient := (arc_header | warc_header_lenient) @{ fbreak; };
 any_header := (arc_header | warc_header) @{ fbreak; };
 
 }%%
@@ -213,6 +229,31 @@ public class WarcParser extends MessageParser {
         if (buf.length > 4096) {
             buf = new byte[4096];
         }
+    }
+
+	/**
+	 * Sets the lenient mode for the WarcParser.
+	 * <p>
+	 * When enabled, this causes the parser to follow the specification less strictly,
+	 * allowing reading of non-compliant records by:
+	 * <ul>
+	 *   <li>permitting ASCII control characters in header field names and values
+	 *   <li>allowing lines to end with LF instead of CRLF
+	 *   <li>permitting multi-digit WARC minor versions like "0.18"
+	 * </ul>
+	 * Calling this method also resets the state of the parser.
+	 */
+    public void setLenient(boolean lenient) {
+        if (warcFieldsMode()) {
+            entryState = lenient ? warc_en_warc_fields_lenient : warc_en_warc_fields;
+        } else {
+            entryState = lenient ? warc_en_any_header_lenient : warc_start;
+        }
+        reset();
+    }
+
+    private boolean warcFieldsMode() {
+        return entryState == warc_en_warc_fields || entryState == warc_en_warc_fields_lenient;
     }
 
     public boolean isFinished() {
