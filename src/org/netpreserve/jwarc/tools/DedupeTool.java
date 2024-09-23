@@ -20,6 +20,7 @@ import static java.nio.file.StandardOpenOption.*;
 public class DedupeTool {
     private long minimumSize = 256;
     private String cdxServer;
+    private boolean verbose;
 
     public void deduplicateWarcFile(Path infile, Path outfile) throws IOException {
         try (FileChannel input = FileChannel.open(infile);
@@ -35,11 +36,11 @@ public class DedupeTool {
                 long length = reader.position() - position;
 
                 if (revisit == null) {
-                    System.out.println("Copying " + position + ":" + length);
+                    if (verbose) System.out.println("Copying " + position + ":" + length);
                     long written = input.transferTo(position, length, output);
                     assert written == length;
                 } else {
-                    System.out.println("Writing revisit for " + position + ":" + length);
+                    if (verbose) System.out.println("Writing revisit for " + position + ":" + length);
                     writer.write(revisit);
                 }
             }
@@ -109,9 +110,14 @@ public class DedupeTool {
                         System.out.println("Usage: jwarc dedupe [options] [warc-files...]");
                         System.out.println();
                         System.out.println("Options:");
-                        System.out.println("  --cdx-server URL      De-deduplicate against a remote CDX server");
-                        System.out.println("  --minimum-size BYTES  Minimum payload size to consider de-duplicating (default " + dedupeTool.minimumSize + ")");
+                        System.out.println("      --cdx-server URL      De-deduplicate against a remote CDX server");
+                        System.out.println("      --minimum-size BYTES  Minimum payload size to consider de-duplicating (default " + dedupeTool.minimumSize + ")");
+                        System.out.println("  -v, --verbose             Verbose output");
                         return;
+                    case "-v":
+                    case "--verbose":
+                        dedupeTool.verbose = true;
+                        break;
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
                         System.err.println("Try `jwarc dedupe --help` for usage information");
