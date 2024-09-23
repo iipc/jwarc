@@ -13,6 +13,9 @@ public class WarcTool {
             case "cdx":
                 CdxTool.main(rest);
                 break;
+            case "dedupe":
+                DedupeTool.main(rest);
+                break;
             case "extract":
                 ExtractTool.main(rest);
                 break;
