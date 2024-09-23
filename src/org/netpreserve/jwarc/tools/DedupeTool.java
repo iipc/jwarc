@@ -65,7 +65,7 @@ public class DedupeTool {
     }
 
     private CdxRecord findMatchingRecord(WarcCaptureRecord capture, String digest) throws IOException {
-        URL queryUrl = new URL(cdxServer + "?sort=reverse&rows=10&url=" + URLEncoder.encode(capture.target(), UTF_8.name()));
+        URL queryUrl = new URL(cdxServer + "?sort=reverse&rows=10&matchType=exact&url=" + URLEncoder.encode(capture.target(), UTF_8.name()));
         try (CdxReader response = new CdxReader(queryUrl.openStream())) {
             for (CdxRecord record : response) {
                 if (digest.equalsIgnoreCase(record.digest())) {
