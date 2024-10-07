@@ -83,13 +83,15 @@ public class DedupeTool {
     private static Path determineOutputPath(Path infile) {
         String[] suffixes = new String[]{".warc.gz", ".warc", ".arc.gz", ".arc"};
         String filename = infile.getFileName().toString();
+        Path dir = infile.getParent();
+        if (dir == null) dir = Paths.get(".");
         for (String suffix : suffixes) {
             if (filename.endsWith(suffix)) {
                 String basename = filename.substring(0, filename.length() - suffix.length());
-                return infile.getParent().resolve(basename + "-dedup" + suffix);
+                return dir.resolve(basename + "-dedup" + suffix);
             }
         }
-        return infile.getParent().resolve(filename + ".dedup");
+        return dir.resolve(filename + ".dedup");
     }
 
     public static void main(String[] args) throws IOException {
