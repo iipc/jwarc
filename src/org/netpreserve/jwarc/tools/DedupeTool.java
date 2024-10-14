@@ -37,13 +37,26 @@ public class DedupeTool {
 
                 if (revisit == null) {
                     if (verbose) System.out.println("Copying " + position + ":" + length);
-                    long written = input.transferTo(position, length, output);
-                    assert written == length;
+                    transferExactly(input, position, length, output);
                 } else {
                     if (verbose) System.out.println("Writing revisit for " + position + ":" + length);
                     writer.write(revisit);
                 }
             }
+        }
+    }
+
+    private static void transferExactly(FileChannel input, long position, long length, FileChannel output) throws IOException {
+        long transferred = 0;
+        while (transferred < length) {
+            long n = input.transferTo(position + transferred, length - transferred, output);
+            if (n <= 0) {
+                throw new IOException("FileChannel.transferTo returned " + n);
+            }
+            transferred += n;
+        }
+        if (transferred != length) {
+            throw new IOException("Expected to transfer " + length + " but actually transferred " + transferred);
         }
     }
 
