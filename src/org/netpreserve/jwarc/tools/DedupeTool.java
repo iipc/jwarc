@@ -25,8 +25,12 @@ public class DedupeTool {
     public void deduplicateWarcFile(Path infile, Path outfile) throws IOException {
         try (FileChannel input = FileChannel.open(infile);
              WarcReader reader = new WarcReader(input);
-             FileChannel output = FileChannel.open(outfile, WRITE, CREATE, TRUNCATE_EXISTING);
-             WarcWriter writer = new WarcWriter(output, reader.compression())) {
+             FileChannel output = FileChannel.open(outfile, WRITE, CREATE, TRUNCATE_EXISTING)) {
+
+            // We create the WarcWriter on demand so that if no records are deduplicated we don't write an empty
+            // gzip member at the end of the file.
+            WarcWriter writer = null;
+
             WarcRecord record = reader.next().orElse(null);
             while (record != null) {
                 long position = reader.position();
@@ -40,6 +44,7 @@ public class DedupeTool {
                     transferExactly(input, position, length, output);
                 } else {
                     if (verbose) System.out.println("Writing revisit for " + position + ":" + length);
+                    if (writer == null) writer = new WarcWriter(output, reader.compression());
                     writer.write(revisit);
                 }
             }
