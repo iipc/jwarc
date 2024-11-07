@@ -91,7 +91,7 @@ public class ValidateTool extends WarcTool {
 
     private static void validateDigest(WarcDigest digestExpected, WarcDigest digestCalculated, long size)
             throws DigestException {
-        if (!digestCalculated.equals(digestCalculated)) {
+        if (!digestExpected.equals(digestCalculated)) {
             throw new java.security.DigestException("Failed to validate digest: expected " + digestExpected + ", got "
                     + digestCalculated + " (on " + size + " bytes)");
         }
