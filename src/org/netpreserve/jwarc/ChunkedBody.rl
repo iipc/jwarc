@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
+/**
+ * A message body with chunked HTTP "Transfer-Encoding".
+ */
 class ChunkedBody extends MessageBody {
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;

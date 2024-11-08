@@ -6,8 +6,11 @@
 package org.netpreserve.jwarc;
 
 import java.nio.charset.Charset;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
+import java.io.IOException;
 
 public abstract class HttpMessage extends Message {
     HttpMessage(MessageVersion version, MessageHeaders headers, MessageBody body) {
@@ -17,6 +20,36 @@ public abstract class HttpMessage extends Message {
     @Override
     Charset headerCharset() {
         return ISO_8859_1;
+    }
+
+    /**
+     * The HTTP payload with Content-Encoding decoded.
+     *
+     * @return a message body with content decoded following the HTTP
+     *         Content-Encoding header.
+     * @throws IOException
+     */
+    public MessageBody bodyDecoded() throws IOException {
+        MessageBody payload = body();
+        List<String> contentEncodings = headers().all("Content-Encoding");
+        if (contentEncodings.isEmpty()) {
+            return payload;
+        } else if (contentEncodings.size() > 1) {
+            throw new IOException("Multiple Content-Encodings not supported: " + contentEncodings);
+        } else if (contentEncodings.get(0).equalsIgnoreCase("identity")
+                || contentEncodings.get(0).equalsIgnoreCase("none")) {
+            return payload;
+        } else if (contentEncodings.get(0).equalsIgnoreCase("gzip")
+                || contentEncodings.get(0).equalsIgnoreCase("x-gzip")) {
+            return DecodedBody.create(payload, DecodedBody.Encoding.GZIP);
+        } else if (contentEncodings.get(0).equalsIgnoreCase("br")) {
+            return DecodedBody.create(payload, DecodedBody.Encoding.BROTLI);
+        } else if (contentEncodings.get(0).equalsIgnoreCase("deflate")) {
+            return DecodedBody.create(payload, DecodedBody.Encoding.DEFLATE);
+        } else {
+            throw new IOException("Content-Encoding not supported: " + contentEncodings.get(0));
+        }
+
     }
 
     public abstract static class AbstractBuilder<R extends HttpMessage, B extends AbstractBuilder<R, B>> extends Message.AbstractBuilder<R, B> {

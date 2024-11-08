@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
+/**
+ * A message body with chunked HTTP "Transfer-Encoding".
+ */
 class ChunkedBody extends MessageBody {
     private final ReadableByteChannel channel;
     private final ByteBuffer buffer;
@@ -95,7 +98,7 @@ class ChunkedBody extends MessageBody {
     }
 
     
-// line 138 "ChunkedBody.rl"
+// line 141 "ChunkedBody.rl"
 
 
     private int cs = chunked_start;
@@ -186,15 +189,15 @@ case 1:
 			switch ( _chunked_actions[_acts++] )
 			{
 	case 0:
-// line 99 "ChunkedBody.rl"
+// line 102 "ChunkedBody.rl"
 	{ tmp = tmp * 16 + Character.digit(buffer.get(p), 16); }
 	break;
 	case 1:
-// line 100 "ChunkedBody.rl"
+// line 103 "ChunkedBody.rl"
 	{ if (tmp != 0) { chunkLength = tmp; tmp = 0; { p += 1; _goto_targ = 5; if (true)  continue _goto;} } }
 	break;
 	case 2:
-// line 101 "ChunkedBody.rl"
+// line 104 "ChunkedBody.rl"
 	{ chunkLength = 0; }
 	break;
 // line 201 "ChunkedBody.java"
@@ -217,7 +220,7 @@ case 5:
 	break; }
 	}
 
-// line 147 "ChunkedBody.rl"
+// line 150 "ChunkedBody.rl"
         if (cs == chunked_error) {
             if (strict) {
                 throw new ParsingException("chunked encoding at position " + p + ": "
@@ -231,7 +234,7 @@ case 5:
     }
 
     
-// line 235 "ChunkedBody.java"
+// line 233 "ChunkedBody.java"
 private static byte[] init__chunked_actions_0()
 {
 	return new byte [] {
@@ -380,5 +383,5 @@ static final int chunked_error = 0;
 static final int chunked_en_chunks = 1;
 
 
-// line 160 "ChunkedBody.rl"
+// line 163 "ChunkedBody.rl"
 }
