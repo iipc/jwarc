@@ -35,7 +35,12 @@ public class DecodedBody extends MessageBody {
             this.channel = IOUtils.gunzipChannel(channel);
             break;
         case BROTLI:
-            throw new IOException("Brotli encoding not yet supported");
+            try {
+                this.channel = BrotliUtils.brotliChannel(channel);
+            } catch (NoClassDefFoundError e) {
+                throw new IOException("Brotli decoder not found, please install org.brotli:dec", e);
+            }
+            break;
         default:
             throw new IOException("Unsupported encoding");
         }

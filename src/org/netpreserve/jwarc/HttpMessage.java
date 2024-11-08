@@ -42,6 +42,8 @@ public abstract class HttpMessage extends Message {
         } else if (contentEncodings.get(0).equalsIgnoreCase("gzip")
                 || contentEncodings.get(0).equalsIgnoreCase("x-gzip")) {
             return DecodedBody.create(payload, DecodedBody.Encoding.GZIP);
+        } else if (contentEncodings.get(0).equalsIgnoreCase("br")) {
+            return DecodedBody.create(payload, DecodedBody.Encoding.BROTLI);
         } else if (contentEncodings.get(0).equalsIgnoreCase("deflate")) {
             return DecodedBody.create(payload, DecodedBody.Encoding.DEFLATE);
         } else {
