@@ -48,33 +48,44 @@ class GunzipChannel implements ReadableByteChannel {
             seenHeader = true;
         }
 
-        if (inflater.needsInput()) {
-            if (!readAtLeast(1)) {
-                throw new EOFException("unexpected end of gzip stream");
-            }
-            inflater.setInput(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
-        }
+        int totalRead = 0;
 
         try {
-            int n = inflater.inflate(dest.array(), dest.arrayOffset() + dest.position(), dest.remaining());
-            if (crc != null) {
-                crc.update(dest.array(), dest.arrayOffset() + dest.position(), n);
-            }
-            dest.position(dest.position() + n);
-
-            int newBufferPosition = buffer.limit() - inflater.getRemaining();
-            inputPosition += newBufferPosition - buffer.position();
-            buffer.position(newBufferPosition);
-
-            if (inflater.finished()) {
-                readTrailer();
-                inflater.reset();
-                if (crc != null) {
-                    crc.reset();
+            do {
+                if (inflater.needsInput()) {
+                    if (!readAtLeast(1)) {
+                        throw new EOFException("unexpected end of gzip stream");
+                    }
+                    inflater.setInput(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
                 }
-                seenHeader = false;
-            }
-            return n;
+
+                int n = inflater.inflate(dest.array(), dest.arrayOffset() + dest.position(), dest.remaining());
+                if (crc != null) {
+                    crc.update(dest.array(), dest.arrayOffset() + dest.position(), n);
+                }
+                dest.position(dest.position() + n);
+
+                int newBufferPosition = buffer.limit() - inflater.getRemaining();
+                inputPosition += newBufferPosition - buffer.position();
+                buffer.position(newBufferPosition);
+                totalRead += n;
+
+                if (inflater.finished()) {
+                    readTrailer();
+                    inflater.reset();
+                    if (crc != null) {
+                        crc.reset();
+                    }
+                    seenHeader = false;
+                    // stop at the end of the gzip member even if there's remaining space in the destination buffer
+                    // so that the caller can the offset of the next member
+                    break;
+                }
+
+                // if we fill the dest buffer but the inflater still requests input then keep going to ensure we fully
+                // consume the gzip trailer at the end of a record before returning.
+            } while (dest.hasRemaining() || inflater.needsInput());
+            return totalRead;
         } catch (DataFormatException e) {
             throw new ZipException(e.getMessage());
         }
