@@ -16,7 +16,6 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,43 +45,28 @@ public class ExtractTool {
     }
 
     private static void writePayload(WritableByteChannel out, WarcRecord record) throws IOException {
-        MessageBody payload;
-        List<String> contentEncodings = Collections.emptyList();
-        if (record instanceof WarcResponse) {
-            if (record.contentType().base().equals(MediaType.HTTP)) {
-                HttpResponse response = ((WarcResponse) record).http();
-                payload = response.body();
-                contentEncodings = response.headers().all("Content-Encoding");
+        try {
+            MessageBody payload;
+            if (record instanceof WarcResponse) {
+                if (record.contentType().base().equals(MediaType.HTTP)) {
+                    HttpResponse response = ((WarcResponse) record).http();
+                    payload = response.bodyDecoded();
+                } else {
+                    payload = ((WarcResponse) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
+                }
+            } else if (record instanceof WarcRequest) {
+                if (record.contentType().base().equals(MediaType.HTTP)) {
+                    HttpRequest request = ((WarcRequest) record).http();
+                    payload = request.bodyDecoded();
+                } else {
+                    payload = ((WarcRequest) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
+                }
             } else {
-                payload = ((WarcResponse) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
+                payload = record.body();
             }
-        } else if (record instanceof WarcRequest) {
-            if (record.contentType().base().equals(MediaType.HTTP)) {
-                HttpRequest request = ((WarcRequest) record).http();
-                payload = request.body();
-                contentEncodings = request.headers().all("Content-Encoding");
-            } else {
-                payload = ((WarcRequest) record).payload().map(WarcPayload::body).orElse(MessageBody.empty());
-            }
-        } else {
-            payload = record.body();
-        }
-        if (contentEncodings.isEmpty()) {
             writeBody(out, payload);
-        } else {
-            if (contentEncodings.size() > 1) {
-                System.err.println("Multiple Content-Encodings not supported: " + contentEncodings);
-            } else if (contentEncodings.get(0).equalsIgnoreCase("identity")
-                    || contentEncodings.get(0).equalsIgnoreCase("none")) {
-                writeBody(out, payload);
-            } else if (contentEncodings.get(0).equalsIgnoreCase("gzip")
-                    || contentEncodings.get(0).equalsIgnoreCase("x-gzip")) {
-                writeBody(out, IOUtils.gunzipChannel(payload));
-            } else if (contentEncodings.get(0).equalsIgnoreCase("deflate")) {
-                writeBody(out, IOUtils.inflateChannel(payload));
-            } else {
-                System.err.println("Content-Encoding not supported: " + contentEncodings.get(0));
-            }
+        } catch (IOException e) {
+            System.err.println("Failed to read payload: " + e.getMessage());
         }
     }
 
