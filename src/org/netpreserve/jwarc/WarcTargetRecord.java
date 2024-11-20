@@ -43,6 +43,9 @@ public abstract class WarcTargetRecord extends WarcRecord {
 
     /**
      * The URI of the original target resource this record holds information about.
+     * <p>
+     * The {@link #target()} method should be preferred unless you actually need an instance of URI as some WARC files
+     * may contain a value of WARC-Target-URI that cannot be represented as a Java URI instance without changing them.
      */
     public URI targetURI() {
         return URIs.parseLeniently(target());

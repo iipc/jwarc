@@ -5,7 +5,6 @@ import org.netpreserve.jwarc.cdx.CdxReader;
 import org.netpreserve.jwarc.cdx.CdxRecord;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
@@ -74,9 +73,9 @@ public class DedupeTool {
         if (payloadDigest == null) return null;
         CdxRecord match = findMatchingRecord(response, payloadDigest.base32());
         if (match == null) return null;
-        return new WarcRevisit.Builder(response.targetURI(), WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_0)
+        return new WarcRevisit.Builder(response.target(), WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_0)
                 .date(response.date())
-                .refersTo((URI) null, match.targetURI(), match.date())
+                .refersTo(null, match.target(), match.date())
                 .body(response.contentType(), response.http().serializeHeader())
                 .payloadDigest(payloadDigest)
                 .build();

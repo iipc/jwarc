@@ -13,7 +13,7 @@ import java.util.TreeSet;
 import static java.util.Comparator.comparing;
 
 public class CaptureIndex {
-    private final NavigableSet<Capture> entries = new TreeSet<>(comparing(Capture::uriKey).thenComparing(Capture::date));
+    private final NavigableSet<Capture> entries = new TreeSet<>(comparing(Capture::uri).thenComparing(Capture::date));
     private Capture entrypoint;
 
     public CaptureIndex(List<Path> warcs) throws IOException {
@@ -22,9 +22,8 @@ public class CaptureIndex {
                 for (WarcRecord record : reader) {
                     if ((record instanceof WarcResponse || record instanceof WarcResource)) {
                         WarcCaptureRecord capture = (WarcCaptureRecord) record;
-                        String scheme = capture.targetURI().getScheme();
-                        if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
-                            Capture entry = new Capture(capture.targetURI(), capture.date(), warc, reader.position());
+                        if (URIs.hasHttpOrHttpsScheme(capture.target())) {
+                            Capture entry = new Capture(capture.target(), capture.date(), warc, reader.position());
                             add(entry);
                             if (entrypoint == null && MediaType.HTML.equals(capture.payloadType().base())) {
                                 entrypoint = entry;
@@ -40,7 +39,7 @@ public class CaptureIndex {
         entries.add(capture);
     }
 
-    NavigableSet<Capture> query(URI uri) {
+    NavigableSet<Capture> query(String uri) {
         return entries.subSet(new Capture(uri, Instant.MIN), true, new Capture(uri, Instant.MAX), true);
     }
 

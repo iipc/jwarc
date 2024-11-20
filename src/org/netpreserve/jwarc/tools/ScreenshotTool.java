@@ -21,7 +21,7 @@ public class ScreenshotTool {
                     for (WarcRecord record : reader) {
                         if (!isNormalPage(record)) continue;
                         WarcCaptureRecord capture = (WarcCaptureRecord) record;
-                        renderer.screenshot(capture.targetURI(), capture.date(), warcWriter);
+                        renderer.screenshot(capture.target(), capture.date(), warcWriter);
                     }
                 }
             }
@@ -33,8 +33,7 @@ public class ScreenshotTool {
             return false;
         }
         WarcCaptureRecord capture = (WarcCaptureRecord) record;
-        String scheme = capture.targetURI().getScheme();
-        if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+        if (!(URIs.hasHttpOrHttpsScheme(capture.target()))) {
             return false;
         }
         try {

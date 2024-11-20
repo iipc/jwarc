@@ -7,7 +7,6 @@ import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,13 +37,21 @@ public class Browser {
     }
 
     public void screenshot(URI uri, Path outfile) throws IOException {
-        run("--screenshot=" + outfile, uri.toString());
+        screenshot(uri.toString(), outfile);
+    }
+
+    public void screenshot(String url, Path outfile) throws IOException {
+        run("--screenshot=" + outfile, url);
     }
 
     public FileChannel screenshot(URI uri) throws IOException {
+        return screenshot(uri.toString());
+    }
+
+    public FileChannel screenshot(String uri) throws IOException {
         Path outfile = Files.createTempFile("jwarc-screenshot", ".png");
         try {
-            run("--screenshot=" + outfile, uri.toString());
+            run("--screenshot=" + outfile, uri);
             return FileChannel.open(outfile, DELETE_ON_CLOSE);
         } catch (Exception e) {
             Files.deleteIfExists(outfile);

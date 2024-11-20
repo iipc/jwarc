@@ -87,8 +87,7 @@ public class WarcServer extends HttpServer {
     }
 
     private void timemap(HttpExchange exchange) throws IOException {
-        URI uri = URI.create(exchange.param(1));
-        NavigableSet<Capture> versions = index.query(uri);
+        NavigableSet<Capture> versions = index.query(exchange.param(1));
         if (versions.isEmpty()) {
             exchange.send(404, "Not found in archive");
             return;
@@ -114,7 +113,7 @@ public class WarcServer extends HttpServer {
 
     private void render(HttpExchange exchange) throws IOException {
         Instant date = Instant.from(ARC_DATE.parse(exchange.param(1)));
-        URI uri = URI.create(exchange.param(2));
+        String uri = exchange.param(2);
         NavigableSet<Capture> versions = index.query(uri);
         if (versions.isEmpty()) {
             exchange.send(404, "Not found in archive");
@@ -134,13 +133,12 @@ public class WarcServer extends HttpServer {
     }
 
     private void replay(HttpExchange exchange, String target, Instant date, boolean proxy) throws IOException {
-        URI uri = URI.create(target);
-        NavigableSet<Capture> versions = index.query(uri);
+        NavigableSet<Capture> versions = index.query(target);
         if (versions.isEmpty()) {
             exchange.send(404, "Not found in archive");
             return;
         }
-        Capture capture = closest(versions, uri, date);
+        Capture capture = closest(versions, target, date);
         try (FileChannel channel = FileChannel.open(capture.file(), READ)) {
             channel.position(capture.position());
             WarcReader reader = new WarcReader(channel);
@@ -186,7 +184,7 @@ public class WarcServer extends HttpServer {
                 .append(rel).append("memento\";datetime=\"").append(RFC_1123_UTC.format(capture.date())).append("\"");
     }
 
-    private Capture closest(NavigableSet<Capture> versions, URI uri, Instant date) {
+    private Capture closest(NavigableSet<Capture> versions, String uri, Instant date) {
         Capture key = new Capture(uri, date);
         Capture a = versions.floor(key);
         Capture b = versions.higher(key);

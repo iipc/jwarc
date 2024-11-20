@@ -37,15 +37,19 @@ public class WarcRenderer implements Closeable  {
     }
 
     public void screenshot(URI uri, Instant date, WarcWriter warcWriter) throws IOException {
+        screenshot(uri.toString(), date, warcWriter);
+    }
+
+    public void screenshot(String url, Instant date, WarcWriter warcWriter) throws IOException {
         Path screenshot = Files.createTempFile("jwarc-screenshot", ".png");
         try {
             Browser browser = new Browser(browserExecutable, (InetSocketAddress) proxySocket.getLocalSocketAddress(),
                     "WarcRenderer (arctime/" + ARC_TIME.format(date) + ")");
-            browser.screenshot(uri, screenshot);
+            browser.screenshot(url, screenshot);
             try (FileChannel channel = FileChannel.open(screenshot)) {
                 long size = channel.size();
                 if (size == 0) return;
-                warcWriter.write(new WarcResource.Builder(URI.create("screenshot:" + uri))
+                warcWriter.write(new WarcResource.Builder(URI.create("screenshot:" + url))
                         .date(date)
                         .body(MediaType.parse("image/png"), channel, size)
                         .build());

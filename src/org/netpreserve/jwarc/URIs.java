@@ -25,6 +25,18 @@ public class URIs {
     private final static Pattern AUTHORITY_REGEX = Pattern.compile("([^@]*@)?(.*?)(?::([0-9]+))?", DOTALL);
     private final static Pattern IPV4_REGEX = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
+    /**
+     * Returns true if the given string begins with a http: or https: URI scheme. Does not enforce the string is a
+     * valid URI.
+     */
+    public static boolean hasHttpOrHttpsScheme(String uri) {
+        return startsWithIgnoreCase(uri, "http:") || startsWithIgnoreCase(uri, "https:");
+    }
+
+    private static boolean startsWithIgnoreCase(String string, String prefix) {
+        return string.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
     public static URI parseLeniently(String uri) {
         Matcher m = URL_REGEX.matcher(uri);
         if (!m.matches()) {

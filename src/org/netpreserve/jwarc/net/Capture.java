@@ -10,33 +10,27 @@ import java.time.Instant;
  * Hods the location of a particular captured version of a resource.
  */
 class Capture {
-    private final String urikey;
-    private final URI uri;
+    private final String uri;
     private final Instant date;
     private final Path file;
     private final long position;
 
-    Capture(URI uri, Instant date) {
+    Capture(String uri, Instant date) {
         this(uri, date, null, -1);
     }
 
-    Capture(URI uri, Instant date, Path file, long position) {
-        urikey = uri.toString();
+    Capture(String uri, Instant date, Path file, long position) {
         this.uri = uri;
         this.date = date;
         this.file = file;
         this.position = position;
     }
 
-    String uriKey() {
-        return urikey;
-    }
-
     Instant date() {
         return date;
     }
 
-    URI uri() {
+    String uri() {
         return uri;
     }
 
