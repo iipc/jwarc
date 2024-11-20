@@ -6,24 +6,44 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.DOTALL;
 
 public class URIs {
     private final static Pattern URL_REGEX = Pattern.compile("\\A" +
             "(?:([a-zA-Z][^:]*):)?" + // scheme
-            "[/\\\\\\r\\n\\t]*" + // slashes
-            "([^/\\\\]*)" + // authority
+            "([/\\\\\\r\\n\\t]*)" + // slashes
+            "([^/\\\\?#]*)" + // authority
             "([/\\\\][^?#]*)?" + // path
             "(?:[?]([^#]*))?" + // query
             "(?:[#](.*))?" + // fragment
             "\\Z", DOTALL);
+    private static final int SCHEME = 1, SLASHES = 2, AUTHORITY = 3, PATH = 4, QUERY = 5, FRAGMENT = 6;
     private final static Pattern AUTHORITY_REGEX = Pattern.compile("([^@]*@)?(.*?)(?::([0-9]+))?", DOTALL);
     private final static Pattern IPV4_REGEX = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
+
+    // According to https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html#uri-syntax-and-components-heading
+    private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static final String DIGIT = "0123456789";
+    private static final String ALPHANUM = ALPHA + DIGIT;
+    private static final String UNRESERVED = ALPHANUM + "_-!.~'()*";
+    private static final String PUNCT = ",;:$&+=";
+    private static final String RESERVED = PUNCT + "?/[]@";
+
+    private static final BitSet PATH_ALLOWED = charBitSet("/@" + UNRESERVED + PUNCT);
+    private static final BitSet QUERY_ALLOWED = charBitSet(UNRESERVED + RESERVED);
+
+    private static BitSet charBitSet(String chars) {
+        BitSet bitSet = new BitSet(128);
+        for (char c : chars.toCharArray()) {
+            bitSet.set(c);
+        }
+        return bitSet;
+    }
 
     /**
      * Returns true if the given string begins with a http: or https: URI scheme. Does not enforce the string is a
@@ -37,16 +57,89 @@ public class URIs {
         return string.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 
+    /**
+     * Like URI.create() but attempts to percent encode when possible instead of throwing.
+     * Note that parseLeniently(s).toString().equals(s) may be false if percent encoding has occurred.
+     * @throws IllegalArgumentException if parsing failed
+     */
     public static URI parseLeniently(String uri) {
-        Matcher m = URL_REGEX.matcher(uri);
-        if (!m.matches()) {
-            throw new IllegalArgumentException();
-        }
         try {
-            return new URI(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5));
+            return new URI(uri);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
+            Matcher urlMatcher = URL_REGEX.matcher(uri);
+            if (!urlMatcher.matches()) {
+                throw new IllegalArgumentException("invalid URI: " + uri);
+            }
+
+            StringBuilder builder = new StringBuilder();
+
+            String scheme = urlMatcher.group(SCHEME);
+            if (scheme != null) {
+                builder.append(scheme);
+                builder.append(':');
+            }
+
+            String slashes = urlMatcher.group(SLASHES);
+            if (slashes != null) builder.append(slashes);
+
+            String authority = urlMatcher.group(AUTHORITY);
+            if (authority != null) {
+                builder.append(authority);
+            }
+
+            String path = urlMatcher.group(PATH);
+            if (path != null) {
+                builder.append(percentEncodeIfNeeded(path, PATH_ALLOWED));
+            }
+
+            String query = urlMatcher.group(QUERY);
+            if (query != null) {
+                builder.append('?');
+                builder.append(percentEncodeIfNeeded(query, QUERY_ALLOWED));
+            }
+
+            String fragment = urlMatcher.group(FRAGMENT);
+            if (fragment != null) {
+                builder.append('#');
+                builder.append(percentEncodeIfNeeded(fragment, QUERY_ALLOWED));
+            }
+
+            return URI.create(builder.toString());
         }
+    }
+
+    private static boolean isHexDigit(char c) {
+        return (c >= '0' && c <= '9')
+               || (c >= 'a' && c <= 'f')
+               || (c >= 'A' && c <= 'F');
+    }
+
+    private static boolean isASCII(char c) {
+        return c <= 127;
+    }
+
+    /**
+     * Percent encodes a string per the given set of allowed characters. Valid existing percent escapes are
+     * preserved instead of double escaped. Unicode characters which are not ASCII, control or space characters
+     * are not encoded.
+     */
+    private static String percentEncodeIfNeeded(String s, BitSet allowed) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (allowed.get(c)) {
+                out.append(c);
+            } else if (c == '%' && i < s.length() - 2 && isHexDigit(s.charAt(i + 1)) && isHexDigit(s.charAt(i + 2))) {
+                out.append(c); // valid existing escape
+            } else if (!isASCII(c) && !Character.isISOControl(c) && !Character.isSpaceChar(c)) {
+                out.append(c); // an 'other' unicode character
+            } else {
+                for (byte b : Character.toString(c).getBytes(UTF_8)) {
+                    out.append('%').append(String.format("%02x", (int) b));
+                }
+            }
+        }
+        return out.toString();
     }
 
     public static String toNormalizedSurt(String uri) {
@@ -54,10 +147,10 @@ public class URIs {
         if (!urlMatcher.matches()) {
             throw new IllegalArgumentException("invalid URL: " + uri);
         }
-        String authority = urlMatcher.group(2);
-        String path = urlMatcher.group(3);
-        String query = urlMatcher.group(4);
-        String fragment = urlMatcher.group(5);
+        String authority = urlMatcher.group(AUTHORITY);
+        String path = urlMatcher.group(PATH);
+        String query = urlMatcher.group(QUERY);
+        String fragment = urlMatcher.group(FRAGMENT);
 
         Matcher authorityMatcher = AUTHORITY_REGEX.matcher(authority);
         if (!authorityMatcher.matches()) throw new IllegalStateException("authority didn't match");
@@ -133,7 +226,7 @@ public class URIs {
 
     public static String percentEncodeIllegals(String s) {
         StringBuilder out = new StringBuilder();
-        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = s.getBytes(UTF_8);
         for (byte rawByte : bytes) {
             int b = rawByte & 0xff;
             if (b == '%' || b == '#' || b <= 0x20 || b >= 0x7f) {
@@ -178,7 +271,7 @@ public class URIs {
     }
 
     private static void tryDecodeUtf8(ByteBuffer bb, StringBuilder out) {
-        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+        CharsetDecoder decoder = UTF_8.newDecoder();
         CharBuffer cb = CharBuffer.allocate(bb.remaining());
         while (bb.hasRemaining()) {
             CoderResult result = decoder.decode(bb, cb, true);
