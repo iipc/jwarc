@@ -29,6 +29,13 @@ public class InetAddressesTest {
                 canonicalInet6((Inet6Address) InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")));
         assertEquals("2001:200f::1",
                 canonicalInet6((Inet6Address) InetAddress.getByName("2001:200f:0:0:0:0:0:1")));
+        // https://datatracker.ietf.org/doc/html/rfc5952#section-4.2.2
+        // "The symbol "::" MUST NOT be used to shorten just one 16-bit 0 field."
+        assertEquals("2001:0:3:4:5:6:7:8",
+                canonicalInet6((Inet6Address) InetAddress.getByName("2001:0:3:4:5:6:7:8")));
+        // shorten first of same-length consecutive 0 fields, also in initial position
+        assertEquals("::4:0:0:0:ffff",
+                canonicalInet6((Inet6Address) InetAddress.getByName("0:0:0:4:0:0:0:ffff")));
     }
 
 }
