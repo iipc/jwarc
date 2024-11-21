@@ -5,6 +5,7 @@
 
 /*
  * Copyright (C) 2008 The Guava Authors
+ * Copyright (C) 2024 National Library of Australia and the jwarc contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +20,7 @@
 
 package org.netpreserve.jwarc;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -223,5 +225,41 @@ final class InetAddresses {
   private static IllegalArgumentException formatIllegalArgumentException(
       String format, Object... args) {
     return new IllegalArgumentException(String.format(Locale.ROOT, format, args));
+  }
+
+  /**
+   * Formats an IPv6 address as the RFC5952 canonical textual representation.
+   */
+  static String canonicalInet6(Inet6Address address) {
+    byte[] bytes = address.getAddress();
+    StringBuilder full = new StringBuilder();
+    for (int i = 0; i < bytes.length; i += 2) {
+      if (i > 0) full.append(':');
+      int group = ((bytes[i] & 0xFF) << 8) | (bytes[i + 1] & 0xFF);
+      full.append(Integer.toHexString(group));
+    }
+
+    // Compress longest zero sequence
+    int lengthOfLongestZeroSequence = 2;
+    int startOfLongestZeroSequence = 0;
+    for (int i = 0; i < full.length(); i++) {
+      if (i > 0 && full.charAt(i) != ':') continue;
+
+      // Find the end of the zero sequence
+      int j;
+      for (j = i; j < full.length(); j++) {
+        char c = full.charAt(j);
+        if (c != ':' && c != '0') break;
+      }
+
+      int length = j - i;
+      if (length > lengthOfLongestZeroSequence) {
+        startOfLongestZeroSequence = i;
+        lengthOfLongestZeroSequence = length;
+      }
+    }
+    if (lengthOfLongestZeroSequence <= 2) return full.toString();
+    return full.substring(0, startOfLongestZeroSequence) + "::" +
+           full.substring(startOfLongestZeroSequence + lengthOfLongestZeroSequence);
   }
 }
