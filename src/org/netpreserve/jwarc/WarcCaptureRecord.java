@@ -61,13 +61,7 @@ public abstract class WarcCaptureRecord extends WarcTargetRecord {
         }
 
         public B ipAddress(InetAddress ipAddress) {
-            String formatted;
-            if (ipAddress instanceof Inet6Address) {
-                formatted = InetAddresses.canonicalInet6((Inet6Address) ipAddress);
-            } else {
-                formatted = ipAddress.getHostAddress();
-            }
-            return addHeader("WARC-IP-Address", formatted);
+            return addHeader("WARC-IP-Address", InetAddresses.toAddrString(ipAddress));
         }
     }
 }
