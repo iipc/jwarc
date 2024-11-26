@@ -9,10 +9,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
@@ -20,6 +17,17 @@ import static java.util.Collections.emptyList;
 public class MessageHeaders {
     private static Pattern COMMA_SEPARATOR = Pattern.compile("[ \t]*,[ \t]*");
     private Map<String,List<String>> map;
+
+    public static MessageHeaders of(String... keysAndValues) {
+        if (keysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("an even number keysAndValues must be provided");
+        }
+        Map<String,List<String>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            map.computeIfAbsent(keysAndValues[i], k -> new ArrayList<>()).add(keysAndValues[i + 1]);
+        }
+        return new MessageHeaders(map);
+    }
 
     MessageHeaders(Map<String, List<String>> map) {
         map.replaceAll((name, values) -> Collections.unmodifiableList(values));

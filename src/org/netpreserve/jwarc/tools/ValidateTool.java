@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -66,6 +67,7 @@ public class ValidateTool extends WarcTool {
 
     private Logger logger;
     private boolean verbose;
+    private HeaderValidator headerValidator;
 
     public ValidateTool(boolean verbose) {
         this.verbose = verbose;
@@ -178,6 +180,12 @@ public class ValidateTool extends WarcTool {
         while (record != null) {
             boolean valid = true;
 
+            if (headerValidator != null) {
+                List<String> headerViolations = headerValidator.validate(record.headers());
+                headerViolations.forEach(logger::error);
+                valid &= headerViolations.isEmpty();
+            }
+
             if (record instanceof WarcCaptureRecord) {
                 try {
                     valid = validateCapture(record);
@@ -251,6 +259,8 @@ public class ValidateTool extends WarcTool {
         System.err.println("");
         System.err.println("Options:");
         System.err.println("");
+        System.err.println(" --no-header-validation\tskips checking headers against WARC standard rules");
+        System.err.println(" --forbid-extensions\tdisallows non-standard WARC header fields and values");
         System.err.println(" -h / --help\tshow usage message and exit");
         System.err.println(" -v / --verbose\tlog information about every WARC record to stdout");
         System.err.println("");
@@ -263,10 +273,18 @@ public class ValidateTool extends WarcTool {
     public static void main(String[] args) throws IOException {
         int res = 0;
         boolean verbose = false;
+        boolean headerValidation = true;
+        boolean forbidExtensions = false;
         if (args.length == 0)
             usage(0);
         for (String arg : args) {
             switch (arg) {
+                case "--no-header-validation":
+                    headerValidation = false;
+                    break;
+                case "--forbid-extensions":
+                    forbidExtensions = true;
+                    break;
                 case "-h":
                 case "--help":
                     usage(0);
@@ -277,6 +295,9 @@ public class ValidateTool extends WarcTool {
                     break;
                 default:
                     ValidateTool validator = new ValidateTool(verbose);
+                    if (headerValidation) {
+                        validator.headerValidator = HeaderValidator.warc_1_1(forbidExtensions);
+                    }
                     try (WarcReader reader = new WarcReader(Paths.get(arg))) {
                         reader.calculateBlockDigest();
                         if (verbose)
