@@ -15,9 +15,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -85,6 +83,7 @@ public class ExtractTool {
         System.err.println();
         System.err.println("Options:");
         System.err.println();
+        System.err.println(" --concurrent\talso outputs any immediately following concurrent records");
         System.err.println(" --headers\toutput only record (and HTTP) headers");
         System.err.println(" --payload\toutput only record payload, if necessary");
         System.err.println("          \tdecode transfer and/or content encoding");
@@ -95,11 +94,16 @@ public class ExtractTool {
         ExtractAction action = ExtractAction.RECORD;
         Path warcFile = null;
         List<Long> offsets = new ArrayList<>();
+        boolean extractConcurrent = false;
         for (String arg : args) {
             switch (arg) {
             case "-h":
             case "--help":
                 usage(0);
+                break;
+            case "--concurrent":
+                extractConcurrent = true;
+                break;
             case "--headers":
                 action = ExtractAction.HEADERS;
                 break;
@@ -128,7 +132,9 @@ public class ExtractTool {
         }
         if (warcFile == null || offsets.isEmpty()) {
             usage(1);
+            return;
         }
+        WritableByteChannel out = Channels.newChannel(System.out);
         for (long offset : offsets) {
             try (FileChannel channel = FileChannel.open(warcFile);
                  WarcReader reader = new WarcReader(channel.position(offset))) {
@@ -137,22 +143,36 @@ public class ExtractTool {
                     System.err.println("No record found at position " + offset);
                     System.exit(1);
                 }
-                WritableByteChannel out = Channels.newChannel(System.out);
-                switch (action) {
-                    case RECORD:
-                        writeWarcHeaders(out, record.get());
-                        writeBody(out, record.get().body());
-                        out.write(ByteBuffer.wrap("\r\n\r\n".getBytes(US_ASCII)));
-                        break;
-                    case HEADERS:
-                        writeWarcHeaders(out, record.get());
-                        writeHttpHeaders(out, record.get());
-                        break;
-                    case PAYLOAD:
-                        writePayload(out, record.get());
-                        break;
+
+                writeRecord(record.get(), out, action);
+
+                if (extractConcurrent) {
+                    ConcurrentRecordSet concurrentSet = new ConcurrentRecordSet();
+                    while (true) {
+                        concurrentSet.add(record.get());
+                        record = reader.next();
+                        if (!record.isPresent() || !concurrentSet.contains(record.get())) break;
+                        writeRecord(record.get(), out, action);
+                    }
                 }
             }
+        }
+    }
+
+    private static void writeRecord(WarcRecord record, WritableByteChannel out, ExtractAction action) throws IOException {
+        switch (action) {
+            case RECORD:
+                writeWarcHeaders(out, record);
+                writeBody(out, record.body());
+                out.write(ByteBuffer.wrap("\r\n\r\n".getBytes(US_ASCII)));
+                break;
+            case HEADERS:
+                writeWarcHeaders(out, record);
+                writeHttpHeaders(out, record);
+                break;
+            case PAYLOAD:
+                writePayload(out, record);
+                break;
         }
     }
 }
