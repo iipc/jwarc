@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) 2025 National Library of Australia
+ */
+
 package org.netpreserve.jwarc.tools;
 
 import org.netpreserve.jwarc.*;
@@ -5,13 +10,17 @@ import org.netpreserve.jwarc.cdx.CdxReader;
 import org.netpreserve.jwarc.cdx.CdxRecord;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
@@ -20,6 +29,33 @@ public class DedupeTool {
     private long minimumSize = 256;
     private String cdxServer;
     private boolean verbose;
+    private LruCache<WarcDigest, CacheValue> digestCache;
+
+    private static class LruCache<K, V> extends LinkedHashMap<K, V> {
+        private final int maxSize;
+
+        public LruCache(int maxSize) {
+            super(maxSize, 0.75f, true);
+            this.maxSize = maxSize;
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            return size() > maxSize;
+        }
+    }
+
+    private static class CacheValue {
+        final URI id;
+        final String targetUri;
+        final Instant date;
+
+        private CacheValue(URI id, String targetUri, Instant date) {
+            this.id = id;
+            this.targetUri = targetUri;
+            this.date = date;
+        }
+    }
 
     public void deduplicateWarcFile(Path infile, Path outfile) throws IOException {
         try (FileChannel input = FileChannel.open(infile);
@@ -71,17 +107,44 @@ public class DedupeTool {
         if (payload == null || payload.body().size() < minimumSize) return null;
         WarcDigest payloadDigest = response.payloadDigest().orElse(null);
         if (payloadDigest == null) return null;
-        CdxRecord match = findMatchingRecord(response, payloadDigest.base32());
-        if (match == null) return null;
+
+        // if we have the payload digest in the cache, return a revisit pointing to it
+        if (digestCache != null) {
+            CacheValue cached = digestCache.get(payloadDigest);
+            if (cached != null) {
+                return newRevisit(response, cached.id, cached.targetUri, cached.date);
+            }
+        }
+
+        // now check the CDX server
+        if (cdxServer != null) {
+            CdxRecord match = findMatchingCdxRecord(response, payloadDigest.base32());
+            if (match != null) {
+                if (digestCache != null) {
+                    digestCache.put(payloadDigest, new CacheValue(null, match.target(), match.date()));
+                }
+                return newRevisit(response, null, match.target(), match.date());
+            }
+        }
+
+        // we haven't seen this digest before, so cache it
+        if (digestCache != null) {
+            digestCache.put(payloadDigest, new CacheValue(response.id(), response.target(), response.date()));
+        }
+
+        return null;
+    }
+
+    private WarcRevisit newRevisit(WarcResponse response, URI refersTo, String refersToTarget, Instant refersToDate) throws IOException {
         return new WarcRevisit.Builder(response.target(), WarcRevisit.IDENTICAL_PAYLOAD_DIGEST_1_0)
                 .date(response.date())
-                .refersTo(null, match.target(), match.date())
+                .refersTo(refersTo, refersToTarget, refersToDate)
                 .body(response.contentType(), response.http().serializeHeader())
-                .payloadDigest(payloadDigest)
+                .payloadDigest(response.payloadDigest().orElseThrow(AssertionError::new))
                 .build();
     }
 
-    private CdxRecord findMatchingRecord(WarcCaptureRecord capture, String digest) throws IOException {
+    private CdxRecord findMatchingCdxRecord(WarcCaptureRecord capture, String digest) throws IOException {
         URL queryUrl = new URL(cdxServer + "?sort=reverse&rows=10&matchType=exact&url=" + URLEncoder.encode(capture.target(), UTF_8.name()));
         try (CdxReader response = new CdxReader(queryUrl.openStream())) {
             for (CdxRecord record : response) {
@@ -97,7 +160,7 @@ public class DedupeTool {
         this.cdxServer = cdxServer;
     }
 
-    private static Path determineOutputPath(Path infile) {
+    public static Path determineOutputPath(Path infile) {
         String[] suffixes = new String[]{".warc.gz", ".warc", ".arc.gz", ".arc"};
         String filename = infile.getFileName().toString();
         Path dir = infile.getParent();
@@ -118,6 +181,9 @@ public class DedupeTool {
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
                 switch (args[i]) {
+                    case "--cache-size":
+                        dedupeTool.setCacheSize(Integer.parseInt(args[++i]));
+                        break;
                     case "--cdx-server":
                         dedupeTool.setCdxServer(args[++i]);
                         break;
@@ -129,6 +195,7 @@ public class DedupeTool {
                         System.out.println("Usage: jwarc dedupe [options] [warc-files...]");
                         System.out.println();
                         System.out.println("Options:");
+                        System.out.println("      --cache-size N        Cache N digests for de-duplication (enables cross-URI de-duplication)");
                         System.out.println("      --cdx-server URL      De-deduplicate against a remote CDX server");
                         System.out.println("      --minimum-size BYTES  Minimum payload size to consider de-duplicating (default " + dedupeTool.minimumSize + ")");
                         System.out.println("  -v, --verbose             Verbose output");
@@ -153,7 +220,15 @@ public class DedupeTool {
         }
     }
 
+    public void setCacheSize(int cacheSize) {
+        digestCache = cacheSize > 0 ? new LruCache<>(cacheSize) : null;
+    }
+
     public void setMinimumSize(long minimumSize) {
         this.minimumSize = minimumSize;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 }
