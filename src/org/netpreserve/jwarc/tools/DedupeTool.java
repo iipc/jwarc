@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -29,6 +31,8 @@ public class DedupeTool {
     private long minimumSize = 256;
     private String cdxServer;
     private boolean verbose;
+    private boolean dryRun;
+    private boolean quiet;
     private LruCache<WarcDigest, CacheValue> digestCache;
 
     private static class LruCache<K, V> extends LinkedHashMap<K, V> {
@@ -57,14 +61,43 @@ public class DedupeTool {
         }
     }
 
+    /**
+     * A WritableByteChannel that discards everything written.
+     */
+    private static class NullWritableByteChannel implements WritableByteChannel {
+        private boolean open = true;
+
+        @Override
+        public int write(ByteBuffer src) {
+            int remaining = src.remaining();
+            src.position(src.limit()); // consume all bytes
+            return remaining;
+        }
+
+        @Override
+        public boolean isOpen() {
+            return open;
+        }
+
+        @Override
+        public void close() {
+            open = false;
+        }
+    }
+
     public void deduplicateWarcFile(Path infile, Path outfile) throws IOException {
+        long totalRecords = 0;
+        long deduplicatedRecords = 0;
+        long totalSize = 0;
+        long savedSize = 0;
+
+        // We create the WarcWriter on demand so that if no records are deduplicated we don't write an empty
+        // gzip member at the end of the file.
+        WarcWriter writer = null;
+
         try (FileChannel input = FileChannel.open(infile);
              WarcReader reader = new WarcReader(input);
-             FileChannel output = FileChannel.open(outfile, WRITE, CREATE, TRUNCATE_EXISTING)) {
-
-            // We create the WarcWriter on demand so that if no records are deduplicated we don't write an empty
-            // gzip member at the end of the file.
-            WarcWriter writer = null;
+             FileChannel output = dryRun ? null : FileChannel.open(outfile, WRITE, CREATE, TRUNCATE_EXISTING)) {
 
             WarcRecord record = reader.next().orElse(null);
             while (record != null) {
@@ -74,16 +107,57 @@ public class DedupeTool {
                 record = reader.next().orElse(null);
                 long length = reader.position() - position;
 
+                totalRecords++;
+                totalSize += length;
+
                 if (revisit == null) {
-                    if (verbose) System.out.println("Copying " + position + ":" + length);
-                    transferExactly(input, position, length, output);
+                    if (verbose) {
+                        System.out.println((dryRun ? "Would copy " : "Copying") + position + ":" + length);
+                    }
+                    if (!dryRun) {
+                        transferExactly(input, position, length, output);
+                    }
                 } else {
-                    if (verbose) System.out.println("Writing revisit for " + position + ":" + length);
-                    if (writer == null) writer = new WarcWriter(output, reader.compression());
+                    if (verbose) {
+                        System.out.println((dryRun ? "Would write" : "Writing") + " revisit for " + position + ":" + length);
+                    }
+                    deduplicatedRecords++;
+
+                    if (writer == null) {
+                        if (dryRun) {
+                            writer = new WarcWriter(new NullWritableByteChannel(), reader.compression());
+                        } else {
+                            writer = new WarcWriter(output, reader.compression());
+                        }
+                    }
+                    long beforePosition = writer.position();
                     writer.write(revisit);
+                    long revisitSize = writer.position() - beforePosition;
+
+                    savedSize += (length - revisitSize);
                 }
             }
+        } finally {
+            if (writer != null) writer.close();
         }
+
+        // Print statistics unless quiet mode is enabled
+        if (!quiet) {
+            double percentage = totalSize > 0 ? (double) savedSize / totalSize * 100 : 0.0;
+            String action = dryRun ? "would dedupe" : "deduped";
+            System.out.printf("%s: %s %d/%d records, saving %s/%s (%.2f%%)%n",
+                outfile != null ? outfile.getFileName() : infile.getFileName(), action, deduplicatedRecords,
+                    totalRecords, formatBytes(savedSize), formatBytes(totalSize), percentage);
+        }
+    }
+
+
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024) return bytes + "B";
+        if (bytes < 1024 * 1024) return String.format("%.2fKB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.2fMB", bytes / (1024.0 * 1024.0));
+        return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
     }
 
     private static void transferExactly(FileChannel input, long position, long length, FileChannel output) throws IOException {
@@ -198,11 +272,21 @@ public class DedupeTool {
                         System.out.println("      --cache-size N        Cache N digests for de-duplication (enables cross-URI de-duplication)");
                         System.out.println("      --cdx-server URL      De-deduplicate against a remote CDX server");
                         System.out.println("      --minimum-size BYTES  Minimum payload size to consider de-duplicating (default " + dedupeTool.minimumSize + ")");
+                        System.out.println("  -n, --dry-run             Don't write output, just calculate and print deduplication statistics");
+                        System.out.println("  -q, --quiet               Don't print deduplication statistics");
                         System.out.println("  -v, --verbose             Verbose output");
                         return;
                     case "-v":
                     case "--verbose":
-                        dedupeTool.verbose = true;
+                        dedupeTool.setVerbose(true);
+                        break;
+                    case "-n":
+                    case "--dry-run":
+                        dedupeTool.setDryRun(true);
+                        break;
+                    case "-q":
+                    case "--quiet":
+                        dedupeTool.setQuiet(true);
                         break;
                     default:
                         System.err.println("Unrecognized option: " + args[i]);
@@ -216,7 +300,15 @@ public class DedupeTool {
         }
 
         for (Path infile : infiles) {
-            dedupeTool.deduplicateWarcFile(infile, determineOutputPath(infile));
+            try {
+                Path outfile = dedupeTool.dryRun ? null : determineOutputPath(infile);
+                dedupeTool.deduplicateWarcFile(infile, outfile);
+            } catch (IOException e) {
+                System.err.println("Failed to deduplicate " + infile + ": " + e.getMessage());
+                if (!dedupeTool.quiet) e.printStackTrace(System.err);
+                System.exit(1);
+                return;
+            }
         }
     }
 
@@ -230,5 +322,13 @@ public class DedupeTool {
 
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+    }
+
+    public void setDryRun(boolean dryRun) {
+        this.dryRun = dryRun;
+    }
+
+    public void setQuiet(boolean quiet) {
+        this.quiet = quiet;
     }
 }

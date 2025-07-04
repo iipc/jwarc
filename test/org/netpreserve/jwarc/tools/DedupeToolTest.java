@@ -194,6 +194,21 @@ public class DedupeToolTest {
     }
 
     @Test
+    public void testDryRun() throws Exception {
+        // Set cache size to enable deduplication
+        dedupeTool.setCacheSize(10);
+
+        // Set minimum size to a small value to allow deduplication of our test payloads
+        dedupeTool.setMinimumSize(10);
+
+        // Enable dry run mode
+        dedupeTool.setDryRun(true);
+
+        // Run dry run deduplication - this should not create any output file
+        dedupeTool.deduplicateWarcFile(testWarcFile, null);
+    }
+
+    @Test
     public void testDetermineOutputPath() {
         // Test with various file extensions
         assertEquals("file-dedup.warc.gz", DedupeTool.determineOutputPath(Paths.get("file.warc.gz")).getFileName().toString());
