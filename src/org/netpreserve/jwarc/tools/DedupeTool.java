@@ -16,13 +16,14 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
@@ -33,7 +34,9 @@ public class DedupeTool {
     private boolean verbose;
     private boolean dryRun;
     private boolean quiet;
-    private LruCache<WarcDigest, CacheValue> digestCache;
+    private int threads = Runtime.getRuntime().availableProcessors();
+    private Map<WarcDigest, CacheValue> digestCache;
+    private final AtomicLong errors = new AtomicLong();
 
     private static class LruCache<K, V> extends LinkedHashMap<K, V> {
         private final int maxSize;
@@ -151,8 +154,6 @@ public class DedupeTool {
         }
     }
 
-
-
     private String formatBytes(long bytes) {
         if (bytes < 1024) return bytes + "B";
         if (bytes < 1024 * 1024) return String.format("%.2fKB", bytes / 1024.0);
@@ -264,6 +265,10 @@ public class DedupeTool {
                     case "--minimum-size":
                         dedupeTool.setMinimumSize(Long.parseLong(args[++i]));
                         break;
+                    case "-j":
+                    case "--threads":
+                        dedupeTool.setThreads(Integer.parseInt(args[++i]));
+                        break;
                     case "-h":
                     case "--help":
                         System.out.println("Usage: jwarc dedupe [options] [warc-files...]");
@@ -272,6 +277,7 @@ public class DedupeTool {
                         System.out.println("      --cache-size N        Cache N digests for de-duplication (enables cross-URI de-duplication)");
                         System.out.println("      --cdx-server URL      De-deduplicate against a remote CDX server");
                         System.out.println("      --minimum-size BYTES  Minimum payload size to consider de-duplicating (default " + dedupeTool.minimumSize + ")");
+                        System.out.println("  -j, --threads N           Number of threads for parallel processing (default " + dedupeTool.threads + ")");
                         System.out.println("  -n, --dry-run             Don't write output, just calculate and print deduplication statistics");
                         System.out.println("  -q, --quiet               Don't print deduplication statistics");
                         System.out.println("  -v, --verbose             Verbose output");
@@ -299,21 +305,42 @@ public class DedupeTool {
             }
         }
 
-        for (Path infile : infiles) {
-            try {
-                Path outfile = dedupeTool.dryRun ? null : determineOutputPath(infile);
-                dedupeTool.deduplicateWarcFile(infile, outfile);
-            } catch (IOException e) {
-                System.err.println("Failed to deduplicate " + infile + ": " + e.getMessage());
-                if (!dedupeTool.quiet) e.printStackTrace(System.err);
-                System.exit(1);
-                return;
+        dedupeTool.run(infiles);
+    }
+
+    private void run(List<Path> infiles) throws IOException {
+        ForkJoinPool pool = new ForkJoinPool(threads);
+        try {
+            pool.submit(() -> infiles.parallelStream().forEach(this::deduplicateWarcFile)).get();  // wait for everything
+        } catch (InterruptedException|ExecutionException e) {
+            Thread.currentThread().interrupt();
+            System.exit(1);
+        } finally {
+            pool.shutdown();
+        }
+        if (errors.get() > 0) System.exit(1);
+    }
+
+    private void deduplicateWarcFile(Path infile) {
+        Path outfile = dryRun ? null : determineOutputPath(infile);
+        try {
+            deduplicateWarcFile(infile, outfile);
+        } catch (IOException e) {
+            System.err.println("Failed to dedupe " + infile + ": " + e);
+            if (outfile != null) {
+                try {
+                    Files.deleteIfExists(outfile);
+                } catch (IOException ex) {
+                    System.err.println("Failed to delete " + outfile + ": " + ex);
+                }
             }
+            if (!quiet) e.printStackTrace(System.err);
+            errors.incrementAndGet();
         }
     }
 
     public void setCacheSize(int cacheSize) {
-        digestCache = cacheSize > 0 ? new LruCache<>(cacheSize) : null;
+        digestCache = cacheSize > 0 ? Collections.synchronizedMap(new LruCache<>(cacheSize)) : null;
     }
 
     public void setMinimumSize(long minimumSize) {
@@ -330,5 +357,9 @@ public class DedupeTool {
 
     public void setQuiet(boolean quiet) {
         this.quiet = quiet;
+    }
+
+    public void setThreads(int threads) {
+        this.threads = Math.max(1, threads);
     }
 }
