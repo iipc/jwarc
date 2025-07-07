@@ -29,27 +29,43 @@ public class ValidateTool extends WarcTool {
 
     private static class Logger {
         protected Optional<StringBuilder> sb;
+        private static final ThreadLocal<String> currentFilename = new ThreadLocal<>();
+
         public Logger() {
             this.sb = Optional.of(new StringBuilder());
         }
+
+        public void setCurrentFilename(String filename) {
+            currentFilename.set(filename);
+        }
+
+        public void clearCurrentFilename() {
+            currentFilename.remove();
+        }
+
+        private String getPrefix() {
+            String filename = currentFilename.get();
+            return filename != null ? filename + ": " : "";
+        }
+
         public void log(String form) {
-            sb.ifPresent(s -> s.append("    ").append(form).append('\n'));
+            sb.ifPresent(s -> s.append("    ").append(getPrefix()).append(form).append('\n'));
         }
         public void log(String form, Object... args) {
-            sb.ifPresent(s -> s.append("    ").append(String.format(form, args)).append('\n'));
+            sb.ifPresent(s -> s.append("    ").append(getPrefix()).append(String.format(form, args)).append('\n'));
         }
         public void error(String form, Object... args) {
             if (sb.isPresent()) {
                 log("ERROR: " + form, args);
             } else {
-                System.err.println("ERROR: " + String.format(form, args));
+                System.err.println(getPrefix() + "ERROR: " + String.format(form, args));
             }
         }
         public void exception(String message, Exception e) {
             if (sb.isPresent()) {
                 log("ERROR: %s: %s", message, e);
             } else {
-                System.err.println("ERROR: " + message + ": " + e);
+                System.err.println(getPrefix() + "ERROR: " + message + ": " + e);
             }
         }
         public String print() {
@@ -238,10 +254,10 @@ public class ValidateTool extends WarcTool {
             long length = reader.position() - position;
 
             if (verbose) {
-                System.out.printf("  offset %d (length %d) %s %s\n%s", position, length, recordType, contentType,
+                System.out.printf(logger.getPrefix() + "  offset %d (length %d) %s %s\n%s", position, length, recordType, contentType,
                         logger.print());
             } else if (!valid) {
-                System.err.printf("  offset %d (length %d) %s %s failed\n", position, length, recordType, contentType);
+                System.err.printf(logger.getPrefix() + "  offset %d (length %d) %s %s failed\n", position, length, recordType, contentType);
             }
 
             if (!valid) {
@@ -256,7 +272,8 @@ public class ValidateTool extends WarcTool {
         return warcValidates;
     }
 
-    private boolean validate(Path warcFile) {
+    boolean validate(Path warcFile) {
+        logger.setCurrentFilename(warcFile.getFileName().toString());
         try (WarcReader reader = new WarcReader(warcFile)) {
             reader.calculateBlockDigest();
             if (verbose)
@@ -270,6 +287,8 @@ public class ValidateTool extends WarcTool {
             System.err.println("Exception validating " + warcFile + ": " + e);
             e.printStackTrace();
             return false;
+        } finally {
+            logger.clearCurrentFilename();
         }
     }
 
