@@ -300,6 +300,7 @@ public class ValidateTool extends WarcTool {
         System.err.println("");
         System.err.println(" --no-header-validation\tskips checking headers against WARC standard rules");
         System.err.println(" --forbid-extensions\tdisallows non-standard WARC header fields and values");
+        System.err.println(" -j / --threads\tmaximum number of threads to use (default: " + Runtime.getRuntime().availableProcessors() + ")");
         System.err.println(" -h / --help\tshow usage message and exit");
         System.err.println(" -v / --verbose\tlog information about every WARC record to stdout");
         System.err.println("");
