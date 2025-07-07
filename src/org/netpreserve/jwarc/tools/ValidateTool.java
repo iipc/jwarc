@@ -9,12 +9,15 @@ import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -253,6 +256,23 @@ public class ValidateTool extends WarcTool {
         return warcValidates;
     }
 
+    private boolean validate(Path warcFile) {
+        try (WarcReader reader = new WarcReader(warcFile)) {
+            reader.calculateBlockDigest();
+            if (verbose)
+                System.out.println("Validating " + warcFile);
+            if (!validate(reader)) {
+                System.err.println("Failed to validate " + warcFile);
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            System.err.println("Exception validating " + warcFile + ": " + e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private static void usage(int exitValue) {
         System.err.println("");
         System.err.println("ValidateTool [-h] [-v] filename...");
@@ -270,15 +290,17 @@ public class ValidateTool extends WarcTool {
         System.exit(exitValue);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         int res = 0;
         boolean verbose = false;
         boolean headerValidation = true;
         boolean forbidExtensions = false;
+        int threads = Runtime.getRuntime().availableProcessors();
+        List<Path> warcFiles = new ArrayList<>();
         if (args.length == 0)
             usage(0);
-        for (String arg : args) {
-            switch (arg) {
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
                 case "--no-header-validation":
                     headerValidation = false;
                     break;
@@ -289,26 +311,33 @@ public class ValidateTool extends WarcTool {
                 case "--help":
                     usage(0);
                     break;
+                case "-j":
+                case "--threads":
+                    threads = Integer.parseInt(args[++i]);
+                    break;
                 case "-v":
                 case "--verbose":
                     verbose = true;
                     break;
                 default:
-                    ValidateTool validator = new ValidateTool(verbose);
-                    if (headerValidation) {
-                        validator.headerValidator = HeaderValidator.warc_1_1(forbidExtensions);
-                    }
-                    try (WarcReader reader = new WarcReader(Paths.get(arg))) {
-                        reader.calculateBlockDigest();
-                        if (verbose)
-                            System.out.println("Validating " + arg);
-                        if (!validator.validate(reader)) {
-                            System.err.println("Failed to validate " + arg);
-                            res = 1;
-                        }
-                    }
+                    warcFiles.add(Paths.get(args[i]));
             }
         }
+
+        ValidateTool validator = new ValidateTool(verbose);
+        if (headerValidation) {
+            validator.headerValidator = HeaderValidator.warc_1_1(forbidExtensions);
+        }
+
+        ForkJoinPool pool = new ForkJoinPool(threads);
+        try {
+            res = pool.submit(() -> warcFiles.parallelStream()
+                            .map(validator::validate)
+                            .anyMatch(valid -> !valid) ? 1 : 0).get();
+        } finally {
+            pool.shutdown();
+        }
+
         System.exit(res);
     }
 
