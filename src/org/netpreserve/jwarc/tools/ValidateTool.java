@@ -49,10 +49,10 @@ public class ValidateTool extends WarcTool {
         }
 
         public void log(String form) {
-            sb.ifPresent(s -> s.append("    ").append(getPrefix()).append(form).append('\n'));
+            sb.ifPresent(s -> s.append("    ").append(form).append('\n'));
         }
         public void log(String form, Object... args) {
-            sb.ifPresent(s -> s.append("    ").append(getPrefix()).append(String.format(form, args)).append('\n'));
+            sb.ifPresent(s -> s.append("    ").append(String.format(form, args)).append('\n'));
         }
         public void error(String form, Object... args) {
             if (sb.isPresent()) {
