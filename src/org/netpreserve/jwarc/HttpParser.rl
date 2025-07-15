@@ -15,6 +15,7 @@ action end_of_text { endOfText = bufPos; }
 action handle_method  { method = new String(buf, 0, bufPos, US_ASCII); bufPos = 0; }
 action handle_reason  { reason = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
 action handle_target  { target = new String(buf, 0, bufPos, ISO_8859_1); bufPos = 0; }
+action handle_invalid_header_line { bufPos = 0; }
 action finish { finished = true; fbreak; }
 
 action fold {
@@ -95,9 +96,10 @@ field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' 
 field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
 field_value_folded_lenient = LWS_lenient (TEXT_lenient OWS)? >fold $push;
 field_value_lenient = field_value_first_lenient (field_value_folded_lenient)*;
+invalid_header_line = (any - '\r' - '\n' - ' ' - '\t')  (any - '\r' - '\n' - ':')* CRLF_lenient %handle_invalid_header_line;
 
 named_field_lenient = (field_name_lenient OWS)? ":" >handle_name field_value_lenient CRLF_lenient %handle_value;
-named_fields_normal = named_field_lenient* CRLF_lenient @finish;
+named_fields_normal = (named_field_lenient | invalid_header_line)* CRLF_lenient @finish;
 
 named_field_unterminated = (field_name_lenient OWS)? ":" >handle_name field_value_lenient %handle_value;
 named_fields_unterminated = named_field_lenient* named_field_unterminated? %finish;

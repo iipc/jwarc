@@ -106,6 +106,10 @@ public class HttpParserTest {
         // missing version number (c.1997)
         parse("HTTP 200 Document follows\r\nServer: NCSA/1.5.1\r\n\r\n");
         assertEquals(new MessageVersion("HTTP", 0, 0), httpParser.version());
+
+        // header line missing ":" (c.1998)
+        parse("HTTP/1.1 200 OK\r\nServer: Microsoft-IIS/4.0\r\nWelcome to my server!\r\nContent-Type: text/plain\r\n\r\n");
+        assertEquals(Optional.of("text/plain"), httpParser.headers().sole("Content-Type"));
     }
 
     @Test
