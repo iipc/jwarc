@@ -102,6 +102,10 @@ public class HttpParserTest {
         assertEquals(Optional.of("value2"), httpParser.headers().sole("key2"));
         parse("HTTP/2 200\r\nKey: value\r\nkey2: value2\r\n");
         assertEquals(new MessageVersion("HTTP", 2, 0), httpParser.version());
+
+        // missing version number (c.1997)
+        parse("HTTP 200 Document follows\r\nServer: NCSA/1.5.1\r\n\r\n");
+        assertEquals(new MessageVersion("HTTP", 0, 0), httpParser.version());
     }
 
     @Test
