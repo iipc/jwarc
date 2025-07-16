@@ -15,16 +15,25 @@ public class ListTool {
                         url = ((WarcTargetRecord) record).target();
                     }
 
+                    Exception exception = null;
                     String methodOrStatus = "-";
                     if (record.contentType().base().equals(MediaType.HTTP)) {
-                        if (record instanceof WarcRequest) {
-                            methodOrStatus = ((WarcRequest) record).http().method();
-                        } else if (record instanceof WarcResponse) {
-                            methodOrStatus = String.valueOf(((WarcResponse) record).http().status());
+                        try {
+                            if (record instanceof WarcRequest) {
+                                methodOrStatus = ((WarcRequest) record).http().method();
+                            } else if (record instanceof WarcResponse) {
+                                methodOrStatus = String.valueOf(((WarcResponse) record).http().status());
+                            }
+                        } catch (ParsingException e) {
+                            methodOrStatus = "invalid";
+                            exception = e;
                         }
                     }
 
                     System.out.format("%10d %-10s %-4s %s\n", reader.position(), record.type(), methodOrStatus, url);
+                    if (exception != null) {
+                        System.err.println(exception.getMessage());
+                    }
                 }
             }
         }
