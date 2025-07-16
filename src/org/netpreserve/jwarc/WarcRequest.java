@@ -31,14 +31,19 @@ public class WarcRequest extends WarcCaptureRecord {
             buffer.flip();
             MessageBody body = body();
             if (body.position() != 0) throw new IllegalStateException("http() cannot be called after reading from body");
-            if (body instanceof LengthedBody) {
-                // if we can, save a copy of the raw header and push it back so we don't invalidate body
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                LengthedBody lengthed = (LengthedBody) body;
-                http = HttpRequest.parse(lengthed.discardPushbackOnRead(), buffer, Channels.newChannel(baos));
-                lengthed.pushback(baos.toByteArray());
-            } else {
-                http = HttpRequest.parse(body, buffer);
+            try {
+                if (body instanceof LengthedBody) {
+                    // if we can, save a copy of the raw header and push it back so we don't invalidate body
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    LengthedBody lengthed = (LengthedBody) body;
+                    http = HttpRequest.parse(lengthed.discardPushbackOnRead(), buffer, Channels.newChannel(baos));
+                    lengthed.pushback(baos.toByteArray());
+                } else {
+                    http = HttpRequest.parse(body, buffer);
+                }
+            } catch (ParsingException e) {
+                e.recordSource = recordSource;
+                throw e;
             }
         }
         return http;

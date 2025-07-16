@@ -39,6 +39,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private long headerLength;
     private boolean blockDigestCalculation = false;
     private Consumer<String> warningHandler;
+    private String filename;
 
     /**
      * Create WarcReader with user-provided buffer. Data contained in the buffer is
@@ -113,6 +114,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
 
     public WarcReader(Path path) throws IOException {
         this(FileChannel.open(path));
+        this.filename = path.getFileName().toString();
     }
 
     private static Map<String, WarcRecord.Constructor> initDefaultTypes() {
@@ -156,8 +158,13 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         }
 
         parser.reset();
-        if (!parser.parse(channel, buffer)) {
-            return Optional.empty();
+        try {
+            if (!parser.parse(channel, buffer)) {
+                return Optional.empty();
+            }
+        } catch (ParsingException e) {
+            e.recordSource = new RecordSource(filename, position);
+            throw e;
         }
         headerLength = parser.position();
         MessageHeaders headers = parser.headers();
@@ -185,7 +192,9 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         if (constructor == null) {
             constructor = types.get("default");
         }
-        return constructor.construct(version, headers, body);
+        WarcRecord record = constructor.construct(version, headers, body);
+        record.recordSource = new RecordSource(filename, position);
+        return record;
     }
 
     private long consumeTrailer() throws IOException {

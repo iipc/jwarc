@@ -15,6 +15,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.io.IOException;
 
 public class WarcRecord extends Message {
+    RecordSource recordSource;
+
     WarcRecord(MessageVersion version, MessageHeaders headers, MessageBody body) {
         super(version, headers, body);
     }

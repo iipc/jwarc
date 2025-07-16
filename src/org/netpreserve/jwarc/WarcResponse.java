@@ -30,14 +30,19 @@ public class WarcResponse extends WarcCaptureRecord {
         if (http == null) {
             MessageBody body = body();
             if (body.position() != 0) throw new IllegalStateException("http() cannot be called after reading from body");
-            if (body instanceof LengthedBody) {
-                // if we can, save a copy of the raw header and push it back so we don't invalidate body
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                LengthedBody lengthed = (LengthedBody) body;
-                http = HttpResponse.parse(lengthed.discardPushbackOnRead(), Channels.newChannel(baos));
-                lengthed.pushback(baos.toByteArray());
-            } else {
-                http = HttpResponse.parse(body);
+            try {
+                if (body instanceof LengthedBody) {
+                    // if we can, save a copy of the raw header and push it back so we don't invalidate body
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    LengthedBody lengthed = (LengthedBody) body;
+                    http = HttpResponse.parse(lengthed.discardPushbackOnRead(), Channels.newChannel(baos));
+                    lengthed.pushback(baos.toByteArray());
+                } else {
+                    http = HttpResponse.parse(body);
+                }
+            } catch (ParsingException e) {
+                e.recordSource = recordSource;
+                throw e;
             }
         }
         return http;
@@ -49,7 +54,12 @@ public class WarcResponse extends WarcCaptureRecord {
             if (body.position() != 0) throw new IllegalStateException("gemini() cannot be called after reading from body");
             ByteBuffer buffer = ByteBuffer.allocate(8192);
             buffer.flip();
-            gemini = GeminiResponse.parse(body, buffer);
+            try {
+                gemini = GeminiResponse.parse(body, buffer);
+            } catch (ParsingException e) {
+                e.recordSource = recordSource;
+                throw e;
+            }
             if (body instanceof LengthedBody) {
                 ((LengthedBody)body).pushback(gemini.serializeHeader());
             }
