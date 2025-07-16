@@ -90,6 +90,16 @@ action handle_arc_date {
     bufPos = 0;
 }
 
+action handle_arc_content_type {
+    String contentType = new String(buf, 0, bufPos, US_ASCII);
+    // Normally the ARC content-type header is copied from the HTTP header, but as a special case "alexa/dat"
+    // indicates the body is not a HTTP message.
+    if (contentType.equals("alexa/dat")) {
+        setHeader("Content-Type", "alexa/dat");
+    }
+    bufPos = 0;
+}
+
 action handle_arc_length {
     setHeader("Content-Length", new String(buf, 0, bufPos, US_ASCII));
     bufPos = 0;
@@ -163,8 +173,8 @@ arc_url = (lower+ ":" arc_url_byte*) $push %handle_arc_url;
 arc_ip = ("0" | digit{1,3} "." digit{1,3} "." digit{1,3} "." digit{1,3}) $push %handle_arc_ip;
 arc_date = digit{14} $push %handle_arc_date;
 arc_date_lenient = digit{8,28} $push %handle_arc_date;
-arc_mime = (token ("/" token ( OWS ";" OWS parameter )*)?)?;
-arc_mime_lenient = arc_mime | (any - " " - "\n")*;
+arc_content_type = (token ("/" token ( OWS ";" OWS parameter )*)?)?;
+arc_content_type_lenient = arc_content_type | (any - " " - "\n")* $push %handle_arc_content_type;
 arc_length = digit+ $push %handle_arc_length %handle_arc;
 
 arc_v2_status = digit{3} $push %handle_arc_status;
@@ -174,7 +184,7 @@ arc_v2_offset = digit+;
 arc_v2_filename = arc_url_byte+;
 arc_v2_fields = arc_v2_status " " arc_v2_checksum " " arc_v2_location " " arc_v2_offset " " arc_v2_filename;
 
-arc_header = "\n"{0,3} arc_url " " arc_ip " " arc_date_lenient " " arc_mime_lenient
+arc_header = "\n"{0,3} arc_url " " arc_ip " " arc_date_lenient " " arc_content_type_lenient
              " " (arc_v2_fields " ")? arc_length "\n";
 
 warc_fields_lenient := named_fields_lenient;
