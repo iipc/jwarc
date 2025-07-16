@@ -110,6 +110,13 @@ public class HttpParserTest {
         // header line missing ":" (c.1998)
         parse("HTTP/1.1 200 OK\r\nServer: Microsoft-IIS/4.0\r\nWelcome to my server!\r\nContent-Type: text/plain\r\n\r\n");
         assertEquals(Optional.of("text/plain"), httpParser.headers().sole("Content-Type"));
+
+        // folded reason phrase (c.1999)
+        parse("HTTP/1.1 404 Line 1.\n" +
+              "  Line 2.\n" +
+              "Server: Domino-Go-Webserver/4.6.2.5");
+        assertEquals("Line 1.", httpParser.reason());
+        assertEquals(Optional.of("Domino-Go-Webserver/4.6.2.5"), httpParser.headers().sole("Server"));
     }
 
     @Test

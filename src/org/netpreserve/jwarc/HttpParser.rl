@@ -90,7 +90,8 @@ request_target_lenient = (any - ' ' - '\n' - '\r')+ $push %handle_target;
 request_line_lenient = method " "+ request_target_lenient (" "+ http_version)? " "* CRLF_lenient;
 
 http_version_lenient = "HTTP" ("/" version_major ("." version_minor)?)?;
-status_line_lenient = http_version_lenient " "+ status_code (" " reason_phrase)? CRLF_lenient;
+folded_reason_phrase_lenient = LWS_lenient TEXT_lenient OWS;
+status_line_lenient = http_version_lenient " "+ status_code (" " reason_phrase)? folded_reason_phrase_lenient? CRLF_lenient;
 
 field_name_lenient = ((any - '\r' - '\n' - ' ' - '\t' - ':') (any - '\r' - '\n' - ':')*) $push;
 field_value_first_lenient = OWS (TEXT_lenient OWS)? $push;
