@@ -125,7 +125,7 @@ public class CdxWriter implements Closeable {
                     record = reader.next().orElse(null);
                 }
             } catch (ParsingException e) {
-                emitWarning(filename, reader.position(), "ParsingException: " + e.getMessage());
+                emitWarning(filename, reader.position(), "ParsingException: " + e.getBaseMessage());
                 record = reader.next().orElse(null);
             }
         }

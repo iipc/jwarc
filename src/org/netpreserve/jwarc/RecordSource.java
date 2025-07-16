@@ -19,8 +19,8 @@ class RecordSource {
 
     public String toString() {
         if (filename == null) {
-            return "record offset " + offset;
+            return "offset " + offset;
         }
-        return "record offset " + offset + " in " + filename;
+        return "offset " + offset + " in " + filename;
     }
 }

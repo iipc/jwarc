@@ -22,4 +22,8 @@ public class ParsingException extends IOException {
             return super.getMessage();
         }
     }
+
+    public String getBaseMessage() {
+        return super.getMessage();
+    }
 }
