@@ -79,13 +79,15 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             }
         }
 
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        if (buffer.getShort(buffer.position()) == GzipChannel.GZIP_MAGIC) {
+        ByteBuffer leBuffer = buffer.asReadOnlyBuffer();
+        leBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        if (leBuffer.getShort(buffer.position()) == (short) 0x8b1f) {
             this.channel = new GunzipChannel(channel, buffer);
             this.buffer = ByteBuffer.allocate(8192);
             this.buffer.flip();
             compression = WarcCompression.GZIP;
-        } else if (buffer.getInt(buffer.position()) == 0xfd2fb528 || buffer.getInt(buffer.position()) == 0x184D2A5D) {
+        } else if (leBuffer.getInt(buffer.position()) == 0xfd2fb528 ||
+                   leBuffer.getInt(buffer.position()) == 0x184D2A5D) {
             try {
                 this.channel = (ReadableByteChannel) Class.forName("org.netpreserve.jwarc.ZstdDecompressingChannel")
                         .getConstructor(ReadableByteChannel.class, ByteBuffer.class)
