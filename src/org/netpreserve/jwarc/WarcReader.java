@@ -49,7 +49,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      * 
      * @param channel read WARC data from
      * @param buffer  buffer to read initial data from, later used to buffer data
-     *                from channel
+     *                from channel. Will be changed to little endian.
      * @throws IOException
      * @throws IllegalArgumentException if buffer is not readable or is not backed
      *                                  by an array
@@ -79,38 +79,31 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             }
         }
 
-        ByteOrder originalOrder = buffer.order();
-        try {
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-
-            if (buffer.getShort(buffer.position()) == GzipChannel.GZIP_MAGIC) {
-                this.channel = new GunzipChannel(channel, buffer);
-                this.buffer = ByteBuffer.allocate(8192);
-                this.buffer.flip();
-                compression = WarcCompression.GZIP;
-            } else if (buffer.getInt(buffer.position()) == 0xfd2fb528 || buffer.getInt(buffer.position()) == 0x184D2A5D) {
-                try {
-                    this.channel = (ReadableByteChannel) Class.forName("org.netpreserve.jwarc.ZstdDecompressingChannel")
-                            .getConstructor(ReadableByteChannel.class, ByteBuffer.class)
-                            .newInstance(channel, buffer);
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException | ClassNotFoundException e) {
-                    throw new IOException(e);
-                }
-                this.buffer = ByteBuffer.allocate(8192);
-                this.buffer.flip();
-                compression = WarcCompression.ZSTD;
-
-                // update position in case we read a dictionary frame
-                position = ((DecompressingChannel) this.channel).inputPosition();
-            } else {
-                this.channel = channel;
-                this.buffer = buffer;
-                compression = WarcCompression.NONE;
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        if (buffer.getShort(buffer.position()) == GzipChannel.GZIP_MAGIC) {
+            this.channel = new GunzipChannel(channel, buffer);
+            this.buffer = ByteBuffer.allocate(8192);
+            this.buffer.flip();
+            compression = WarcCompression.GZIP;
+        } else if (buffer.getInt(buffer.position()) == 0xfd2fb528 || buffer.getInt(buffer.position()) == 0x184D2A5D) {
+            try {
+                this.channel = (ReadableByteChannel) Class.forName("org.netpreserve.jwarc.ZstdDecompressingChannel")
+                        .getConstructor(ReadableByteChannel.class, ByteBuffer.class)
+                        .newInstance(channel, buffer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException | ClassNotFoundException e) {
+                throw new IOException(e);
             }
+            this.buffer = ByteBuffer.allocate(8192);
+            this.buffer.flip();
+            compression = WarcCompression.ZSTD;
 
-        } finally {
-            buffer.order(originalOrder);
+            // update position in case we read a dictionary frame
+            position = ((DecompressingChannel) this.channel).inputPosition();
+        } else {
+            this.channel = channel;
+            this.buffer = buffer;
+            compression = WarcCompression.NONE;
         }
 
         underlyingChannel = channel;
