@@ -305,26 +305,27 @@ Note: revisit records never have a payload so
 
 ## Comparison
 
-| Criteria            | jwarc       | [JWAT]          | [webarchive-commons]  |
-|---------------------|-------------|-----------------|---------------|
-| License             | Apache 2    | Apache 2        | Apache 2      |
-| Parser based on     | Ragel FSM   | Hand-rolled FSM | Apache HTTP   |
-| Push parsing        | Low level   | ✘               | ✘             |
-| Folded headers †    | ✔           | ✔               | ✔             | 
-| [Encoded words] †   | ✘           | ✘ (disabled)    | ✘             |
-| Validation          | The basics  | ✔               | ✘             |
-| Strict parsing  ‡   | ✔           | ✘               | ✘             |
-| Lenient parsing     | HTTP only   | ✔               | ✔             |
-| Multi-value headers | ✔           | ✔               | ✘             |
-| I/O Framework       | NIO         | IO              | IO            |
-| Record type classes | ✔           | ✘               | ✘             |
-| Typed accessors     | ✔           | ✔               | Some          |
-| GZIP detection      | ✔           | ✔               | Filename only |
-| WARC writer         | Barebones   | ✔               | ✔             |
-| ARC reader          | Auto        | Separate API    | Factory       |
-| ARC writer          | ✘           | ✔               | ✔             |
-| Speed * (.warc)     | 1x          | ~5x slower      | ~13x slower   |
-| Speed * (.warc.gz)  | 1x          | ~1.4x slower    | ~2.8x slower  |
+| Criteria            | jwarc      | [JWAT]          | [webarchive-commons] |
+|---------------------|------------|-----------------|----------------------|
+| License             | Apache 2   | Apache 2        | Apache 2             |
+| Parser based on     | Ragel FSM  | Hand-rolled FSM | Apache HTTP          |
+| Push parsing        | Low level  | ✘               | ✘                    |
+| Folded headers †    | ✔          | ✔               | ✔                    | 
+| [Encoded words] †   | ✘          | ✘ (disabled)    | ✘                    |
+| Validation          | The basics | ✔               | ✘                    |
+| Strict parsing  ‡   | ✔          | ✘               | ✘                    |
+| Lenient parsing     | HTTP only  | ✔               | ✔                    |
+| Multi-value headers | ✔          | ✔               | ✘                    |
+| I/O Framework       | NIO        | IO              | IO                   |
+| Record type classes | ✔          | ✘               | ✘                    |
+| Typed accessors     | ✔          | ✔               | Some                 |
+| GZIP detection      | ✔          | ✔               | Filename only        |
+| [zstd compression]  | read-only  | ✘               | ✘                    |
+| WARC writer         | Barebones  | ✔               | ✔                    |
+| ARC reader          | Auto       | Separate API    | Factory              |
+| ARC writer          | ✘          | ✔               | ✔                    |
+| Speed * (.warc)     | 1x         | ~5x slower      | ~13x slower          |
+| Speed * (.warc.gz)  | 1x         | ~1.4x slower    | ~2.8x slower         |
 
 (†) WARC features copied from HTTP that have since been deprecated in HTTP. I'm not aware of any software that writes
 WARCs using these features and usage of them should probably be avoided. JWAT behaves differently from jwarc and
@@ -345,6 +346,7 @@ See also: [Unaffiliated benchmark against other languages](https://code402.com/h
 [JWAT]: https://sbforge.org/display/JWAT/JWAT
 [webarchive-commons]: https://github.com/iipc/webarchive-commons
 [Encoded words]: https://www.ietf.org/rfc/rfc2047.txt
+[zstd compression]: https://iipc.github.io/warc-specifications/specifications/warc-zstd/
 
 ### Other WARC libraries
 

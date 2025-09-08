@@ -1,11 +1,12 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2025 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channels;
@@ -61,7 +62,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         startPosition = tryPosition(channel);
         position = startPosition;
 
-        while (buffer.remaining() < 2) {
+        while (buffer.remaining() < 4) {
             buffer.compact();
             int n = channel.read(buffer);
             buffer.flip();
@@ -78,17 +79,40 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             }
         }
 
-        if ((buffer.order() == ByteOrder.LITTLE_ENDIAN && buffer.getShort(buffer.position()) == (short) 0x8b1f)
-                || (buffer.order() == ByteOrder.BIG_ENDIAN && buffer.getShort(buffer.position()) == 0x1f8b)) {
-            this.channel = new GunzipChannel(channel, buffer);
-            this.buffer = ByteBuffer.allocate(8192);
-            this.buffer.flip();
-            compression = WarcCompression.GZIP;
-        } else {
-            this.channel = channel;
-            this.buffer = buffer;
-            compression = WarcCompression.NONE;
+        ByteOrder originalOrder = buffer.order();
+        try {
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            if (buffer.getShort(buffer.position()) == GzipChannel.GZIP_MAGIC) {
+                this.channel = new GunzipChannel(channel, buffer);
+                this.buffer = ByteBuffer.allocate(8192);
+                this.buffer.flip();
+                compression = WarcCompression.GZIP;
+            } else if (buffer.getInt(buffer.position()) == 0xfd2fb528 || buffer.getInt(buffer.position()) == 0x184D2A5D) {
+                try {
+                    this.channel = (ReadableByteChannel) Class.forName("org.netpreserve.jwarc.ZstdDecompressingChannel")
+                            .getConstructor(ReadableByteChannel.class, ByteBuffer.class)
+                            .newInstance(channel, buffer);
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                         NoSuchMethodException | ClassNotFoundException e) {
+                    throw new IOException(e);
+                }
+                this.buffer = ByteBuffer.allocate(8192);
+                this.buffer.flip();
+                compression = WarcCompression.ZSTD;
+
+                // update position in case we read a dictionary frame
+                position = ((DecompressingChannel) this.channel).inputPosition();
+            } else {
+                this.channel = channel;
+                this.buffer = buffer;
+                compression = WarcCompression.NONE;
+            }
+
+        } finally {
+            buffer.order(originalOrder);
         }
+
         underlyingChannel = channel;
     }
 
@@ -150,8 +174,8 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             record.body().close();
             long trailerLength = consumeTrailer();
 
-            if (channel instanceof GunzipChannel) {
-                position = startPosition + ((GunzipChannel) channel).inputPosition();
+            if (channel instanceof DecompressingChannel) {
+                position = startPosition + ((DecompressingChannel) channel).inputPosition();
             } else {
                 position += headerLength + record.body().size() + trailerLength;
             }
@@ -309,8 +333,8 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             record.body().close();
             record = null;
         }
-        if (compression == WarcCompression.GZIP) {
-            ((GunzipChannel)channel).reset();
+        if (channel instanceof DecompressingChannel) {
+            ((DecompressingChannel)channel).reset();
         }
     }
 

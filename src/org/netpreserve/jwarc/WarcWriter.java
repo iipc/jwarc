@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018-2023 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2025 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
@@ -47,8 +47,10 @@ public class WarcWriter implements Closeable {
         this.compression = compression;
         if (compression == WarcCompression.GZIP) {
             this.channel = new GzipChannel(channel);
-        } else {
+        } else if (compression == WarcCompression.NONE || compression == null) {
             this.channel = channel;
+        } else {
+            throw new IllegalArgumentException("Unsupported compression: " + compression);
         }
 
         if (channel instanceof SeekableByteChannel) {

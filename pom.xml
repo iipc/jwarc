@@ -77,6 +77,11 @@
           <scope>compile</scope>
           <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>1.5.7-4</version>
+        </dependency>
     </dependencies>
 
     <properties>

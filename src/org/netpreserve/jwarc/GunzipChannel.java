@@ -1,6 +1,6 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018-2022 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2025 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
@@ -15,7 +15,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
 
-class GunzipChannel implements ReadableByteChannel {
+class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
     private static final int FHCRC = 2;
     private static final int FEXTRA = 4;
     private static final int FNAME = 8;

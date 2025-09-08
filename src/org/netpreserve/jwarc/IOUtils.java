@@ -1,11 +1,12 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (C) 2018 National Library of Australia and the jwarc contributors
+ * Copyright (C) 2018-2025 National Library of Australia and the jwarc contributors
  */
 
 package org.netpreserve.jwarc;
 
 import javax.net.ssl.SSLSocketFactory;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,6 +23,7 @@ public final class IOUtils {
 
     /**
      * Transfers as many bytes as possible from src to dst.
+     *
      * @return the number of bytes transferred.
      */
     static int transfer(ByteBuffer src, ByteBuffer dst) {
@@ -30,10 +32,11 @@ public final class IOUtils {
 
     /**
      * Transfers up to limits from src to dst.
+     *
      * @return the number of bytes transferred.
      */
     static int transfer(ByteBuffer src, ByteBuffer dst, long limit) {
-        return transferExactly(src, dst, (int)Math.min(Math.min(src.remaining(), dst.remaining()), limit));
+        return transferExactly(src, dst, (int) Math.min(Math.min(src.remaining(), dst.remaining()), limit));
     }
 
     private static int transferExactly(ByteBuffer src, ByteBuffer dst, int n) {
@@ -125,7 +128,7 @@ public final class IOUtils {
 
     public static byte[] readNBytes(InputStream stream, int n) throws IOException {
         byte[] buffer = new byte[n];
-        for (int remaining = n; remaining > 0;) {
+        for (int remaining = n; remaining > 0; ) {
             int read = stream.read(buffer, buffer.length - remaining, remaining);
             if (read < 0) {
                 return Arrays.copyOf(buffer, buffer.length - remaining);
@@ -133,5 +136,27 @@ public final class IOUtils {
             remaining -= read;
         }
         return buffer;
+    }
+
+    /**
+     * Ensures that at least the specified number of bytes are available in the buffer by reading from the provided channel
+     * if necessary. If the buffer already contains enough bytes, no data is read. If the channel reaches EOF before the
+     * required number of bytes is available, an EOFException is thrown.
+     *
+     * @return the total number of bytes read from the channel to ensure the required availability in the buffer.
+     * @throws IOException if an I/O error occurs while reading from the channel.
+     * @throws EOFException if the channel reaches EOF before the required number of bytes are available.
+     */
+    static int ensureAvailable(ReadableByteChannel channel, ByteBuffer buffer, int needed) throws IOException {
+        int totalRead = 0;
+        if (buffer.remaining() >= needed) return 0;
+        buffer.compact();
+        while (buffer.position() < needed) {
+            int n = channel.read(buffer);
+            if (n == -1) throw new EOFException("expected " + (needed - totalRead) + " more bytes in channel");
+            totalRead += n;
+        }
+        buffer.flip();
+        return totalRead;
     }
 }
