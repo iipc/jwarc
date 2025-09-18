@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+/**
+ * Reads CDX records from an input stream.
+ */
 public class CdxReader implements Iterable<CdxRecord>, Closeable {
     private final BufferedReader reader;
     private CdxFormat format;

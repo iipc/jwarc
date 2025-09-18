@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### New features
+
+- CdxRecord: added surt(), format(), values() and toString()
+
 ## 0.32.0
 
 ### Added

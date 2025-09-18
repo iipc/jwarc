@@ -11,7 +11,13 @@ import org.netpreserve.jwarc.URIs;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
+/**
+ * A single CDX record.
+ */
 public class CdxRecord {
     private final String[] values;
     private final CdxFormat format;
@@ -31,11 +37,21 @@ public class CdxRecord {
         }
     }
 
+    /**
+     * Returns the value of the given field. See {@link CdxFields} for a list of valid fields.
+     */
     public String get(int field) {
         int i = format.indexOf(field);
         if (i == -1) return null;
         String value = values[i];
         return value.equals("-") ? null : value;
+    }
+
+    /**
+     * Returns the value of the 'normalized SURT' (N) field.
+     */
+    public String surt() {
+        return get(CdxFields.NORMALIZED_SURT);
     }
 
     public Instant date() {
@@ -98,5 +114,26 @@ public class CdxRecord {
     public MediaType contentType() {
         String value = get(CdxFields.MIME_TYPE);
         return value == null ? null : MediaType.parseLeniently(value);
+    }
+
+    /**
+     * Returns the CDX format of this record.
+     */
+    public CdxFormat format() {
+        return format;
+    }
+
+    /**
+     * Returns an unmodifiable list of the field values in this record.
+     */
+    public List<String> values() {
+        return Collections.unmodifiableList(Arrays.asList(values));
+    }
+
+    /**
+     * Returns this record as a space-separated string.
+     */
+    public String toString() {
+        return String.join(" ", values);
     }
 }
