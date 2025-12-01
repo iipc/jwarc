@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
+import static org.netpreserve.jwarc.tools.DigestEncodingUtils.*;
 
 public class WarcDigestTest {
 
@@ -38,24 +39,24 @@ public class WarcDigestTest {
 
     @Test
     public void testBase32()  {
-        assertEquals("AELZ2347", WarcDigest.base32Encode(WarcDigest.base32Decode("aelz2347")));
+        assertEquals("AELZ2347", base32Encode(base32Decode("aelz2347")));
         // test with and without padding (although obligatory following RFC 4648)
-        assertEquals("AELZ2347AE======", WarcDigest.base32Encode(WarcDigest.base32Decode("aelz2347ae======")));
-        assertEquals("AELZ2347AE======", WarcDigest.base32Encode(WarcDigest.base32Decode("aelz2347ae")));
+        assertEquals("AELZ2347AE======", base32Encode(base32Decode("aelz2347ae======")));
+        assertEquals("AELZ2347AE======", base32Encode(base32Decode("aelz2347ae")));
     }
 
     @Test
     public void testBase64()  {
-        assertEquals("ARedb58B", WarcDigest.base64Encode(WarcDigest.base64Decode("ARedb58B")));
+        assertEquals("ARedb58B", base64Encode(base64Decode("ARedb58B")));
         // test with and without padding (although obligatory following RFC 4648)
-        assertEquals("ARedb58BAQ==", WarcDigest.base64Encode(WarcDigest.base64Decode("ARedb58BAQ==")));
-        assertEquals("ARedb58BAQ==", WarcDigest.base64Encode(WarcDigest.base64Decode("ARedb58BAQ")));
+        assertEquals("ARedb58BAQ==", base64Encode(base64Decode("ARedb58BAQ==")));
+        assertEquals("ARedb58BAQ==", base64Encode(base64Decode("ARedb58BAQ")));
     }
 
     @Test
     public void testEncodeHex() {
-        assertEquals("000190ff", WarcDigest.hexEncode(new byte[]{0x00, 0x01, (byte) 0x90, (byte) 0xff}));
-        assertEquals("000190ff", WarcDigest.hexEncode(WarcDigest.hexDecode("000190ff")));
+        assertEquals("000190ff", hexEncode(new byte[]{0x00, 0x01, (byte) 0x90, (byte) 0xff}));
+        assertEquals("000190ff", hexEncode(hexDecode("000190ff")));
     }
 
     @Test
