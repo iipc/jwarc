@@ -36,7 +36,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private final WarcCompression compression;
     private WarcRecord record;
     private long startPosition;
-    private long position;
+    private long recordPosition;
     private long headerLength;
     private boolean blockDigestCalculation = false;
     private Consumer<String> warningHandler;
@@ -60,7 +60,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         }
         this.types = new HashMap<>(defaultTypes);
         startPosition = tryPosition(channel);
-        position = startPosition;
+        recordPosition = startPosition;
 
         while (buffer.remaining() < 4) {
             buffer.compact();
@@ -101,7 +101,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             compression = WarcCompression.ZSTD;
 
             // update position in case we read a dictionary frame
-            position = ((DecompressingChannel) this.channel).inputPosition();
+            recordPosition = ((DecompressingChannel) this.channel).inputPosition();
         } else {
             this.channel = channel;
             this.buffer = buffer;
@@ -170,9 +170,9 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             long trailerLength = consumeTrailer();
 
             if (channel instanceof DecompressingChannel) {
-                position = startPosition + ((DecompressingChannel) channel).inputPosition();
+                recordPosition = startPosition + ((DecompressingChannel) channel).inputPosition();
             } else {
-                position += headerLength + record.body().size() + trailerLength;
+                recordPosition += headerLength + record.body().size() + trailerLength;
             }
         }
 
@@ -182,7 +182,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 return Optional.empty();
             }
         } catch (ParsingException e) {
-            e.recordSource = new RecordSource(filename, position);
+            e.recordSource = new RecordSource(filename, recordPosition);
             throw e;
         }
         headerLength = parser.position();
@@ -195,6 +195,12 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         return Optional.of(record);
     }
 
+    /**
+     * This replaces the conditonal statement above and wraps the given message body.
+     * @param headers the headers of the current WARC record.
+     * @param body the body itself of the current WARC record.
+     * @return It would either return just the body itself or a digesting wrapper around it.
+     */
     private MessageBody wrapWithBlockDigest(MessageHeaders headers, MessageBody body) {
         if(!blockDigestCalculation) {
             return body;
@@ -220,7 +226,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             constructor = types.get("default");
         }
         WarcRecord record = constructor.construct(version, headers, body);
-        record.recordSource = new RecordSource(filename, position);
+        record.recordSource = new RecordSource(filename, recordPosition);
         return record;
     }
 
@@ -312,7 +318,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      * that the start of a new record corresponds to the start of a compression block.
      */
     public long position() {
-        return position;
+        return recordPosition;
     }
 
     /**
@@ -328,7 +334,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             throw new UnsupportedOperationException("underlying channel is not seekable");
         }
         ((SeekableByteChannel) underlyingChannel).position(newPosition);
-        position = newPosition;
+        recordPosition = newPosition;
         startPosition = newPosition;
         buffer.clear();
         buffer.flip();
