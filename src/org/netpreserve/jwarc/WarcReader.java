@@ -24,6 +24,8 @@ import java.util.stream.StreamSupport;
 import static java.util.Spliterator.NONNULL;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
+import static org.netpreserve.jwarc.DigestUtils.getDigester;
+
 
 public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private static final int CRLFCRLF = 0x0d0a0d0a;
@@ -209,7 +211,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         Optional<String> blockDigestHeader = headers.sole("WARC-Block-Digest");
         if (blockDigestHeader.isPresent()) {
             try {
-                MessageDigest md = (new WarcDigest(blockDigestHeader.get())).getDigester();
+                MessageDigest md = getDigester(new WarcDigest(blockDigestHeader.get()).algorithm());
                 body = new DigestingMessageBody(body, md);
             } catch (NoSuchAlgorithmException e) {
                 // ignore in order to be able to read also WARC records with unknown digest algorithm

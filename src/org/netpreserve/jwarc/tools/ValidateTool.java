@@ -120,7 +120,7 @@ public class ValidateTool extends WarcTool {
 
     private static void validateDigest(MessageBody body, WarcDigest digest, AtomicLong consumedBytes)
             throws IOException, NoSuchAlgorithmException, DigestException {
-        MessageDigest md = digest.getDigester();
+        MessageDigest md = DigestUtils.getDigester(digest.algorithm());
         long size = readBody(body, b -> md.update(b));
         consumedBytes.set(size);
         WarcDigest dig = new WarcDigest(md);
@@ -234,7 +234,8 @@ public class ValidateTool extends WarcTool {
                     }
                 } else {
                     try {
-                        record.blockDigest().get().getDigester();
+                        WarcDigest digest = record.blockDigest().get();
+                        DigestUtils.getDigester(digest.algorithm());
                         logger.log("block digest not calculated (unknown reason)");
                     } catch (NoSuchAlgorithmException e) {
                         logger.log("block digest not calculated: %s", e.getMessage());

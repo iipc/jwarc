@@ -12,6 +12,8 @@ import java.util.Base64;
 import java.util.Locale;
 import java.util.Objects;
 
+import static org.netpreserve.jwarc.DigestUtils.getDigester;
+
 public class WarcDigest {
     private final String raw;
     private String algorithm;
@@ -231,25 +233,5 @@ public class WarcDigest {
     @Override
     public int hashCode() {
         return Objects.hash(algorithm(), value());
-    }
-
-    /**
-     * Get digester for algorithm names not matching the canonical Java names, e.g.
-     * "sha256" instead of "SHA-256"
-     */
-    public static MessageDigest getDigester(String algorithm) throws NoSuchAlgorithmException {
-        try {
-            return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
-            // transform "sha256" to "SHA-256" and similar
-            if (algorithm.toLowerCase(Locale.ROOT).startsWith("sha")) {
-                algorithm = "SHA-" + algorithm.substring(3);
-            }
-        }
-        return MessageDigest.getInstance(algorithm);
-    }
-
-    public MessageDigest getDigester() throws NoSuchAlgorithmException {
-        return getDigester(algorithm());
     }
 }
