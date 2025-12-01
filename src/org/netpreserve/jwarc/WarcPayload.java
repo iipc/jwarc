@@ -23,4 +23,23 @@ public abstract class WarcPayload {
     abstract Optional<MediaType> identifiedType();
 
     public abstract Optional<WarcDigest> digest();
+
+    static Optional<WarcPayload> createPayload(MessageBody body, MediaType type) {
+        return Optional.of(new WarcPayload(body) {
+            @Override
+            public MediaType type() {
+                return type;
+            }
+
+            @Override
+            Optional<MediaType> identifiedType() {
+                return identifiedType();
+            }
+
+            @Override
+            public Optional<WarcDigest> digest() {
+                return digest();
+            }
+        });
+    }
 }

@@ -12,6 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.util.Optional;
 
+import static org.netpreserve.jwarc.WarcPayload.createPayload;
+
 public class WarcRequest extends WarcCaptureRecord {
 
     private HttpRequest http;
@@ -75,25 +77,9 @@ public class WarcRequest extends WarcCaptureRecord {
     }
 
     public Optional<WarcPayload> payload() throws IOException {
-        if (contentType().base().equals(MediaType.HTTP)) {
-            return Optional.of(new WarcPayload(http().body()) {
-
-                @Override
-                public MediaType type() {
-                    return http.contentType();
-                }
-
-                @Override
-                Optional<MediaType> identifiedType() {
-                    return identifiedPayloadType();
-                }
-
-                @Override
-                public Optional<WarcDigest> digest() {
-                    return payloadDigest();
-                }
-            });
+        if(!contentType().base().equals(MediaType.HTTP_REQUEST)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        return createPayload(http().body(), http.contentType());
     }
 }
