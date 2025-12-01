@@ -259,7 +259,10 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 buffer.flip();
             }
             int trailer = buffer.getInt();
-            if (trailer != CRLFCRLF) {
+
+            //Introduced a boolean isValidTrailer just to improve readability when scanning the code throughout.
+            boolean isValidTrailer = trailer == CRLFCRLF;
+            if (!isValidTrailer) {
                 emitWarning("invalid record trailer");
 
                 // try to recover by skipping an arbitrary number of CR and LF characters
