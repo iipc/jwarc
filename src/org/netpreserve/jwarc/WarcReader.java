@@ -186,23 +186,31 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
             throw e;
         }
         headerLength = parser.position();
+
         MessageHeaders headers = parser.headers();
         long contentLength = headers.sole("Content-Length").map(Long::parseLong).orElse(0L);
         MessageBody body = LengthedBody.create(channel, buffer, contentLength);
-        if (blockDigestCalculation) {
-            Optional<String> blockDigestHeader = headers.sole("WARC-Block-Digest");
-            if (blockDigestHeader.isPresent()) {
-                try {
-                    MessageDigest md = (new WarcDigest(blockDigestHeader.get())).getDigester();
-                    body = new DigestingMessageBody(body, md);
-                } catch (NoSuchAlgorithmException e) {
-                    // ignore in order to be able to read also WARC records with unknown digest algorithm
-                    //throw new IOException("Failed to calculate block digest", e);
-                }
-            }
-        }
+        body = wrapWithBlockDigest(headers, body);
         record = construct(parser.version(), headers, body);
         return Optional.of(record);
+    }
+
+    private MessageBody wrapWithBlockDigest(MessageHeaders headers, MessageBody body) {
+        if(!blockDigestCalculation) {
+            return body;
+        }
+
+        Optional<String> blockDigestHeader = headers.sole("WARC-Block-Digest");
+        if (blockDigestHeader.isPresent()) {
+            try {
+                MessageDigest md = (new WarcDigest(blockDigestHeader.get())).getDigester();
+                body = new DigestingMessageBody(body, md);
+            } catch (NoSuchAlgorithmException e) {
+                // ignore in order to be able to read also WARC records with unknown digest algorithm
+                //throw new IOException("Failed to calculate block digest", e);
+            }
+        }
+        return body;
     }
 
     private WarcRecord construct(MessageVersion version, MessageHeaders headers, MessageBody body) {
