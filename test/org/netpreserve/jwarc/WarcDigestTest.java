@@ -103,7 +103,7 @@ public class WarcDigestTest {
     public void testMessageDigests() throws NoSuchAlgorithmException {
         String[] algorithms = { "sha", "sha1", "sha224", "sha256", "sha384", "sha512", "md5" };
         for (String algorithm : algorithms) {
-            MessageDigest md = WarcDigest.getDigester(algorithm);
+            MessageDigest md = DigestUtils.getDigester(algorithm);
             md.update(contentBytes);
             byte[] digest = md.digest(); // note: digest() resets the digester
             md.update(contentBytes);
