@@ -25,6 +25,24 @@ public class HttpRequestTest {
         assertEquals(header, new String(request.serializeHeader(), US_ASCII));
     }
 
+    @Test
+    public void chunkedEncodingRequestShouldDecodeBody() throws IOException {
+        String header = "POST /submit HTTP/1.1\r\n" +
+                "Host: example.org\r\n" +
+                "Transfer-Encoding: chunked\r\n\r\n";
+        String chunkedBody = "4\r\nWiki\r\n" +
+                "5\r\npedia\r\n" +
+                "0\r\n\r\n";
+        String message = header + chunkedBody;
+
+        HttpRequest request = HttpRequest.parse(Channels.newChannel(new ByteArrayInputStream(message.getBytes(US_ASCII))));
+
+        assertEquals("POST", request.method());
+        assertEquals("/submit", request.target());
+        assertEquals(Optional.of("chunked"), request.headers().first("Transfer-Encoding"));
+        assertEquals("Wikipedia", new String(IOUtils.readNBytes(request.body().stream(), 32), US_ASCII));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void invalidVersionShouldThrow() {
         new HttpRequest.Builder("GET", "/").version(MessageVersion.WARC_1_0);
