@@ -142,27 +142,42 @@ public class WarcServer extends HttpServer {
         try (FileChannel channel = FileChannel.open(capture.file(), READ)) {
             channel.position(capture.position());
             WarcReader reader = new WarcReader(channel);
-            WarcResponse record = (WarcResponse) reader.next().get();
-            HttpResponse http = record.http();
-            HttpResponse.Builder b = new HttpResponse.Builder(http.status(), http.reason());
-            for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
-                if (e.getKey().equalsIgnoreCase("Strict-Transport-Security")) continue;
-                if (e.getKey().equalsIgnoreCase("Transfer-Encoding")) continue;
-                if (e.getKey().equalsIgnoreCase("Public-Key-Pins")) continue;
-                for (String value : e.getValue()) {
-                    b.addHeader(e.getKey(), value);
+            WarcRecord record = reader.next().get();
+            HttpResponse.Builder responseBuilder;
+            MessageBody body;
+            MediaType contentType = MediaType.OCTET_STREAM;
+            if (record instanceof WarcResponse) {
+                HttpResponse http = ((WarcResponse)record).http();
+                responseBuilder = new HttpResponse.Builder(http.status(), http.reason());
+                for (Map.Entry<String, List<String>> entry : http.headers().map().entrySet()) {
+                    if (entry.getKey().equalsIgnoreCase("Strict-Transport-Security")) continue;
+                    if (entry.getKey().equalsIgnoreCase("Transfer-Encoding")) continue;
+                    if (entry.getKey().equalsIgnoreCase("Public-Key-Pins")) continue;
+                    if (entry.getKey().equalsIgnoreCase("Content-Type")) {
+                        contentType = MediaType.parseLeniently(entry.getValue().get(0));
+                    }
+                    for (String value : entry.getValue()) {
+                        responseBuilder.addHeader(entry.getKey(), value);
+                    }
                 }
+                body = http.body();
+            } else if (record instanceof WarcResource) {
+                responseBuilder = new HttpResponse.Builder(200, "OK");
+                contentType = record.contentType();
+                body = record.body();
+            } else {
+                throw new IllegalArgumentException("Unexpected record type: " + record.getClass());
             }
-            b.setHeader("Connection", "keep-alive");
-            b.setHeader("Memento-Datetime", RFC_1123_UTC.format(record.date()));
-            if (!proxy) b.setHeader("Link", mementoLinks(versions, capture));
-            if (proxy) b.setHeader("Vary", "Accept-Datetime");
-            MessageBody body = http.body();
-            if (!proxy && HTML.equals(http.contentType().base())) {
+            responseBuilder.setHeader("Connection", "keep-alive");
+            responseBuilder.setHeader("Memento-Datetime", RFC_1123_UTC.format(record.date()));
+            if (!proxy) responseBuilder.setHeader("Link", mementoLinks(versions, capture));
+            if (proxy) responseBuilder.setHeader("Vary", "Accept-Datetime");
+
+            if (!proxy && HTML.equals(contentType.base())) {
                 body = LengthedBody.create(body, ByteBuffer.wrap(script.getBytes(US_ASCII)), script.length() + body.size());
             }
-            b.body(http.contentType(), body, body.size());
-            exchange.send(b.build());
+            responseBuilder.body(contentType, body, body.size());
+            exchange.send(responseBuilder.build());
         }
     }
 
