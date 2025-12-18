@@ -58,6 +58,9 @@ public class WarcTool {
             case "version":
                 version();
                 break;
+            case "wacz":
+                WaczTool.main(rest);
+                break;
             default:
                 System.err.println("jwarc: '" + args[0] + "' is not a jwarc command. See 'jwarc help'.");
                 System.exit(1);
@@ -83,6 +86,7 @@ public class WarcTool {
         System.out.println("  stats       Print statistics about WARC and CDX files");
         System.out.println("  validate    Validate WARC or ARC files");
         System.out.println("  version     Print version information");
+        System.out.println("  wacz        Package WARC files into a WACZ file");
     }
 
     private static void version() {
