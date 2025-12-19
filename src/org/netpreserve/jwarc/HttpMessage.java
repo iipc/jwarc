@@ -46,6 +46,8 @@ public abstract class HttpMessage extends Message {
             return DecodedBody.create(payload, DecodedBody.Encoding.BROTLI);
         } else if (contentEncodings.get(0).equalsIgnoreCase("deflate")) {
             return DecodedBody.create(payload, DecodedBody.Encoding.DEFLATE);
+        } else if (contentEncodings.get(0).equalsIgnoreCase("zstd")) {
+            return DecodedBody.create(payload, DecodedBody.Encoding.ZSTD);
         } else {
             throw new IOException("Content-Encoding not supported: " + contentEncodings.get(0));
         }
