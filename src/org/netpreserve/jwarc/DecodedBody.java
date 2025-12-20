@@ -18,7 +18,8 @@ public class DecodedBody extends MessageBody {
     public static enum Encoding {
         DEFLATE,
         GZIP,
-        BROTLI
+        BROTLI,
+        ZSTD
     }
 
     private final ReadableByteChannel channel;
@@ -39,6 +40,15 @@ public class DecodedBody extends MessageBody {
                 this.channel = BrotliUtils.brotliChannel(channel);
             } catch (NoClassDefFoundError e) {
                 throw new IOException("Brotli decoder not found, please install org.brotli:dec", e);
+            }
+            break;
+        case ZSTD:
+            try {
+                ByteBuffer buf = ByteBuffer.allocate(8192);
+                buf.flip();
+                this.channel = new ZstdDecompressingChannel(channel, buf);
+            } catch (NoClassDefFoundError e) {
+                throw new IOException("ZStandard decoder not found, please install com.github.luben:zstd-jni", e);
             }
             break;
         default:
