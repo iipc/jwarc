@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.33.0
 
 ### New features
 
-- CdxRecord: added surt(), format(), values() and toString()
+- CdxRecord: surt(), format(), values() and toString()
+- CdxWriter: CDXJ output support
+- HttpMessage: `Content-Encoding: zstd` support
+- HttpRequest: `Content-Encoding: chunked` support
+- WarcReader: [Zstandard compressed WARC Files](https://iipc.github.io/warc-specifications/specifications/warc-zstd/) support
+- WarcServer: resource record support
 
 ## 0.32.0
 
