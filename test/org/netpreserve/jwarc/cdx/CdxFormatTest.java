@@ -114,4 +114,19 @@ public class CdxFormatTest {
         assertEquals("org,example)/ 20220302214434 http://example.org/ text/html 404 "+payloadDigest+" - - 456 123 /home/jwarc/example.warc.gz",                      
                 cdxFormat.format(response, path.toAbsolutePath().toString(), 123, 456));
     }
+
+    @Test
+    public void testCdxj() throws Exception {
+        Path path=Paths.get("/home/jwarc/example.warc.gz");
+        HttpResponse httpResponse = new HttpResponse.Builder(404, "Not Found")
+                .body(MediaType.HTML, new byte[0])
+                .build();
+        WarcResponse response = new WarcResponse.Builder("http://example.org/")
+                .date(Instant.parse("2022-03-02T21:44:34Z"))
+                .payloadDigest("sha1", "AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7")
+                .body(httpResponse)
+                .build();
+        assertEquals("org,example)/ 20220302214434 {\"url\": \"http://example.org/\", \"mime\": \"text/html\", \"status\": \"404\", \"digest\": \"sha1:AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7\", \"length\": \"456\", \"offset\": \"123\", \"filename\": \"example.warc.gz\"}",
+                CdxFormat.CDXJ.format(response, path.getFileName().toString(), 123, 456));
+    }
 }

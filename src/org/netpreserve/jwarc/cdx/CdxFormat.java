@@ -9,8 +9,7 @@ import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 import static org.netpreserve.jwarc.cdx.CdxFields.*;
 
@@ -21,20 +20,25 @@ public class CdxFormat {
     public static final CdxFormat CDX9 = new CdxFormat(CDX9_LEGEND);
     public static final CdxFormat CDX10 = new CdxFormat(CDX10_LEGEND);
     public static final CdxFormat CDX11 = new CdxFormat(CDX11_LEGEND);
+    public static final CdxFormat CDXJ = new Builder().legend("N b")
+            .json("url", "mime", "status", "digest", "length", "offset", "filename")
+            .build();
 
     // PyWb has defined this fake Mime-type value to identify revisit
     public static final String PYWB_REVISIT_MIMETYPE = "warc/revisit";
-    
+
     private final byte[] fieldNames;
     private final byte[] fieldIndices;
+    private final String[] jsonFields;
     private final boolean digestUnchanged;
 
     public CdxFormat(String legend) {
-        this(legend, false);
+        this(legend, false, null);
     }
 
-    private CdxFormat(String legend, boolean digestUnchanged) {
+    private CdxFormat(String legend, boolean digestUnchanged, String[] jsonFields) {
         this.digestUnchanged = digestUnchanged;
+        this.jsonFields = jsonFields;
         String[] fields = legend.replaceFirst("^ ?CDX ", "").split(" ");
         fieldNames = new byte[fields.length];
         fieldIndices = new byte[128];
@@ -90,7 +94,97 @@ public class CdxFormat {
             }
             builder.append(value);
         }
+        formatJsonBlock(record, filename, position, size, builder);
         return builder.toString();
+    }
+
+    private void formatJsonBlock(WarcCaptureRecord record, String filename, long position, long size, StringBuilder out) {
+        if (jsonFields == null || jsonFields.length == 0) return;
+        out.append(" {");
+        boolean first = true;
+        for (String field : jsonFields) {
+            String value;
+            switch (field) {
+                case "digest":
+                    value = record.payloadDigest().map(WarcDigest::raw).orElse(null);
+                    break;
+                case "filename":
+                    value = filename;
+                    break;
+                case "length":
+                    value = size < 0 ? null : String.valueOf(size);
+                    break;
+                case "mime":
+                    if (record instanceof WarcRevisit) {
+                        value = PYWB_REVISIT_MIMETYPE;
+                    } else {
+                        try {
+                            value = record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString();
+                        } catch (IOException e) {
+                            value = null;
+                        }
+                    }
+                    break;
+                case "offset":
+                    value = String.valueOf(position);
+                    break;
+                case "status":
+                    try {
+                        value = String.valueOf(statusCode(record));
+                    } catch (IOException e) {
+                        value = null;
+                    }
+                    break;
+                case "url":
+                    value = record.target();
+                    break;
+                default:
+                    value = null;
+            }
+            if (value == null) continue;
+
+            if (!first) out.append(", ");
+            first = false;
+            out.append('"');
+            out.append(field);
+            out.append("\": \"");
+            escapeJsonString(out, value);
+            out.append('"');
+        }
+        out.append("}");
+    }
+
+    private static void escapeJsonString(StringBuilder out, String value) {
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '"') out.append("\\\"");
+            else if (c == '\\') out.append("\\\\");
+            else if (c == '\b') out.append("\\b");
+            else if (c == '\f') out.append("\\f");
+            else if (c == '\n') out.append("\\n");
+            else if (c == '\r') out.append("\\r");
+            else if (c == '\t') out.append("\\t");
+            else if (c <= 0x1f) {
+                out.append("\\u00");
+                out.append(Character.forDigit((c & 0xf0) >>> 4, 16));
+                out.append(Character.forDigit(c & 0xf, 16));
+            } else {
+                out.append(c);
+            }
+        }
+    }
+
+    private static int statusCode(WarcCaptureRecord record) throws IOException {
+        if (record instanceof WarcResponse || record instanceof WarcRevisit) {
+            if (record instanceof WarcRevisit) {
+                return ((WarcRevisit) record).http().status();
+            } else if (record.contentType().base().equals(MediaType.HTTP)) {
+                return ((WarcResponse) record).http().status();
+            } else if (record.contentType().base().equals(MediaType.GEMINI)) {
+                return ((WarcResponse) record).gemini().statusHttpEquivalent();
+            }
+        }
+        return 200;
     }
 
     String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {
@@ -110,10 +204,10 @@ public class CdxFormat {
                 return filename == null ? "-" : escape(filename);
             case MIME_TYPE:
                 if (record instanceof WarcRevisit) {
-                    return PYWB_REVISIT_MIMETYPE;    
+                    return PYWB_REVISIT_MIMETYPE;
                 } else {
                     return escape(record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString());
-                }                       
+                }
             case NORMALIZED_SURT:
                 if (urlkey != null) {
                     return escape(urlkey);
@@ -129,17 +223,17 @@ public class CdxFormat {
                     return "-";
                 }
             case RESPONSE_CODE:
-                if (record instanceof WarcResponse || record instanceof WarcRevisit) {                                              
-                    if (record instanceof WarcRevisit) {                                                                                    
+                if (record instanceof WarcResponse || record instanceof WarcRevisit) {
+                    if (record instanceof WarcRevisit) {
                         return Integer.toString(((WarcRevisit) record).http().status());
-                    }                    
+                    }
                     else if (record.contentType().base().equals(MediaType.HTTP)) {
                         return Integer.toString(((WarcResponse) record).http().status());
                     } else if (record.contentType().base().equals(MediaType.GEMINI)) {
                         return String.format("%02d", ((WarcResponse) record).gemini().statusHttpEquivalent());
                     }
                 }
-                return "200";
+                return Integer.toString(statusCode(record));
             default:
                 throw new IllegalArgumentException("Unknown CDX field: " + (char) fieldName);
         }
@@ -155,9 +249,16 @@ public class CdxFormat {
     public static class Builder {
         private String legend;
         private boolean digestUnchanged = false;
+        private String[] jsonFields;
 
         public Builder() {
             this.legend = CDX11_LEGEND;
+        }
+
+        public Builder(CdxFormat base) {
+            legend = base.legend();
+            digestUnchanged = base.digestUnchanged;
+            jsonFields = base.jsonFields;
         }
 
         public Builder legend(String legend) {
@@ -170,8 +271,13 @@ public class CdxFormat {
             return this;
         }
 
+        private Builder json(String... jsonFields) {
+            this.jsonFields = jsonFields;
+            return this;
+        }
+
         public CdxFormat build() {
-            return new CdxFormat(legend, digestUnchanged);
+            return new CdxFormat(legend, digestUnchanged, jsonFields);
         }
     }
 }

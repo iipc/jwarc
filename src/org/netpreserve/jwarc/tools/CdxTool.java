@@ -17,35 +17,43 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class CdxTool {
     public static void main(String[] args) throws IOException {
         List<Path> files = new ArrayList<>();
-        CdxFormat.Builder cdxFormatBuilder = new CdxFormat.Builder();
+        CdxFormat format = CdxFormat.CDX11;
+        String legend = null;
         boolean printHeader = true;
         boolean fullFilePath = false;
         boolean postAppend = false;
+        boolean digestUnchanged = false;
         Predicate<WarcRecord> filter = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
                 switch (args[i]) {
                 case "-f":
                 case "--format":
-                    String format = args[++i];
-                    switch (format) {
+                    String formatName = args[++i];
+                    switch (formatName) {
                     case "CDX9":
-                        cdxFormatBuilder.legend(CdxFormat.CDX9_LEGEND);
+                        format = CdxFormat.CDX9;
                         break;
                     case "CDX10":
-                        cdxFormatBuilder.legend(CdxFormat.CDX10_LEGEND);
+                        format = CdxFormat.CDX10;
                         break;
                     case "CDX11":
-                        cdxFormatBuilder.legend(CdxFormat.CDX11_LEGEND);
+                        format = CdxFormat.CDX11;
+                        break;
+                    case "CDXJ":
+                        format = CdxFormat.CDXJ;
+                        printHeader = false;
                         break;
                     default:
-                        cdxFormatBuilder.legend(format);
+                        legend = formatName;
                         break;
                     }
                     break;
@@ -69,7 +77,7 @@ public class CdxTool {
                     break;
                 case "-d":
                 case "--digest-unchanged":
-                    cdxFormatBuilder.digestUnchanged();
+                    digestUnchanged = true;
                     break;
                 case "-r":
                 case "--revisits-included":
@@ -89,18 +97,29 @@ public class CdxTool {
                     return;
                 }
             } else {
+                //noinspection JvmTaintAnalysis
                 files.add(Paths.get(args[i]));
             }
         }
 
+        CdxFormat.Builder builder = new CdxFormat.Builder(format);
+        if (legend != null) builder.legend(legend);
+        if (digestUnchanged) builder.digestUnchanged();
+        format = builder.build();
+
         try (CdxWriter cdxWriter = new CdxWriter(new OutputStreamWriter(System.out))) {
             cdxWriter.onWarning(System.err::println);
-            cdxWriter.setFormat(cdxFormatBuilder.build());
+            cdxWriter.setFormat(format);
             cdxWriter.setPostAppend(postAppend);
             cdxWriter.setRecordFilter(filter);
 
             if (printHeader) cdxWriter.writeHeaderLine();
             cdxWriter.process(files, fullFilePath);
         }
+    }
+
+    static void cdxj(String[] rest) throws IOException {
+        main(Stream.concat(Stream.of("--format", "CDXJ"), Arrays.stream(rest))
+                .toArray(String[]::new));
     }
 }

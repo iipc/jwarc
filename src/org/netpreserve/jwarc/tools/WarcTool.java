@@ -1,5 +1,8 @@
 package org.netpreserve.jwarc.tools;
 
+import org.netpreserve.jwarc.cdx.CdxFormat;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class WarcTool {
@@ -12,6 +15,9 @@ public class WarcTool {
         switch (args[0]) {
             case "cdx":
                 CdxTool.main(rest);
+                break;
+            case "cdxj":
+                CdxTool.cdxj(rest);
                 break;
             case "dedupe":
                 DedupeTool.main(rest);
@@ -73,6 +79,7 @@ public class WarcTool {
         System.out.println("Commands:");
         System.out.println();
         System.out.println("  cdx         List records in CDX format");
+        System.out.println("  cdxj        List records in CDXJ format");
         System.out.println("  dedupe      Deduplicate records by looking up a CDX server");
         System.out.println("  extract     Extract record by offset");
         System.out.println("  fetch       Download a URL recording the request and response");
