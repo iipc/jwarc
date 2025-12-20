@@ -93,7 +93,7 @@ public class WarcTool {
         System.out.println("  stats       Print statistics about WARC and CDX files");
         System.out.println("  validate    Validate WARC or ARC files");
         System.out.println("  version     Print version information");
-        System.out.println("  wacz        Package WARC files into a WACZ file");
+        //System.out.println("  wacz        Package WARC files into a WACZ file (EXPERIMENTAL)");
     }
 
     private static void version() {

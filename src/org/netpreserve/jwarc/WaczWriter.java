@@ -23,6 +23,8 @@ import java.util.zip.ZipOutputStream;
 /**
  * Writer for Web Archive Collection Zipped (WACZ) files.
  *
+ * EXPERIMENTAL API: May change or be removed without notice.
+ *
  * @see <a href="https://specs.webrecorder.net/wacz/latest/">WACZ Specification</a>
  */
 public class WaczWriter implements Closeable {
