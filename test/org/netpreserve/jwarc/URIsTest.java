@@ -13,7 +13,6 @@ public class URIsTest {
         assertEquals("filedesc:test.arc.gz", URIs.toNormalizedSurt("filedesc:test.arc.gz"));
         assertEquals("filedesc:/test.arc.gz", URIs.toNormalizedSurt("filedesc:/test.arc.gz"));
         assertEquals("filedesc://test.arc.gz", URIs.toNormalizedSurt("filedesc://test.arc.gz"));
-        assertEquals("urn:pageinfo:https://www.example.org/", URIs.toNormalizedSurt("urn:pageinfo:https://www.example.org/"));
         assertEquals("dns:example.com", URIs.toNormalizedSurt("dns:example.com"));
         assertEquals("org,example)/", URIs.toNormalizedSurt("http://www.example.org/"));
         assertEquals("org,example:1)/", URIs.toNormalizedSurt("http://www.example.org:1/"));
@@ -45,6 +44,7 @@ public class URIsTest {
         assertEquals("org,example)/?foobar", URIs.toNormalizedSurt("http://example.org?foosid=3E544261B39C3B399E1C6BB38D6888E6&bar"));
         assertEquals("filedesc.example.com", URIs.toNormalizedSurt("filedesc.example.com"));
         assertEquals("com,example,filedesc)/", URIs.toNormalizedSurt("Filedesc.example.com"));
+        assertEquals("urn:pageinfo:https://www.example.org", URIs.toNormalizedSurt("urn:pageinfo:https://www.example.org/"));
     }
 
     @Test

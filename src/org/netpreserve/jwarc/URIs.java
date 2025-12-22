@@ -247,7 +247,12 @@ public class URIs {
             for (Pattern PATH_SESSIONID : PATH_SESSIONID_REGEXS) {
                 path = PATH_SESSIONID.matcher(path).replaceFirst("$1");
             }
-            output.append(percentEncodeIllegals(path));
+            path = percentEncodeIllegals(path);
+            if (path.length() > 1 && path.endsWith("/")) {
+                output.append(path, 0, path.length() - 1);
+            } else {
+                output.append(path);
+            }
         } else {
             output.append('/');
         }
