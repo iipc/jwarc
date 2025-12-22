@@ -11,6 +11,10 @@
 - WarcReader: [Zstandard compressed WARC Files](https://iipc.github.io/warc-specifications/specifications/warc-zstd/) support
 - WarcServer: resource record support
 
+### Fixed
+
+- URIs.toNormalizedSurt(): Improved compatibility with Python [surt](https://github.com/internetarchive/surt).
+
 ## 0.32.0
 
 ### Added

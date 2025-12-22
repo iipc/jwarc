@@ -23,8 +23,25 @@ public class URIs {
             "(?:[#](.*))?" + // fragment
             "\\Z", DOTALL);
     private static final int SCHEME = 1, SLASHES = 2, AUTHORITY = 3, PATH = 4, QUERY = 5, FRAGMENT = 6;
-    private final static Pattern AUTHORITY_REGEX = Pattern.compile("([^@]*@)?(.*?)(?::([0-9]+))?", DOTALL);
-    private final static Pattern IPV4_REGEX = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
+    private final static Pattern SURT_URL_REGEX = Pattern.compile(
+            "\\A(?:(?<scheme>[A-Za-z][A-Za-z0-9+\\-.]*):)?" +
+            "(?:(?://(?<authority>[^/?#]*))?" +
+            "(?<path>[^?#]*)" +
+            "(?:\\?(?<query>[^#]*))?)?" +
+            "(?:#(?<fragment>.*))?\\Z", DOTALL);
+    private final static Pattern WWW_REGEX = Pattern.compile("www\\d*\\.");
+    private final static Pattern HAS_PROTOCOL_REGEX = Pattern.compile("\\A[a-zA-Z][a-zA-Z0-9+\\-.]*:");
+    private final static Pattern QUERY_SESSIONID_REGEX = Pattern.compile(
+            "(?:jsessionid=[0-9a-zA-Z]{32}"
+            + "|phpsessid=[0-9a-zA-Z]{32}"
+            + "|sid=[0-9a-zA-Z]{32}"
+            + "|aspsessionid[a-zA-Z]{8}=[a-zA-Z]{24}"
+            + "|cfid=[^&]+&cftoken=[^&]+"
+            + ")(?:&|$)");
+    private static final Pattern[] PATH_SESSIONID_REGEXS = new Pattern[]{
+            Pattern.compile("/\\([a-z]\\([0-9a-z]{24}\\)\\)(/[^?]+.aspx)"),
+            Pattern.compile("/\\([0-9a-z]{24}\\)(/[^?]+.aspx)"),
+    };
 
     // According to https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html#uri-syntax-and-components-heading
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -36,6 +53,7 @@ public class URIs {
 
     private static final BitSet PATH_ALLOWED = charBitSet("/@" + UNRESERVED + PUNCT);
     private static final BitSet QUERY_ALLOWED = charBitSet(UNRESERVED + RESERVED);
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
     private static BitSet charBitSet(String chars) {
         BitSet bitSet = new BitSet(128);
@@ -135,54 +153,117 @@ public class URIs {
                 out.append(c); // an 'other' unicode character
             } else {
                 for (byte b : Character.toString(c).getBytes(UTF_8)) {
-                    out.append('%').append(String.format("%02x", (int) b));
+                    appendPercentEncoding(out, b);
                 }
             }
         }
         return out.toString();
     }
 
-    public static String toNormalizedSurt(String uri) {
-        Matcher urlMatcher = URL_REGEX.matcher(uri);
-        if (!urlMatcher.matches()) {
-            throw new IllegalArgumentException("invalid URL: " + uri);
-        }
-        String authority = urlMatcher.group(AUTHORITY);
-        String path = urlMatcher.group(PATH);
-        String query = urlMatcher.group(QUERY);
-        String fragment = urlMatcher.group(FRAGMENT);
+    private static void appendPercentEncoding(StringBuilder out, byte b) {
+        out.append('%');
+        out.append(HEX_DIGITS[(b >> 4) & 0xf]);
+        out.append(HEX_DIGITS[b & 0xf]);
+    }
 
-        Matcher authorityMatcher = AUTHORITY_REGEX.matcher(authority);
-        if (!authorityMatcher.matches()) throw new IllegalStateException("authority didn't match");
-        String host = authorityMatcher.group(2);
-        String port = authorityMatcher.group(3);
+    /**
+     * Converts a given URI into its normalized SURT (Sort-friendly URI Reordering Transform) format.
+     * <p>
+     * There are many slightly different implementations of SURT. This one tries to produce the same output as the
+     * Python <a href="https://github.com/internetarchive/surt">surt</a> module for compatibility with pywb.
+     */
+    public static String toNormalizedSurt(String uri) {
+        if (uri.startsWith("filedesc")) return uri;
+
+        uri = trimSpaces(uri);
+        uri = uri.replace("\r", "");
+        uri = uri.replace("\n", "");
+        uri = uri.replace("\t", "");
+
+        if (!uri.isEmpty() && !HAS_PROTOCOL_REGEX.matcher(uri).lookingAt()) {
+            uri = "http://" + uri;
+        }
+
+        Matcher urlMatcher = SURT_URL_REGEX.matcher(uri);
+        if (!urlMatcher.matches()) {
+            return uri; // shouldn't be possible
+        }
+        String scheme = urlMatcher.group("scheme");
+        String authority = urlMatcher.group("authority");
+        String path = urlMatcher.group("path");
+        String query = urlMatcher.group("query");
+        String fragment = urlMatcher.group("fragment");
+
+        String host = null;
+        String port = null;
+
+        if (authority != null) {
+            int atIndex = authority.indexOf('@');
+            int colonIndex = -1;
+            for (int i = authority.length() - 1; i > atIndex; i--) {
+                char c = authority.charAt(i);
+                if (c == ':') {
+                    colonIndex = i;
+                    break;
+                } else if (!isAsciiDigit(c)) {
+                    break;
+                }
+            }
+            if (colonIndex >= 0) {
+                host = authority.substring(atIndex + 1, colonIndex);
+                port = authority.substring(colonIndex + 1);
+            } else {
+                host = authority.substring(atIndex + 1);
+            }
+        }
 
         StringBuilder output = new StringBuilder();
-        if (IPV4_REGEX.matcher(host).matches()) {
-            output.append(host);
-        } else {
-            List<String> hostSegments = Arrays.asList(host.toLowerCase(Locale.ROOT).split("\\."));
-            if (hostSegments.get(0).equals("www")) {
-                hostSegments = hostSegments.subList(1, hostSegments.size());
+        if (host == null) {
+            if (scheme != null) {
+                output.append(scheme);
+                output.append(':');
             }
-            Collections.reverse(hostSegments);
-            output.append(normalizePercentEncoding(String.join(",", hostSegments)));
+        } else {
+            // remove IPv6 brackets
+            if (host.startsWith("[")) {
+                host = host.substring(1, host.length() - 1);
+            }
+
+            host = host.toLowerCase(Locale.ROOT);
+            host = trimWWW(host);
+            host = reverseHost(host);
+            output.append(normalizePercentEncoding(host));
+            if (port != null && !port.isEmpty() && !isDefaultPort(scheme, port)) {
+                output.append(':');
+                output.append(port);
+            }
+            output.append(')');
         }
-        if (port != null) {
-            output.append(':');
-            output.append(port);
-        }
-        output.append(')');
+
         if (path != null) {
-            output.append(normalizePercentEncoding(normalizePathSegments(path.toLowerCase(Locale.ROOT))));
+            path = fullyPercentDecode(path);
+            path = path.toLowerCase(Locale.ROOT);
+            if (host != null) path = normalizePathSegments(path);
+            for (Pattern PATH_SESSIONID : PATH_SESSIONID_REGEXS) {
+                path = PATH_SESSIONID.matcher(path).replaceFirst("$1");
+            }
+            output.append(percentEncodeIllegals(path));
         } else {
             output.append('/');
         }
-        if (query != null) {
+        if (query != null && !query.isEmpty()) {
             output.append('?');
-            String[] params = normalizePercentEncoding(query).toLowerCase(Locale.ROOT).split("&", -1);
+            query = normalizePercentEncoding(query);
+            query = query.toLowerCase(Locale.ROOT);
+            query = QUERY_SESSIONID_REGEX.matcher(query).replaceAll("");
+            String[] params = query.split("&", -1);
             Arrays.sort(params);
-            output.append(String.join("&", params));
+            boolean first = true;
+            for (String param : params) {
+                if (!first) output.append('&');
+                first = false;
+                output.append(param);
+            }
         }
         if (fragment != null) {
             output.append('#');
@@ -191,24 +272,111 @@ public class URIs {
         return output.toString();
     }
 
-    static String normalizePathSegments(String path) {
-        ArrayList<String> output = new ArrayList<>();
-        for (String segment : path.split("/")) {
-            switch (segment) {
-                case "":
-                case ".":
-                    break;
-                case "..":
-                    if (!output.isEmpty()) {
-                        output.remove(output.size() - 1);
-                    }
-                    break;
-                default:
-                    output.add(segment);
-                    break;
+    private static boolean isAsciiDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static String trimWWW(String host) {
+        Matcher matcher = WWW_REGEX.matcher(host);
+        if (matcher.lookingAt()) {
+            return host.substring(matcher.end());
+        }
+        return host;
+    }
+
+    private static String reverseHost(String s) {
+        if (s == null || s.isEmpty()) return s;
+
+        StringBuilder result = new StringBuilder();
+        int end = s.length();
+
+        while (end > 0) {
+            int start = s.lastIndexOf('.', end - 1);
+
+            if (result.length() > 0) {
+                result.append(',');
+            }
+
+            if (start == -1) {
+                if (end == s.length()) return s;
+                result.append(s, 0, end);
+                break;
+            } else {
+                result.append(s, start + 1, end);
+                end = start;
             }
         }
-        return "/" + String.join("/", output);
+
+        return result.toString();
+    }
+
+    /**
+     * Removes leading and trailing spaces from a string.
+     */
+    private static String trimSpaces(String s) {
+        int start = 0;
+        int end = s.length();
+
+        while (start < end && s.charAt(start) == ' ') {
+            start++;
+        }
+
+        while (end > start && s.charAt(end - 1) == ' ') {
+            end--;
+        }
+
+        return s.substring(start, end);
+    }
+
+    private static boolean isDefaultPort(String scheme, String port) {
+        return (scheme.equalsIgnoreCase("http") && port.equals("80")) ||
+               (scheme.equalsIgnoreCase("https") && port.equals("443"));
+    }
+
+    static String normalizePathSegments(String path) {
+        if (path == null || path.isEmpty()) return "/";
+
+        int len = path.length();
+        int[] segmentStarts = new int[len / 2 + 1];
+        int[] segmentEnds = new int[len / 2 + 1];
+        int size = 0;
+
+        for (int i = 0; i < len; ) {
+            // Skip slashes
+            if (path.charAt(i) == '/') {
+                i++;
+                continue;
+            }
+
+            // Find end of segment
+            int start = i;
+            while (i < len && path.charAt(i) != '/') {
+                i++;
+            }
+            int end = i;
+
+            int segmentLen = end - start;
+            //noinspection StatementWithEmptyBody
+            if (segmentLen == 1 && path.charAt(start) == '.') {
+                // Ignore "."
+            } else if (segmentLen == 2 && path.charAt(start) == '.' && path.charAt(start + 1) == '.') {
+                // Handle ".."
+                if (size > 0) size--;
+            } else {
+                // Valid segment
+                segmentStarts[size] = start;
+                segmentEnds[size] = end;
+                size++;
+            }
+        }
+
+        if (size == 0) return "/";
+
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < size; i++) {
+            sb.append('/').append(path, segmentStarts[i], segmentEnds[i]);
+        }
+        return sb.toString();
     }
 
     static String normalizePercentEncoding(String s) {
@@ -225,12 +393,23 @@ public class URIs {
     }
 
     public static String percentEncodeIllegals(String s) {
+        // optimisation: in the common case there are none, return the original string
+        boolean seen = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '%' || c == '#' || c <= 0x20 || c >= 0x7f) {
+                seen = true;
+                break;
+            }
+        }
+        if (!seen) return s;
+
         StringBuilder out = new StringBuilder();
         byte[] bytes = s.getBytes(UTF_8);
         for (byte rawByte : bytes) {
             int b = rawByte & 0xff;
             if (b == '%' || b == '#' || b <= 0x20 || b >= 0x7f) {
-                out.append('%').append(String.format("%02x", b));
+                appendPercentEncoding(out, (byte) b);
             } else {
                 out.append((char) b);
             }
@@ -243,6 +422,7 @@ public class URIs {
     }
 
     private static String percentDecode(String s) {
+        if (s.indexOf('%') == -1) return s;
         ByteBuffer bb = null;
         StringBuilder out = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
@@ -277,7 +457,7 @@ public class URIs {
             CoderResult result = decoder.decode(bb, cb, true);
             if (result.isMalformed()) {
                 for (int i = 0; i < result.length(); i++) {
-                    out.append('%').append(String.format("%02x", bb.get()));
+                    appendPercentEncoding(out, bb.get());
                 }
             }
             out.append(cb.flip());

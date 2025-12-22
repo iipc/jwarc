@@ -40,7 +40,7 @@ public class CdxFormatTest {
                 .payloadDigest("sha1", "A LNJ7DOPHK477BWWC726H7Y5XBPBNF7")
                 .body(httpResponse)
                 .build();
-        assertEquals("Spaces should be escaped when formatting the urlkey", "a%20b)/",
+        assertEquals("Spaces should be escaped when formatting the urlkey", "data:a%20b",
                 CdxFormat.CDX11.formatField(CdxFields.NORMALIZED_SURT, response2, "foo", 456, 400, null));
         assertEquals("Spaces should be escaped when formatting the urlkey", "a%20b",
                 CdxFormat.CDX11.formatField(CdxFields.NORMALIZED_SURT, response2, "foo", 456, 400, "a b"));
