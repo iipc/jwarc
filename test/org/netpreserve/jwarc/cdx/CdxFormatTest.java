@@ -1,12 +1,10 @@
 package org.netpreserve.jwarc.cdx;
 
 import org.junit.Test;
-import org.netpreserve.jwarc.HttpResponse;
-import org.netpreserve.jwarc.MediaType;
-import org.netpreserve.jwarc.WarcResponse;
-import org.netpreserve.jwarc.WarcRevisit;
+import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -128,5 +126,17 @@ public class CdxFormatTest {
                 .build();
         assertEquals("org,example)/ 20220302214434 {\"url\": \"http://example.org/\", \"mime\": \"text/html\", \"status\": \"404\", \"digest\": \"sha1:AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7\", \"length\": \"456\", \"offset\": \"123\", \"filename\": \"example.warc.gz\"}",
                 CdxFormat.CDXJ.format(response, path.getFileName().toString(), 123, 456));
+    }
+
+    @Test
+    public void testCdxjResource() throws Exception {
+        Path path = Paths.get("/home/jwarc/resource.warc.gz");
+        WarcResource resource = new WarcResource.Builder(URI.create("http://example.org/"))
+                .date(Instant.parse("2022-03-02T21:44:34Z"))
+                .payloadDigest("sha1", "AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7")
+                .body(null, new byte[0])
+                .build();
+        assertEquals("org,example)/ 20220302214434 {\"url\": \"http://example.org/\", \"digest\": \"sha1:AQLNJ7DOPHK477BWWC726H7Y5XBPBNF7\", \"length\": \"456\", \"offset\": \"123\", \"filename\": \"resource.warc.gz\"}",
+                CdxFormat.CDXJ.format(resource, path.getFileName().toString(), 123, 456));
     }
 }

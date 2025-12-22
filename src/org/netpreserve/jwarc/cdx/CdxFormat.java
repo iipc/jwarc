@@ -119,7 +119,20 @@ public class CdxFormat {
                         value = PYWB_REVISIT_MIMETYPE;
                     } else {
                         try {
-                            value = record.payload().map(p -> p.type().base()).orElse(MediaType.OCTET_STREAM).toString();
+                            if (record instanceof WarcResponse &&
+                                    record.contentType().equals(MediaType.HTTP_RESPONSE)) {
+                                value = ((WarcResponse) record).http().headers().first("Content-Type")
+                                        .map(s -> MediaType.parseLeniently(s).base().toString())
+                                        .orElse(null);
+                            } else if (record instanceof WarcResource) {
+                                value = record.headers().first("Content-Type")
+                                        .map(s -> MediaType.parseLeniently(s).base().toString())
+                                        .orElse(null);
+                            } else {
+                                value = record.payload()
+                                        .map(p -> p.type().base())
+                                        .map(Object::toString).orElse(null);
+                            }
                         } catch (IOException e) {
                             value = null;
                         }
@@ -130,7 +143,8 @@ public class CdxFormat {
                     break;
                 case "status":
                     try {
-                        value = String.valueOf(statusCode(record));
+                        Integer status = statusCode(record);
+                        value = status == 0 ? null : String.valueOf(status);
                     } catch (IOException e) {
                         value = null;
                     }
@@ -184,7 +198,7 @@ public class CdxFormat {
                 return ((WarcResponse) record).gemini().statusHttpEquivalent();
             }
         }
-        return 200;
+        return 0;
     }
 
     String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {
@@ -223,17 +237,9 @@ public class CdxFormat {
                     return "-";
                 }
             case RESPONSE_CODE:
-                if (record instanceof WarcResponse || record instanceof WarcRevisit) {
-                    if (record instanceof WarcRevisit) {
-                        return Integer.toString(((WarcRevisit) record).http().status());
-                    }
-                    else if (record.contentType().base().equals(MediaType.HTTP)) {
-                        return Integer.toString(((WarcResponse) record).http().status());
-                    } else if (record.contentType().base().equals(MediaType.GEMINI)) {
-                        return String.format("%02d", ((WarcResponse) record).gemini().statusHttpEquivalent());
-                    }
-                }
-                return Integer.toString(statusCode(record));
+                int status = statusCode(record);
+                if (status == 0) status = 200;
+                return Integer.toString(status);
             default:
                 throw new IllegalArgumentException("Unknown CDX field: " + (char) fieldName);
         }
