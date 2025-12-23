@@ -34,6 +34,10 @@ the latest [release jar](https://github.com/iipc/jwarc/releases) and run it usin
  
     java -jar jwarc-{version}.jar
 
+Or use the [Docker image](https://hub.docker.com/r/iipc/jwarc):
+ 
+    docker run --rm -it iipc/jwarc:latest
+
 If you would prefer to build it from source install [JDK 8+](https://adoptopenjdk.net/) and 
 [Maven](https://maven.apache.org/) and then run:
 
