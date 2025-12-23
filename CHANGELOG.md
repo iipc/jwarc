@@ -5,7 +5,9 @@
 ### New features
 
 - CdxRecord: surt(), format(), values() and toString()
-- CdxWriter: CDXJ output support
+- CdxWriter
+  - CDXJ output support
+  - sort option
 - HttpMessage: `Content-Encoding: zstd` support
 - HttpRequest: `Content-Encoding: chunked` support
 - WarcReader: [Zstandard compressed WARC Files](https://iipc.github.io/warc-specifications/specifications/warc-zstd/) support

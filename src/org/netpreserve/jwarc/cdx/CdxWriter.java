@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -25,6 +26,7 @@ public class CdxWriter implements Closeable {
     private boolean postAppend = false;
     private Predicate<WarcRecord> recordFilter;
     private Consumer<String> warningHandler;
+    private List<String> sortBuffer;
 
     public CdxWriter(Writer writer) {
         this.writer = writer;
@@ -58,8 +60,16 @@ public class CdxWriter implements Closeable {
             String rawUrlKey = capture.target() + (capture.target().contains("?") ? '&' : '?') + encodedRequest;
             urlKey = URIs.toNormalizedSurt(rawUrlKey);
         }
-        writer.write(format.format(capture, filename, position, length, urlKey));
-        writer.write('\n');
+        writeLine(format.format(capture, filename, position, length, urlKey));
+    }
+
+    private void writeLine(String line) throws IOException {
+        if (sortBuffer != null) {
+            sortBuffer.add(line);
+        } else {
+            writer.write(line);
+            writer.write('\n');
+        }
     }
 
     /**
@@ -166,8 +176,24 @@ public class CdxWriter implements Closeable {
         this.warningHandler = warningHandler;
     }
 
+    public void setSort(boolean sort) {
+        if (sort) {
+            sortBuffer = new ArrayList<>();
+        } else {
+            sortBuffer = null;
+        }
+    }
+
     @Override
     public void close() throws IOException {
+        if (sortBuffer != null) {
+            sortBuffer.sort(null);
+            for (String line : sortBuffer) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            sortBuffer = null;
+        }
         writer.close();
     }
 }

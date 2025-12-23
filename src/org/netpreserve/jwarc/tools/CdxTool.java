@@ -31,6 +31,7 @@ public class CdxTool {
         boolean fullFilePath = false;
         boolean postAppend = false;
         boolean digestUnchanged = false;
+        boolean sort = false;
         Predicate<WarcRecord> filter = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-")) {
@@ -86,6 +87,10 @@ public class CdxTool {
                 case "--revisits-excluded":
                     filter = record -> !(record instanceof WarcRevisit);
                     break;
+                case "-s":
+                case "--sort":
+                    sort = true;
+                    break;
                 case "-w":
                 case "--warc-full-path":
                     fullFilePath = true;
@@ -112,6 +117,7 @@ public class CdxTool {
             cdxWriter.setFormat(format);
             cdxWriter.setPostAppend(postAppend);
             cdxWriter.setRecordFilter(filter);
+            cdxWriter.setSort(sort);
 
             if (printHeader) cdxWriter.writeHeaderLine();
             cdxWriter.process(files, fullFilePath);
