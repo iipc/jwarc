@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestOutputStream;
@@ -17,8 +18,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.zip.CRC32;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import org.netpreserve.jwarc.cdx.CdxFormat;
+import org.netpreserve.jwarc.cdx.CdxWriter;
+
+import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
  * Writer for Web Archive Collection Zipped (WACZ) files.
@@ -32,14 +41,27 @@ public class WaczWriter implements Closeable {
     private final Map<String, Object> metadata = new LinkedHashMap<>();
     private final ArrayList<Map<String, Object>> resources = new ArrayList<>();
     private final MessageDigest messageDigest;
+    private final FileChannel cdxChannel;
+    private final CdxWriter cdxWriter;
     private boolean finished;
 
     public WaczWriter(Path path) throws IOException {
         this(Files.newOutputStream(path));
     }
 
-    public WaczWriter(OutputStream out) {
+    public WaczWriter(OutputStream out) throws IOException {
         this.zip = new ZipOutputStream(out);
+        Path tempFile = Files.createTempFile("jwarc-cdx", ".cdx.gz");
+        this.cdxChannel = FileChannel.open(tempFile, READ, WRITE, DELETE_ON_CLOSE);
+        OutputStream cdxGzipStream = new GZIPOutputStream(Channels.newOutputStream(cdxChannel), 8192) {
+            @Override
+            public void close() throws IOException {
+                finish(); // don't close the underlying channel
+            }
+        };
+        this.cdxWriter = new CdxWriter(new BufferedWriter(new OutputStreamWriter(cdxGzipStream, StandardCharsets.UTF_8)));
+        cdxWriter.setFormat(CdxFormat.CDXJ);
+        cdxWriter.setSort(true);
         set("profile", "data-package");
         set("wacz_version", "1.1.1");
         try  {
@@ -70,6 +92,8 @@ public class WaczWriter implements Closeable {
         if (finished) throw new IllegalStateException("WACZ file is already finished");
 
         ZipEntry entry = new ZipEntry(path);
+        int slash = path.lastIndexOf('/');
+        String filename = slash >= 0 ? path.substring(slash + 1) : path;
 
         // https://specs.webrecorder.net/wacz/1.1.1/#zip-compression
         // All archive/ files should be stored in ZIP with 'STORE' mode.
@@ -88,6 +112,13 @@ public class WaczWriter implements Closeable {
             entry.setSize(size);
         }
 
+        // Add archive files to CDX index
+        if (path.startsWith("archive/")) {
+            long start = source.position();
+            cdxWriter.process(new WarcReader(source), filename);
+            source.position(start);
+        }
+
         zip.putNextEntry(entry);
         messageDigest.reset();
         byte[] buffer = new byte[8192];
@@ -102,8 +133,7 @@ public class WaczWriter implements Closeable {
         zip.closeEntry();
 
         Map<String, Object> resource = new LinkedHashMap<>();
-        int slash = path.lastIndexOf('/');
-        resource.put("name", slash >= 0 ? path.substring(slash + 1) : path);
+        resource.put("name", filename);
         resource.put("path", path);
         resource.put("hash", "sha256:" + WarcDigest.hexEncode(messageDigest.digest()));
         resource.put("bytes", size);
@@ -145,6 +175,11 @@ public class WaczWriter implements Closeable {
      */
     public void finish() throws IOException {
         if (finished) return;
+        cdxWriter.close();
+        if (cdxChannel.size() > 0) {
+            cdxChannel.position(0);
+            writeResource("indexes/index.cdx.gz", cdxChannel);
+        }
         writeDatapackageJson();
         zip.finish();
         metadata.clear();
@@ -162,6 +197,11 @@ public class WaczWriter implements Closeable {
         try {
             finish();
         } finally {
+            try {
+                cdxChannel.close();
+            } catch (IOException e) {
+                // ignore
+            }
             zip.close();
         }
     }

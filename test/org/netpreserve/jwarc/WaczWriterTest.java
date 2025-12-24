@@ -4,14 +4,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -25,10 +28,15 @@ public class WaczWriterTest {
     @Test
     public void test() throws Exception {
         Path waczFile = temporaryFolder.newFile("test.wacz").toPath();
-        Path warcFile = temporaryFolder.newFile("test.warc").toPath();
+        Path warcFile = temporaryFolder.newFile("test.warc.gz").toPath();
 
         try (WarcWriter warcWriter = new WarcWriter(warcFile)) {
-            warcWriter.write(new WarcResponse.Builder("http://example.org/").build());
+            warcWriter.write(new WarcResponse.Builder("http://example.org/")
+                    .date(java.time.Instant.now())
+                    .body(new HttpResponse.Builder(200, "OK")
+                            .body(MediaType.HTML, "hello".getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                            .build())
+                    .build());
         }
         String warcSha256 = sha256(warcFile);
 
@@ -40,6 +48,17 @@ public class WaczWriterTest {
             ZipEntry warcEntry = zipFile.getEntry("archive/test.warc.gz");
             assertNotNull(warcEntry);
             assertEquals(ZipEntry.STORED, warcEntry.getMethod());
+
+            ZipEntry cdxEntry = zipFile.getEntry("indexes/index.cdx.gz");
+            assertNotNull(cdxEntry);
+            try (InputStream is = zipFile.getInputStream(cdxEntry);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(is)))) {
+                String line = reader.readLine();
+                assertNotNull(line);
+                assertTrue(line.contains("example.org"));
+                assertTrue(line.startsWith("org,example)/"));
+                assertTrue(line.endsWith("}")); // CDXJ format
+            }
 
             ZipEntry datapackageEntry = zipFile.getEntry("datapackage.json");
             assertNotNull(datapackageEntry);
