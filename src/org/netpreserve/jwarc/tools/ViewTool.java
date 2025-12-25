@@ -2,13 +2,22 @@ package org.netpreserve.jwarc.tools;
 
 import org.netpreserve.jwarc.*;
 
+import org.netpreserve.jwarc.net.WarcServer;
+
+import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 
 import static java.lang.ProcessBuilder.Redirect.PIPE;
 
@@ -18,6 +27,7 @@ public class ViewTool {
     private static final String REVERSE = "\u001B[7m", CLEAR = "\u001B[H\u001B[2J";
     private static final String HIDE_CURSOR = "\u001B[?25l", SHOW_CURSOR = "\u001B[?25h";
     private final WarcCaptureReader reader;
+    private final Path warcPath;
     private int termRows, termCols;
     private int selectedRow = 0;
     private int scrollOffset = 0;
@@ -30,9 +40,12 @@ public class ViewTool {
     private int selectedRecordIndex = 0;
     private List<WarcCaptureRecord> currentRecords = null;
     private Class<? extends WarcCaptureRecord> preferredRecordClass = null;
+    private WarcServer server;
+    private int serverPort;
 
-    private ViewTool(WarcReader reader) {
+    private ViewTool(WarcReader reader, Path warcPath) {
         this.reader = new WarcCaptureReader(reader);
+        this.warcPath = warcPath;
     }
 
     private void checkTerminalSize() {
@@ -207,6 +220,37 @@ public class ViewTool {
         return line;
     }
 
+    private void openBrowser() throws IOException {
+        if (server == null) {
+            ServerSocket serverSocket = new ServerSocket(0);
+            this.serverPort = serverSocket.getLocalPort();
+            server = new WarcServer(serverSocket, Collections.singletonList(warcPath));
+            new Thread(() -> server.listen()).start();
+        }
+        WarcCapture capture = rows.get(selectedRow);
+        DateTimeFormatter ARC_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+        String url = "http://localhost:" + serverPort + "/replay/" + ARC_DATE.format(capture.date()) + "/" + capture.target();
+        boolean opened = false;
+        try {
+            if (System.getProperty("os.name").startsWith("Mac")) {
+                Runtime.getRuntime().exec(new String[]{"open", url}).waitFor();
+                opened = true;
+            } else if (!GraphicsEnvironment.isHeadless() && Desktop.isDesktopSupported() &&
+                       Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(URI.create(url));
+                opened = true;
+            }
+        } catch (Exception e) {
+            // ignore and fallback to printing URL
+        }
+
+        if (!opened) {
+            System.out.print("\r\u001B[KOpen URL: " + url + " [Press any key]");
+            System.out.flush();
+            System.in.read();
+        }
+    }
+
     private void render() throws IOException, InterruptedException {
         checkTerminalSize();
         loadMoreRows();
@@ -218,6 +262,7 @@ public class ViewTool {
             try {
                 System.out.print(SHOW_CURSOR);
                 new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
+                if (server != null) server.close();
             } catch (Exception e) {
                 // ignore
             }
@@ -293,9 +338,13 @@ public class ViewTool {
                 }
             }
 
-            System.out.print("\u001B[7m q:quit f:filter s:save ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
+            System.out.print("\u001B[7m q:quit f:filter s:save b:browser ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
             int c = System.in.read();
             if (c == 'q' || c == 3) break;
+            if (c == 'b') {
+                openBrowser();
+                continue;
+            }
             if (c == 's') {
                 savePayload();
                 continue;
@@ -397,8 +446,9 @@ public class ViewTool {
 
     public static void main(String[] args) throws Exception {
         //noinspection JvmTaintAnalysis
-        try (WarcReader reader = new WarcReader(Paths.get(args[0]))) {
-            new ViewTool(reader).render();
+        Path path = Paths.get(args[0]);
+        try (WarcReader reader = new WarcReader(path)) {
+            new ViewTool(reader, path).render();
         }
     }
 }

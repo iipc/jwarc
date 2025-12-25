@@ -5,6 +5,7 @@ import org.netpreserve.jwarc.HttpResponse;
 
 import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -25,7 +26,7 @@ import java.util.regex.Pattern;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-abstract class HttpServer {
+abstract class HttpServer implements Closeable {
     final ServerSocket serverSocket;
     private final CertificateAuthority ca;
     private final List<Route> routes = new ArrayList<>();
@@ -153,6 +154,10 @@ abstract class HttpServer {
 
     public CertificateAuthority certificateAuthority() {
         return ca;
+    }
+
+    public void close() throws IOException {
+        serverSocket.close();
     }
 
     private static class Route {
