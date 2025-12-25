@@ -6,11 +6,13 @@ import org.netpreserve.jwarc.net.WarcServer;
 
 import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -21,7 +23,7 @@ import java.util.List;
 
 import static java.lang.ProcessBuilder.Redirect.PIPE;
 
-public class ViewTool {
+public class ViewTool implements Closeable {
     private static final String GREEN = "\u001B[32m", BLUE = "\u001B[34m", RED = "\u001B[31m", RESET = "\u001B[0m";
     private static final String CYAN = "\u001B[36m";
     private static final String REVERSE = "\u001B[7m", CLEAR = "\u001B[H\u001B[2J";
@@ -43,8 +45,8 @@ public class ViewTool {
     private WarcServer server;
     private int serverPort;
 
-    private ViewTool(WarcReader reader, Path warcPath) {
-        this.reader = new WarcCaptureReader(reader);
+    private ViewTool(Path warcPath) throws IOException {
+        this.reader = new WarcCaptureReader(warcPath);
         this.warcPath = warcPath;
     }
 
@@ -176,6 +178,73 @@ public class ViewTool {
         }
     }
 
+    private String getExtension(MediaType type) {
+        String subtype = type.subtype().toLowerCase();
+        switch (subtype) {
+            case "html": return ".html";
+            case "plain": return ".txt";
+            case "json": return ".json";
+            case "xml": return ".xml";
+            case "jpeg": return ".jpg";
+            case "png": return ".png";
+            case "css": return ".css";
+            case "javascript": return ".js";
+            case "gif": return ".gif";
+            case "pdf": return ".pdf";
+            case "svg+xml": return ".svg";
+            case "xhtml+xml": return ".xhtml";
+            default: return ".bin";
+        }
+    }
+
+    private void openInEditor() throws IOException {
+        WarcCapture capture = rows.get(selectedRow);
+        WarcCaptureRecord record;
+        if (splitScreen && currentRecords != null) {
+            record = currentRecords.get(selectedRecordIndex);
+        } else {
+            record = capture.record();
+        }
+
+        Optional<WarcPayload> payload = record.payload();
+        if (!payload.isPresent()) {
+            System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
+            System.out.flush();
+            System.in.read();
+            return;
+        }
+
+        String extension = getExtension(payload.get().type());
+        Path tempFile = Files.createTempFile("jwarc-payload", extension);
+        try {
+            try (MessageBody body = payload.get().body();
+                 FileChannel out = FileChannel.open(tempFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                ByteBuffer buffer = ByteBuffer.allocate(8192);
+                while (body.read(buffer) != -1) {
+                    buffer.flip();
+                    while (buffer.hasRemaining()) {
+                        out.write(buffer);
+                    }
+                    buffer.clear();
+                }
+            }
+
+            String editor = System.getenv("EDITOR");
+            if (editor == null || editor.isEmpty()) editor = "vi";
+
+            new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
+            try {
+                new ProcessBuilder(editor, tempFile.toString()).inheritIO().start().waitFor();
+            } finally {
+                new ProcessBuilder("stty", "raw", "-echo").inheritIO().start().waitFor();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
     private String formatSize(long size) {
         if (size < 1024) return size + "B";
         int exp = (int) (Math.log(size) / Math.log(1024));
@@ -251,7 +320,7 @@ public class ViewTool {
         }
     }
 
-    private void render() throws IOException, InterruptedException {
+    private void run() throws IOException, InterruptedException {
         checkTerminalSize();
         loadMoreRows();
         if (rows.isEmpty()) {
@@ -260,9 +329,7 @@ public class ViewTool {
         }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                System.out.print(SHOW_CURSOR);
-                new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
-                if (server != null) server.close();
+                close();
             } catch (Exception e) {
                 // ignore
             }
@@ -338,11 +405,15 @@ public class ViewTool {
                 }
             }
 
-            System.out.print("\u001B[7m q:quit f:filter s:save b:browser ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
+            System.out.print("\u001B[7m q:quit f:filter s:save e:edit b:browser ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
             int c = System.in.read();
             if (c == 'q' || c == 3) break;
             if (c == 'b') {
                 openBrowser();
+                continue;
+            }
+            if (c == 'e') {
+                openInEditor();
                 continue;
             }
             if (c == 's') {
@@ -447,8 +518,19 @@ public class ViewTool {
     public static void main(String[] args) throws Exception {
         //noinspection JvmTaintAnalysis
         Path path = Paths.get(args[0]);
-        try (WarcReader reader = new WarcReader(path)) {
-            new ViewTool(reader, path).render();
+        try (ViewTool viewTool = new ViewTool(path)) {
+            viewTool.run();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        System.out.print(SHOW_CURSOR + "\r\n");
+        try {
+            new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
+        } catch (Exception e) {
+            // ignore
+        }
+        if (server != null) server.close();
     }
 }
