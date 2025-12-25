@@ -31,7 +31,7 @@ public class ViewTool {
     private List<WarcCaptureRecord> currentRecords = null;
     private Class<? extends WarcCaptureRecord> preferredRecordClass = null;
 
-    public ViewTool(WarcReader reader) {
+    private ViewTool(WarcReader reader) {
         this.reader = new WarcCaptureReader(reader);
     }
 
