@@ -64,6 +64,9 @@ public class WarcTool {
             case "version":
                 version();
                 break;
+            case "view":
+                ViewTool.main(rest);
+                break;
             case "wacz":
                 WaczTool.main(rest);
                 break;
@@ -93,6 +96,7 @@ public class WarcTool {
         System.out.println("  stats       Print statistics about WARC and CDX files");
         System.out.println("  validate    Validate WARC or ARC files");
         System.out.println("  version     Print version information");
+        System.out.println("  view        View WARC file with an interactive terminal UI");
         //System.out.println("  wacz        Package WARC files into a WACZ file (EXPERIMENTAL)");
     }
 

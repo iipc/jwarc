@@ -87,6 +87,20 @@ public class WarcCaptureReader implements Closeable {
     }
 
     /**
+     * Seeks to the record at the given position in the underlying channel.
+     *
+     * @param position byte offset of the beginning of the record to seek to
+     * @throws IOException                   if an I/O error occurs
+     * @throws IllegalArgumentException      if the position is negative
+     * @throws UnsupportedOperationException if the underlying channel does not support seeking
+     */
+    public void position(long position) throws IOException {
+        reader.position(position);
+        nextRecord = null;
+        warcinfo = null;
+    }
+
+    /**
      * Closes the underlying WarcReader.
      * @throws IOException if an I/O error occurs during the close operation.
      */

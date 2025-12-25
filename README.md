@@ -116,6 +116,10 @@ Create a CDX file:
 
     java -jar jwarc.jar cdx example.warc > records.cdx
 
+List, filter and extract captures with an interactive terminal interface:
+
+    java -jar jwarc.jar view example.warc
+
 Run a replay proxy and web server:
 
     export PORT=8080
