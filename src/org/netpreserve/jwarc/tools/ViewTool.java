@@ -85,6 +85,7 @@ public class ViewTool implements Closeable {
             // preload http response and request headers
             capture.status();
             capture.method();
+            capture.records();
 
             rows.add(capture);
         }
@@ -139,7 +140,7 @@ public class ViewTool implements Closeable {
             WarcRecord record = freshReader.next().orElseThrow(() -> new IOException("No record found at position " + selectedRecord.position()));
 
             Optional<WarcPayload> payload = ((WarcCaptureRecord) record).payload();
-            if (!payload.isPresent()) {
+            if (!(record instanceof WarcMetadata) && !payload.isPresent()) {
                 System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
                 System.out.flush();
                 int ignore = System.in.read();
@@ -162,7 +163,7 @@ public class ViewTool implements Closeable {
             if (filename == null) return;
             if (filename.isEmpty()) filename = defaultFilename;
 
-            try (MessageBody body = payload.get().body();
+            try (MessageBody body = record instanceof WarcMetadata ? record.body() : payload.get().body();
                  FileChannel out = FileChannel.open(Paths.get(filename), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
                 ByteBuffer buffer = ByteBuffer.allocate(8192);
                 while (body.read(buffer) != -1) {
@@ -217,17 +218,17 @@ public class ViewTool implements Closeable {
             WarcRecord record = freshReader.next().get();
 
             Optional<WarcPayload> payload = ((WarcCaptureRecord) record).payload();
-            if (!payload.isPresent()) {
+            if (!(record instanceof WarcMetadata) &&!payload.isPresent()) {
                 System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
                 System.out.flush();
                 System.in.read();
                 return;
             }
 
-            String extension = getExtension(payload.get().type());
+            String extension = getExtension(record instanceof WarcMetadata ? record.contentType() : payload.get().type());
             Path tempFile = Files.createTempFile("jwarc-payload", extension);
             try {
-                try (MessageBody body = payload.get().body();
+                try (MessageBody body = record instanceof WarcMetadata ? record.body() : payload.get().body();
                      FileChannel out = FileChannel.open(tempFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
                     ByteBuffer buffer = ByteBuffer.allocate(8192);
                     while (body.read(buffer) != -1) {
