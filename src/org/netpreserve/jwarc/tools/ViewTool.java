@@ -418,7 +418,7 @@ public class ViewTool implements Closeable {
                 }
             }
 
-            System.out.print("\u001B[7m q:quit f:filter s:save e:edit b:browser ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
+            System.out.print("\u001B[7m q:quit f:filter s:save b:browser e:editor ↑↓:scroll PgUp/PgDn <ret>:details \u001B[0m");
             int c = System.in.read();
             if (c == 'q' || c == 3) break;
             if (c == 'b') {
