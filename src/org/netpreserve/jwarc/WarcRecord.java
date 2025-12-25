@@ -100,6 +100,19 @@ public class WarcRecord extends Message {
         return Optional.empty();
     }
 
+    /**
+     * Returns the byte position of the record within the WARC file it was read from.
+     *
+     * @return the byte position of the record
+     * @throws UnsupportedOperationException if the record was not read from a file
+     */
+    public long position() {
+        if (recordSource == null) {
+            throw new UnsupportedOperationException("Record was not read from a file");
+        }
+        return recordSource.position();
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + id() + "]";

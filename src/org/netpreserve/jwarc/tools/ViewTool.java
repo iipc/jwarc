@@ -127,54 +127,59 @@ public class ViewTool implements Closeable {
 
     private void savePayload() throws IOException {
         WarcCapture capture = rows.get(selectedRow);
-        WarcCaptureRecord record;
+        WarcCaptureRecord selectedRecord;
         if (splitScreen && currentRecords != null) {
-            record = currentRecords.get(selectedRecordIndex);
+            selectedRecord = currentRecords.get(selectedRecordIndex);
         } else {
-            record = capture.record();
+            selectedRecord = capture.record();
         }
 
-        Optional<WarcPayload> payload = record.payload();
-        if (!payload.isPresent()) {
-            System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
-            System.out.flush();
-            int ignore = System.in.read();
-            return;
-        }
+        try (WarcReader freshReader = new WarcReader(warcPath)) {
+            freshReader.position(selectedRecord.position());
+            WarcRecord record = freshReader.next().orElseThrow(() -> new IOException("No record found at position " + selectedRecord.position()));
 
-        String target = capture.target();
-        String defaultFilename = "payload.bin";
-        try {
-            URI uri = URI.create(target);
-            String path = uri.getPath();
-            if (path != null && !path.isEmpty() && !path.endsWith("/")) {
-                defaultFilename = path.substring(path.lastIndexOf('/') + 1);
+            Optional<WarcPayload> payload = ((WarcCaptureRecord) record).payload();
+            if (!payload.isPresent()) {
+                System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
+                System.out.flush();
+                int ignore = System.in.read();
+                return;
             }
-        } catch (Exception e) {
-            // ignore
-        }
 
-        String filename = readLine("Save payload to (" + defaultFilename + "): ");
-        if (filename == null) return;
-        if (filename.isEmpty()) filename = defaultFilename;
-
-        try (MessageBody body = payload.get().body();
-             FileChannel out = FileChannel.open(Paths.get(filename), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-            ByteBuffer buffer = ByteBuffer.allocate(8192);
-            while (body.read(buffer) != -1) {
-                buffer.flip();
-                while (buffer.hasRemaining()) {
-                    out.write(buffer);
+            String target = capture.target();
+            String defaultFilename = "payload.bin";
+            try {
+                URI uri = URI.create(target);
+                String path = uri.getPath();
+                if (path != null && !path.isEmpty() && !path.endsWith("/")) {
+                    defaultFilename = path.substring(path.lastIndexOf('/') + 1);
                 }
-                buffer.clear();
+            } catch (Exception e) {
+                // ignore
             }
-            System.out.print("\r\u001B[KSaved to " + filename + " [Press any key]");
-            System.out.flush();
-            int ignore = System.in.read();
-        } catch (Exception e) {
-            System.out.print("\r\u001B[KError saving payload: " + e.getMessage() + " [Press any key]");
-            System.out.flush();
-            int ignore = System.in.read();
+
+            String filename = readLine("Save payload to (" + defaultFilename + "): ");
+            if (filename == null) return;
+            if (filename.isEmpty()) filename = defaultFilename;
+
+            try (MessageBody body = payload.get().body();
+                 FileChannel out = FileChannel.open(Paths.get(filename), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                ByteBuffer buffer = ByteBuffer.allocate(8192);
+                while (body.read(buffer) != -1) {
+                    buffer.flip();
+                    while (buffer.hasRemaining()) {
+                        out.write(buffer);
+                    }
+                    buffer.clear();
+                }
+                System.out.print("\r\u001B[KSaved to " + filename + " [Press any key]");
+                System.out.flush();
+                int ignore = System.in.read();
+            } catch (Exception e) {
+                System.out.print("\r\u001B[KError saving payload: " + e.getMessage() + " [Press any key]");
+                System.out.flush();
+                int ignore = System.in.read();
+            }
         }
     }
 
@@ -188,6 +193,7 @@ public class ViewTool implements Closeable {
             case "jpeg": return ".jpg";
             case "png": return ".png";
             case "css": return ".css";
+            case "x-javascript":
             case "javascript": return ".js";
             case "gif": return ".gif";
             case "pdf": return ".pdf";
@@ -199,49 +205,54 @@ public class ViewTool implements Closeable {
 
     private void openInEditor() throws IOException {
         WarcCapture capture = rows.get(selectedRow);
-        WarcCaptureRecord record;
+        WarcCaptureRecord selectedRecord;
         if (splitScreen && currentRecords != null) {
-            record = currentRecords.get(selectedRecordIndex);
+            selectedRecord = currentRecords.get(selectedRecordIndex);
         } else {
-            record = capture.record();
+            selectedRecord = capture.record();
         }
 
-        Optional<WarcPayload> payload = record.payload();
-        if (!payload.isPresent()) {
-            System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
-            System.out.flush();
-            System.in.read();
-            return;
-        }
+        try (WarcReader freshReader = new WarcReader(warcPath)) {
+            freshReader.position(selectedRecord.position());
+            WarcRecord record = freshReader.next().get();
 
-        String extension = getExtension(payload.get().type());
-        Path tempFile = Files.createTempFile("jwarc-payload", extension);
-        try {
-            try (MessageBody body = payload.get().body();
-                 FileChannel out = FileChannel.open(tempFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                ByteBuffer buffer = ByteBuffer.allocate(8192);
-                while (body.read(buffer) != -1) {
-                    buffer.flip();
-                    while (buffer.hasRemaining()) {
-                        out.write(buffer);
-                    }
-                    buffer.clear();
-                }
+            Optional<WarcPayload> payload = ((WarcCaptureRecord) record).payload();
+            if (!payload.isPresent()) {
+                System.out.print("\r\u001B[KNo payload for this record. [Press any key]");
+                System.out.flush();
+                System.in.read();
+                return;
             }
 
-            String editor = System.getenv("EDITOR");
-            if (editor == null || editor.isEmpty()) editor = "vi";
-
-            new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
+            String extension = getExtension(payload.get().type());
+            Path tempFile = Files.createTempFile("jwarc-payload", extension);
             try {
-                new ProcessBuilder(editor, tempFile.toString()).inheritIO().start().waitFor();
+                try (MessageBody body = payload.get().body();
+                     FileChannel out = FileChannel.open(tempFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                    ByteBuffer buffer = ByteBuffer.allocate(8192);
+                    while (body.read(buffer) != -1) {
+                        buffer.flip();
+                        while (buffer.hasRemaining()) {
+                            out.write(buffer);
+                        }
+                        buffer.clear();
+                    }
+                }
+
+                String editor = System.getenv("EDITOR");
+                if (editor == null || editor.isEmpty()) editor = "vi";
+
+                new ProcessBuilder("stty", "-raw", "echo").inheritIO().start().waitFor();
+                try {
+                    new ProcessBuilder(editor, tempFile.toString()).inheritIO().start().waitFor();
+                } finally {
+                    new ProcessBuilder("stty", "raw", "-echo").inheritIO().start().waitFor();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } finally {
-                new ProcessBuilder("stty", "raw", "-echo").inheritIO().start().waitFor();
+                Files.deleteIfExists(tempFile);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            Files.deleteIfExists(tempFile);
         }
     }
 

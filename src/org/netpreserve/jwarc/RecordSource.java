@@ -17,6 +17,10 @@ class RecordSource {
         this.offset = offset;
     }
 
+    public long position() {
+        return offset;
+    }
+
     public String toString() {
         if (filename == null) {
             return "offset " + offset;
