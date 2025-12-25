@@ -305,7 +305,9 @@ public class ViewTool implements Closeable {
             ServerSocket serverSocket = new ServerSocket(0);
             this.serverPort = serverSocket.getLocalPort();
             server = new WarcServer(serverSocket, Collections.singletonList(warcPath));
-            new Thread(() -> server.listen()).start();
+            Thread thread = new Thread(() -> server.listen(), WarcServer.class.getSimpleName());
+            thread.setDaemon(true);
+            thread.start();
         }
         WarcCapture capture = rows.get(selectedRow);
         DateTimeFormatter ARC_DATE = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
