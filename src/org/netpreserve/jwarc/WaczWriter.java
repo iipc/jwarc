@@ -43,6 +43,9 @@ public class WaczWriter implements Closeable {
     private final MessageDigest messageDigest;
     private final FileChannel cdxChannel;
     private final CdxWriter cdxWriter;
+    private final FileChannel pagesChannel;
+    private final JsonPagesWriter pagesWriter;
+    private boolean autoPages = true;
     private boolean finished;
 
     public WaczWriter(Path path) throws IOException {
@@ -62,6 +65,11 @@ public class WaczWriter implements Closeable {
         this.cdxWriter = new CdxWriter(new BufferedWriter(new OutputStreamWriter(cdxGzipStream, StandardCharsets.UTF_8)));
         cdxWriter.setFormat(CdxFormat.CDXJ);
         cdxWriter.setSort(true);
+
+        Path pagesTempFile = Files.createTempFile("jwarc-pages", ".jsonl");
+        this.pagesChannel = FileChannel.open(pagesTempFile, READ, WRITE, DELETE_ON_CLOSE);
+        this.pagesWriter = new JsonPagesWriter(new BufferedWriter(new OutputStreamWriter(Channels.newOutputStream(pagesChannel), StandardCharsets.UTF_8)));
+
         set("profile", "data-package");
         set("wacz_version", "1.1.1");
         try  {
@@ -117,6 +125,10 @@ public class WaczWriter implements Closeable {
             long start = source.position();
             cdxWriter.process(new WarcReader(source), filename);
             source.position(start);
+            if (autoPages) {
+                pagesWriter.process(new WarcReader(source));
+                source.position(start);
+            }
         }
 
         zip.putNextEntry(entry);
@@ -151,6 +163,17 @@ public class WaczWriter implements Closeable {
         return crc.getValue();
     }
 
+    /**
+     * Adds a page entry to pages.jsonl.
+     *
+     * @param url   the URL of the page
+     * @param ts    the timestamp in RFC3339 format
+     * @param title an optional title for the page
+     */
+    public void addPage(String url, String ts, String title) throws IOException {
+        pagesWriter.addPage(url, ts, title);
+    }
+
     private void writeDatapackageJson() throws IOException {
         // https://specs.webrecorder.net/wacz/1.1.1/#datapackage-json
         zip.putNextEntry(new ZipEntry("datapackage.json"));
@@ -180,6 +203,12 @@ public class WaczWriter implements Closeable {
             cdxChannel.position(0);
             writeResource("indexes/index.cdx.gz", cdxChannel);
         }
+        pagesWriter.flush();
+        boolean pagesProvided = resources.stream().anyMatch(r -> "pages/pages.jsonl".equals(r.get("path")));
+        if (!pagesProvided && pagesChannel.size() > 0) {
+            pagesChannel.position(0);
+            writeResource("pages/pages.jsonl", pagesChannel);
+        }
         writeDatapackageJson();
         zip.finish();
         metadata.clear();
@@ -202,6 +231,11 @@ public class WaczWriter implements Closeable {
             } catch (IOException e) {
                 // ignore
             }
+            try {
+                pagesChannel.close();
+            } catch (IOException e) {
+                // ignore
+            }
             zip.close();
         }
     }
@@ -214,5 +248,13 @@ public class WaczWriter implements Closeable {
      */
     public void set(String name, Object value) {
         metadata.put(name, value);
+    }
+
+    /**
+     * Enables or disables automatic detection of pages from WARC records.
+     * If disabled, only pages added via {@link #addPage} will be included.
+     */
+    public void setAutoPages(boolean enabled) {
+        this.autoPages = enabled;
     }
 }

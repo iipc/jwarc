@@ -8,10 +8,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -71,6 +73,20 @@ public class WaczWriterTest {
             assertEquals("archive/test.warc.gz", resource.get("path"));
             assertEquals("test.warc.gz", resource.get("name"));
             assertEquals("sha256:" + warcSha256, resource.get("hash"));
+            
+            ZipEntry pagesEntry = zipFile.getEntry("pages/pages.jsonl");
+            assertNotNull(pagesEntry);
+            try (InputStream is = zipFile.getInputStream(pagesEntry);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                String header = reader.readLine();
+                assertNotNull(header);
+                assertTrue(header.contains("json-pages-1.0"));
+                String page = reader.readLine();
+                assertNotNull(page);
+                assertTrue(page.contains("http://example.org/"));
+                assertTrue(page.contains("\"url\":"));
+                assertTrue(page.contains("\"ts\":"));
+            }
 
             String datapackageDigest = sha256(zipFile.getInputStream(datapackageEntry));
             ZipEntry digestEntry = zipFile.getEntry("datapackage-digest.json");
@@ -78,6 +94,32 @@ public class WaczWriterTest {
             Map<String, Object> digestMetadata = (Map<String, Object>) Json.read(zipFile.getInputStream(digestEntry));
             assertEquals("datapackage.json", digestMetadata.get("path"));
             assertEquals("sha256:" + datapackageDigest, digestMetadata.get("hash"));
+        }
+    }
+
+    @Test
+    public void testManualPages() throws Exception {
+        Path waczFile = temporaryFolder.newFile("manual.wacz").toPath();
+        Path pagesFile = temporaryFolder.newFile("pages.jsonl").toPath();
+        Files.write(pagesFile, Arrays.asList("{\"format\": \"json-pages-1.0\", \"id\": \"pages\", \"title\": \"Manual Pages\"}",
+                "{\"url\": \"http://example.org/manual\", \"ts\": \"2023-01-01T00:00:00Z\"}"), StandardCharsets.UTF_8);
+
+        try (WaczWriter waczWriter = new WaczWriter(Files.newOutputStream(waczFile))) {
+            waczWriter.setAutoPages(false);
+            waczWriter.writeResource("pages/pages.jsonl", pagesFile);
+        }
+
+        try (ZipFile zipFile = new ZipFile(waczFile.toFile())) {
+            ZipEntry pagesEntry = zipFile.getEntry("pages/pages.jsonl");
+            assertNotNull(pagesEntry);
+            try (InputStream is = zipFile.getInputStream(pagesEntry);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                String header = reader.readLine();
+                assertTrue(header.contains("Manual Pages"));
+                String page = reader.readLine();
+                assertTrue(page.contains("http://example.org/manual"));
+                assertNull(reader.readLine());
+            }
         }
     }
 

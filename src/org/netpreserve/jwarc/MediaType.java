@@ -236,6 +236,7 @@ static final int media_type_en_lenient = 11;
     public static final MediaType JSON = MediaType.parse("application/json");
     public static MediaType HTML = MediaType.parse("text/html");
     public static MediaType HTML_UTF8 = MediaType.parse("text/html;charset=utf-8");
+    public static final MediaType XHTML = MediaType.parse("application/xhtml+xml");
     public static MediaType HTTP = MediaType.parse("application/http");
     public static MediaType HTTP_REQUEST = MediaType.parse("application/http;msgtype=request");
     public static MediaType HTTP_RESPONSE = MediaType.parse("application/http;msgtype=response");
