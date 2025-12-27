@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.GZIPOutputStream;
@@ -170,7 +171,7 @@ public class WaczWriter implements Closeable {
      * @param ts    the timestamp in RFC3339 format
      * @param title an optional title for the page
      */
-    public void addPage(String url, String ts, String title) throws IOException {
+    public void addPage(String url, Instant ts, String title) throws IOException {
         pagesWriter.addPage(url, ts, title);
     }
 

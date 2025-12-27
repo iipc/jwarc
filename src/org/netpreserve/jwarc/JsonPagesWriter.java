@@ -8,6 +8,7 @@ package org.netpreserve.jwarc;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ public class JsonPagesWriter implements Closeable {
                 WarcCaptureRecord capture = (WarcCaptureRecord) record;
                 MediaType type = capture.payloadType();
                 if (type.base().equals(MediaType.HTML) || type.base().equals(MediaType.XHTML)) {
-                    addPage(capture.target(), capture.date().toString(), null);
+                    addPage(capture.target(), capture.date(), null);
                 }
             }
         }
@@ -54,14 +55,14 @@ public class JsonPagesWriter implements Closeable {
      * @param ts    the timestamp in RFC3339 format
      * @param title an optional title for the page
      */
-    public void addPage(String url, String ts, String title) throws IOException {
+    public void addPage(String url, Instant ts, String title) throws IOException {
         if (!headerWritten) {
             writeHeader();
             headerWritten = true;
         }
         Map<String, Object> page = new LinkedHashMap<>();
         page.put("url", url);
-        page.put("ts", ts);
+        page.put("ts", ts.toString());
         if (title != null) page.put("title", title);
         // Add other optional fields (id, text, size) as needed
         Json.write(writer, page);
