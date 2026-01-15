@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.34.0 (2026-01-15)
+
+### New features
+
+- Added `view` command: interactive TUI for exploring WARC files
+  - view captures, WARC and HTTP headers
+  - filter captures by type, status, method or url
+  - save payload to a file, open in browser or external editor
+
+### Fixed
+
+- HttpParser: lenient mode now accepts "0" as a status code for compatibility with Browsertrix WARCs
+
 ## 0.33.0 (2025-12-24)
 
 ### New features
