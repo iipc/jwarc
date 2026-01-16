@@ -79,7 +79,7 @@ public class ExtractTool {
 
     private static void usage(int exitValue) {
         System.err.println();
-        System.err.println("ExtractTool [-h] [--payload | --headers] filename offset ...");
+        System.err.println("ExtractTool [-h] [--payload | --headers] warc-file offset...");
         System.err.println();
         System.err.println("Options:");
         System.err.println();

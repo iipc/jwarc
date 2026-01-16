@@ -11,6 +11,10 @@ import java.net.URI;
 
 public class RecordTool {
     public static void main(String[] args) throws Exception {
+        Utils.showUsage(args, 1, RecordTool.class, "uri...",
+                "Record pages and page dependencies using headless Chrome or the browser executable"
+                        + "\ndefined by the environment variable BROWSER (default: \"google-chrome\")."
+                        + "\n\nWARC output is written to stdout.");
         try (ServerSocket socket = new ServerSocket(0, -1, InetAddress.getLoopbackAddress())) {
             WarcRecorder recorder = new WarcRecorder(socket, new WarcWriter(System.out));
             new Thread(recorder::listen).start();

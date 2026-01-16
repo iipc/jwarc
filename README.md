@@ -153,6 +153,12 @@ Create a new file containing only html responses with status 200:
 
     java -jar jwarc.jar filter ':status == 200 && http:content-type =~ "text/html(;.*)?"' example.warc > pages.warc 
 
+All available tools are listed per
+
+    java -jar jwarc.jar
+
+and every tool provides a command-line help if called with the option `--help`.
+
 ## API Quick Reference
 
 See the [javadoc](https://www.javadoc.io/doc/org.netpreserve/jwarc) for more details.

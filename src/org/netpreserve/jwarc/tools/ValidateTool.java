@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 
-public class ValidateTool extends WarcTool {
+public class ValidateTool {
 
     private final static MediaType DNS = MediaType.parse("text/dns");
 
@@ -294,7 +294,7 @@ public class ValidateTool extends WarcTool {
 
     private static void usage(int exitValue) {
         System.err.println("");
-        System.err.println("ValidateTool [-h] [-v] filename...");
+        System.err.println("ValidateTool [-h] [-v] warc-file...");
         System.err.println("");
         System.err.println("Options:");
         System.err.println("");

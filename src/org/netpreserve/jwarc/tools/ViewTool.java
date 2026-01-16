@@ -536,6 +536,8 @@ public class ViewTool implements Closeable {
 
     public static void main(String[] args) throws Exception {
         //noinspection JvmTaintAnalysis
+        Utils.showUsage(args, 1, ViewTool.class, "warc-file",
+                "Interactively inspect and browse the content of a single WARC file in the terminal.");
         Path path = Paths.get(args[0]);
         try (ViewTool viewTool = new ViewTool(path)) {
             viewTool.run();

@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class ServeTool {
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
+        if (args.length == 0 || Utils.hasHelpFlag(args)) {
             System.err.println("Usage: WarcTool serve <warc-files>");
             System.err.println("Obeys environment variable PORT.");
             System.exit(1);

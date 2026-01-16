@@ -57,7 +57,7 @@ public class SavebackTool {
     }
 
     private static void usage() {
-        System.err.println("Usage: jwarc saveback wayback-url ...");
+        System.err.println("Usage: jwarc saveback wayback-url...");
         System.err.println("Reconstructs WARC records from wayback or pywb replayed pages");
         System.err.println("Intended to be used with the id_ option: .../wayback/20060101010000id_/http://example.org/");
         System.err.println();

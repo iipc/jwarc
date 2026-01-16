@@ -13,6 +13,11 @@ import java.util.stream.Stream;
 
 public class ScreenshotTool {
     public static void main(String[] args) throws Exception {
+        Utils.showUsage(args, 1, ScreenshotTool.class, "warc-file...",
+                "Take a screenshot of each page in the given WARCs."
+                        + "\n\nThe browser executable defined by the environment variable BROWSER"
+                        + "\nis used to take the screenshots (default: \"google-chrome\")."
+                        + "\n\nWARC output is written to stdout.");
         List<Path> warcs = Stream.of(args).map(Paths::get).collect(Collectors.toList());
         try (WarcWriter warcWriter = new WarcWriter(System.out);
              WarcRenderer renderer = new WarcRenderer(new CaptureIndex(warcs))) {
