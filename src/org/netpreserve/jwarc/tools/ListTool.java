@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 public class ListTool {
+
     public static void main(String[] args) throws IOException {
+        Utils.showUsage(args, 1, ListTool.class, "warc-file...", "List records in WARC file(s)");
         for (String arg : args) {
             try (WarcReader reader = new WarcReader(Paths.get(arg))) {
                 for (WarcRecord record : reader) {

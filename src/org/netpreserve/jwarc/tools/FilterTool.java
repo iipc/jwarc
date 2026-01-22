@@ -10,8 +10,8 @@ public class FilterTool {
     public static void main(String[] args) throws Exception {
         try {
             String[] files;
-            if (args.length == 0) {
-                System.err.println("Usage: jwarc filter <expression> [warc-file]...");
+            if (args.length == 0 || Utils.hasHelpFlag(args)) {
+                System.err.println("Usage: jwarc filter <expression> [warc-file...]");
                 System.err.println("  e.g. jwarc filter 'warc-type == \"response\" && http:content-type =~ \"image/.*\" && :status == 200' example.warc");
                 System.exit(1);
                 return;
