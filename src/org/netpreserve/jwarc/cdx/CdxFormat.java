@@ -82,7 +82,7 @@ public class CdxFormat {
         return format(record, filename, position, size, null);
     }
 
-    public String format(WarcCaptureRecord record, String filename, long position, long size, String urlkey) {
+    public String format(WarcTargetRecord record, String filename, long position, long size, String urlkey) {
         StringBuilder builder = new StringBuilder();
         for (byte fieldName : fieldNames) {
             if (builder.length() > 0) builder.append(' ');
@@ -98,7 +98,7 @@ public class CdxFormat {
         return builder.toString();
     }
 
-    private void formatJsonBlock(WarcCaptureRecord record, String filename, long position, long size, StringBuilder out) {
+    private void formatJsonBlock(WarcTargetRecord record, String filename, long position, long size, StringBuilder out) {
         if (jsonFields == null || jsonFields.length == 0) return;
         out.append(" {");
         boolean first = true;
@@ -188,7 +188,7 @@ public class CdxFormat {
         }
     }
 
-    private static int statusCode(WarcCaptureRecord record) throws IOException {
+    private static int statusCode(WarcTargetRecord record) throws IOException {
         if (record instanceof WarcResponse || record instanceof WarcRevisit) {
             if (record instanceof WarcRevisit) {
                 return ((WarcRevisit) record).http().status();
@@ -201,7 +201,7 @@ public class CdxFormat {
         return 0;
     }
 
-    String formatField(byte fieldName, WarcCaptureRecord record, String filename, long position, long size, String urlkey) throws IOException {
+    String formatField(byte fieldName, WarcTargetRecord record, String filename, long position, long size, String urlkey) throws IOException {
         switch (fieldName) {
             case CHECKSUM:
                 return record.payloadDigest()
