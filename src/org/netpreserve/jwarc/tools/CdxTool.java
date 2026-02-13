@@ -96,7 +96,7 @@ public class CdxTool {
                 case "--warc-full-path":
                     fullFilePath = true;
                     break;
-                case "-rt":
+                case "-t":
                 case "--record-type":
                     String typesArg = args[++i];
                     List<String> recordTypes = Arrays.asList(typesArg.split(","));
