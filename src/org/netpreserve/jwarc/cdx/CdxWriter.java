@@ -141,12 +141,13 @@ public class CdxWriter implements Closeable {
                     // Handle WarcCaptureRecord types (response, resource, revisit, request)
                     if (record instanceof WarcCaptureRecord) {
                         WarcCaptureRecord capture = (WarcCaptureRecord) record;
-                        URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
 
-                        // Ensure HTTP header is parsed for revisit records
-                        if (record instanceof WarcRevisit && record.contentType().base().equals(MediaType.HTTP)) {
-                            ((WarcRevisit) record).http();
+                        if (capture instanceof WarcRevisit && capture.contentType().base().equals(MediaType.HTTP)) {
+                            ((WarcRevisit) capture).http();
+                        } else {
+                            capture.payload();
                         }
+                        URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
 
                         // Advance to next record to calculate length
                         record = reader.next().orElse(null);
@@ -175,6 +176,7 @@ public class CdxWriter implements Closeable {
                     // Handle WarcConversion (from WET files) and other WarcTargetRecord types
                     else if (record instanceof WarcTargetRecord) {
                         WarcTargetRecord targetRecord = (WarcTargetRecord) record;
+                        targetRecord.payload();
 
                         // Advance to next record to calculate length
                         record = reader.next().orElse(null);
