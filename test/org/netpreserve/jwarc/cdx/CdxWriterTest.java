@@ -6,6 +6,7 @@ import org.junit.rules.TemporaryFolder;
 import org.netpreserve.jwarc.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -188,4 +189,89 @@ public class CdxWriterTest {
 
     }
 
+    @Test
+    public void testFilteringRequestAndResponse_shouldWork() throws Exception {
+        Path testWarcFile = temporaryFolder.newFile().toPath().toAbsolutePath();
+
+        try (WarcWriter warcWriter = new WarcWriter(Files.newByteChannel(testWarcFile, CREATE, WRITE))) {
+            HttpRequest httpRequest = new HttpRequest.Builder("GET", "http://example.org/")
+                    .build();
+
+            warcWriter.write(new WarcRequest.Builder("http://example.org/")
+                    .date(Instant.parse("2022-03-02T21:44:34Z"))
+                    .body(httpRequest)
+                    .payloadDigest("sha256", "b04af472c47a8b1b5059b3404caac0e1bfb5a3c07b329be66f65cfab5ee8d3faaa")
+                    .build());
+
+            HttpResponse httpResponse = new HttpResponse.Builder(200, "OK")
+                    .body(MediaType.HTML, new byte[0])
+                    .build();
+
+            warcWriter.write(new WarcResponse.Builder("http://example.org/")
+                    .date(Instant.parse("2022-03-01T12:45:34Z"))
+                    .body(httpResponse)
+                    .payloadDigest("sha256", "b04af472c47a8b1b5059b3404caac0e1bfb5a3c07b329be66f65cfab5ee8d3f3")
+                    .build());
+        }
+
+        StringWriter cdxBuffer = new StringWriter();
+        try (CdxWriter cdxWriter = new CdxWriter(cdxBuffer)) {
+            cdxWriter.setRecordFilter(record -> record.type().equals("request") || record.type().equals("response"));
+            cdxWriter.setFormat(CdxFormat.CDXJ);
+            cdxWriter.setSort(true);
+            cdxWriter.process(Collections.singletonList(testWarcFile), true);
+        }
+
+        List<String> splits = cdxBuffer.toString().isEmpty()
+            ? Collections.emptyList()
+            : Arrays.asList(cdxBuffer.toString().split("\n"));
+
+        assertThat(splits, hasSize(2));
+        assertThat(splits.get(0), not(emptyString()));
+        assertThat(splits.get(0), startsWith("org,example)/ 20220301124534"));
+        assertThat(splits.get(0), containsString("http://example.org/"));
+        assertThat(splits.get(0), containsString("\"status\": \"200\""));
+        assertThat(splits.get(1), startsWith("org,example)/ 20220302214434"));
+        assertThat(splits.get(1), containsString("http://example.org/"));
+        assertThat(splits.get(1), not(containsString("\"status\": \"200\"")));
+
+
+    }
+
+    @Test
+    public void testFilteringResource_shouldWork() throws Exception {
+        Path testWarcFile = temporaryFolder.newFile().toPath().toAbsolutePath();
+
+        try (WarcWriter warcWriter = new WarcWriter(Files.newByteChannel(testWarcFile, CREATE, WRITE))) {
+            // Add a Resource record
+            warcWriter.write(new WarcResource.Builder(URI.create("http://example.org/resource.png"))
+                .date(Instant.parse("2022-03-02T21:44:34Z"))
+                .body(MediaType.parse("image/png"), new byte[0])
+                .payloadDigest("sha256", "b04af472c47a8b1b5059b3404caac0e1bfb5a3c07b329be66f65cfab5ee8d3faaa")
+                .build());
+
+            // Add a Metadata record
+            warcWriter.write(new WarcMetadata.Builder()
+                .targetURI(URI.create("http://example.org/metadata"))
+                .date(Instant.parse("2022-03-01T12:44:34Z"))
+                .body(MediaType.parse("application/warc-fields"), "foo: bar".getBytes())
+                .build());
+        }
+
+        StringWriter cdxBuffer = new StringWriter();
+        try (CdxWriter cdxWriter = new CdxWriter(cdxBuffer)) {
+            cdxWriter.setRecordFilter(record -> record.type().equals("resource"));
+            cdxWriter.setFormat(CdxFormat.CDXJ);
+            cdxWriter.setSort(true);
+            cdxWriter.process(Collections.singletonList(testWarcFile), true);
+        }
+
+        List<String> splits = cdxBuffer.toString().isEmpty()
+            ? Collections.emptyList()
+            : Arrays.asList(cdxBuffer.toString().split("\n"));
+
+        assertThat(splits, hasSize(1));
+        assertThat(splits.get(0), containsString("http://example.org/resource.png"));
+        assertThat(splits.get(0), containsString("\"mime\": \"image/png\""));
+    }
 }
