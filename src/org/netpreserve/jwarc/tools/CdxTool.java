@@ -68,7 +68,7 @@ public class CdxTool {
                     System.out.println("  -p, --post-append        Append the request body to the urlkey field");
                     System.out.println("      --revisits-excluded  Don't index revisit records");
                     System.out.println("  -w, --warc-full-path     Use absolute paths for the filename field");
-                    System.out.println("  -rt, --record-type       Filter by record type");
+                    System.out.println("  -t, --record-type       Filter by record type");
                     return;
                 case "--no-header":
                     printHeader = false;
