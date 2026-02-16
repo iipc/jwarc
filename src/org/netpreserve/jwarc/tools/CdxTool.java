@@ -99,7 +99,10 @@ public class CdxTool {
                 case "-t":
                 case "--record-type":
                     String typesArg = args[++i];
-                    List<String> recordTypes = Arrays.asList(typesArg.split(","));
+                    List<String> recordTypes = Arrays.stream(typesArg.split(","))
+                                .map(String::trim)
+                                .map(String::toLowerCase)
+                                .collect(java.util.stream.Collectors.toList());
                     filter = record -> recordTypes.contains(record.type().toLowerCase());
                     break;
                 default:
