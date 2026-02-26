@@ -68,6 +68,7 @@ public class CdxTool {
                     System.out.println("  -p, --post-append        Append the request body to the urlkey field");
                     System.out.println("      --revisits-excluded  Don't index revisit records");
                     System.out.println("  -w, --warc-full-path     Use absolute paths for the filename field");
+                    System.out.println("  -t, --record-type       Filter by record type");
                     return;
                 case "--no-header":
                     printHeader = false;
@@ -94,7 +95,16 @@ public class CdxTool {
                 case "-w":
                 case "--warc-full-path":
                     fullFilePath = true;
-                    break;                         
+                    break;
+                case "-t":
+                case "--record-type":
+                    String typesArg = args[++i];
+                    List<String> recordTypes = Arrays.stream(typesArg.split(","))
+                                .map(String::trim)
+                                .map(String::toLowerCase)
+                                .collect(java.util.stream.Collectors.toList());
+                    filter = record -> recordTypes.contains(record.type().toLowerCase());
+                    break;
                 default:
                     System.err.println("Unrecognized option: " + args[i]);
                     System.err.println("Usage: jwarc cdx [--format LEGEND] warc-files...");

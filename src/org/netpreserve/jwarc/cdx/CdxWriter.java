@@ -44,7 +44,7 @@ public class CdxWriter implements Closeable {
     /**
      * Writes a CDX record.
      */
-    public void write(WarcCaptureRecord capture, String filename, long position, long length) throws IOException {
+    public void write(WarcTargetRecord capture, String filename, long position, long length) throws IOException {
         write(capture, filename, position, length, null);
     }
 
@@ -52,7 +52,7 @@ public class CdxWriter implements Closeable {
      * Writes a CDX record with an encoded request body appended to the urlkey field.
      * @see CdxRequestEncoder#encode(HttpRequest)
      */
-    public void write(WarcCaptureRecord capture, String filename,
+    public void write(WarcTargetRecord capture, String filename,
                        long position, long length, String encodedRequest) throws IOException {
         if (recordFilter != null && !recordFilter.test(capture)) return;
         String urlKey = null;
@@ -93,46 +93,106 @@ public class CdxWriter implements Closeable {
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
             try {
-                if (((record instanceof WarcResponse || record instanceof WarcResource) &&
-                        ((WarcCaptureRecord) record).payload().isPresent()
-                        || record instanceof WarcRevisit)) {
-                    long position = reader.position();
-                    WarcCaptureRecord capture = (WarcCaptureRecord) record;
-                    URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
+                if (recordFilter == null) {
+                    if (((record instanceof WarcResponse || record instanceof WarcResource) &&
+                            ((WarcCaptureRecord) record).payload().isPresent()
+                            || record instanceof WarcRevisit)) {
+                        long position = reader.position();
+                        WarcCaptureRecord capture = (WarcCaptureRecord) record;
+                        URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
 
-                    // Ensure the HTTP header is parsed before advancing to the next record.
-                    // Calling .payload() will do this for response records but as revisits don't have a payload
-                    // we need to do it ourselves.
-                    if (record instanceof WarcRevisit && record.contentType().base().equals(MediaType.HTTP)) {
-                        ((WarcRevisit) record).http();
-                    }
-
-                    // advance to the next record, so we can calculate the length
-                    record = reader.next().orElse(null);
-                    long length = reader.position() - position;
-
-                    // skip records without a date, this often occurs in old ARC files with a corrupt date field
-                    if (!capture.headers().first("WARC-Date").isPresent()) {
-                        emitWarning(filename, position, "Skipping record due to missing or invalid date");
-                        continue;
-                    }
-
-                    String encodedRequest = null;
-                    if (postAppend) {
-                        // check for a corresponding request record
-                        while (encodedRequest == null && record instanceof WarcCaptureRecord
-                                && ((WarcCaptureRecord) record).concurrentTo().contains(id)) {
-                            if (record instanceof WarcRequest) {
-                                HttpRequest httpRequest = ((WarcRequest) record).http();
-                                encodedRequest = CdxRequestEncoder.encode(httpRequest);
-                            }
-                            record = reader.next().orElse(null);
+                        // Ensure the HTTP header is parsed before advancing to the next record.
+                        // Calling .payload() will do this for response records but as revisits don't have a payload
+                        // we need to do it ourselves.
+                        if (record instanceof WarcRevisit && record.contentType().base().equals(MediaType.HTTP)) {
+                            ((WarcRevisit) record).http();
                         }
-                    }
 
-                    write(capture, filename, position, length, encodedRequest);
+                        // advance to the next record, so we can calculate the length
+                        record = reader.next().orElse(null);
+                        long length = reader.position() - position;
+
+                        // skip records without a date, this often occurs in old ARC files with a corrupt date field
+                        if (!capture.headers().first("WARC-Date").isPresent()) {
+                            emitWarning(filename, position, "Skipping record due to missing or invalid date");
+                            continue;
+                        }
+
+                        String encodedRequest = null;
+                        if (postAppend) {
+                            // check for a corresponding request record
+                            while (encodedRequest == null && record instanceof WarcCaptureRecord
+                                    && ((WarcCaptureRecord) record).concurrentTo().contains(id)) {
+                                if (record instanceof WarcRequest) {
+                                    HttpRequest httpRequest = ((WarcRequest) record).http();
+                                    encodedRequest = CdxRequestEncoder.encode(httpRequest);
+                                }
+                                record = reader.next().orElse(null);
+                            }
+                        }
+
+                        write(capture, filename, position, length, encodedRequest);
+                    } else {
+                        record = reader.next().orElse(null);
+                    }
                 } else {
-                    record = reader.next().orElse(null);
+                    long position = reader.position();
+
+                    // Handle WarcCaptureRecord types (response, resource, revisit, request)
+                    if (record instanceof WarcCaptureRecord) {
+                        WarcCaptureRecord capture = (WarcCaptureRecord) record;
+
+                        if (capture instanceof WarcRevisit && capture.contentType().base().equals(MediaType.HTTP)) {
+                            ((WarcRevisit) capture).http();
+                        } else {
+                            capture.payload();
+                        }
+                        URI id = record.version().getProtocol().equals("ARC") ? null : record.id();
+
+                        // Advance to next record to calculate length
+                        record = reader.next().orElse(null);
+                        long length = reader.position() - position;
+
+                        // Skip records without a date
+                        if (!capture.headers().first("WARC-Date").isPresent()) {
+                            emitWarning(filename, position, "Skipping record due to missing or invalid date");
+                            continue;
+                        }
+
+                        String encodedRequest = null;
+                        if (postAppend) {
+                            while (encodedRequest == null && record instanceof WarcCaptureRecord
+                                    && ((WarcCaptureRecord) record).concurrentTo().contains(id)) {
+                                if (record instanceof WarcRequest) {
+                                    HttpRequest httpRequest = ((WarcRequest) record).http();
+                                    encodedRequest = CdxRequestEncoder.encode(httpRequest);
+                                }
+                                record = reader.next().orElse(null);
+                            }
+                        }
+
+                        write(capture, filename, position, length, encodedRequest);
+                    }
+                    // Handle WarcConversion (from WET files) and other WarcTargetRecord types
+                    else if (record instanceof WarcTargetRecord) {
+                        WarcTargetRecord targetRecord = (WarcTargetRecord) record;
+                        targetRecord.payload();
+
+                        // Advance to next record to calculate length
+                        record = reader.next().orElse(null);
+                        long length = reader.position() - position;
+
+                        // Skip records without a date
+                        if (!targetRecord.headers().first("WARC-Date").isPresent()) {
+                            emitWarning(filename, position, "Skipping record due to missing or invalid date");
+                            continue;
+                        }
+
+                        write(targetRecord, filename, position, length);
+                    } else {
+                        // Skip non-target records (like warcinfo)
+                        record = reader.next().orElse(null);
+                    }
                 }
             } catch (ParsingException e) {
                 emitWarning(filename, reader.position(), "ParsingException: " + e.getBaseMessage());
