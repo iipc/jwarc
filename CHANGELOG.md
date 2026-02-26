@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.35.0 (2026-02-26)
+
+### New features
+
+- CdxWriter: additional record types (e.g. conversion) can now be included by setting an appropriate filter [#105](https://github.com/iipc/jwarc/pull/105)
+- CdxTool: `--record-type` option [#105](https://github.com/iipc/jwarc/pull/105)
+
+### Fixed
+
+- Added command-line help to all tools [#103](https://github.com/iipc/jwarc/pull/103)
+
 ## 0.34.0 (2026-01-15)
 
 ### New features
