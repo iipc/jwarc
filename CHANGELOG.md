@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.0 (2026-04-07)
+
+### Fixed
+
+- Made zstd-jni dependency optional. It was included as a required dependency in 0.33.0 by mistake.
+
 ## 0.35.0 (2026-02-26)
 
 ### New features
