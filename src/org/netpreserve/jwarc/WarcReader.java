@@ -92,8 +92,10 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
                 this.channel = (ReadableByteChannel) Class.forName("org.netpreserve.jwarc.ZstdDecompressingChannel")
                         .getConstructor(ReadableByteChannel.class, ByteBuffer.class)
                         .newInstance(channel, buffer);
+            } catch (ClassNotFoundException e) {
+                throw new IOException("ZStandard decoder not found, please install com.github.luben:zstd-jni", e);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                     NoSuchMethodException | ClassNotFoundException e) {
+                     NoSuchMethodException e) {
                 throw new IOException(e);
             }
             this.buffer = ByteBuffer.allocate(8192);
