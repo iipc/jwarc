@@ -51,9 +51,11 @@ public class ValidateTool {
         public void log(String form) {
             sb.ifPresent(s -> s.append("    ").append(form).append('\n'));
         }
+
         public void log(String form, Object... args) {
             sb.ifPresent(s -> s.append("    ").append(String.format(form, args)).append('\n'));
         }
+
         public void error(String form, Object... args) {
             if (sb.isPresent()) {
                 log("ERROR: " + form, args);
@@ -61,6 +63,7 @@ public class ValidateTool {
                 System.err.println(getPrefix() + "ERROR: " + String.format(form, args));
             }
         }
+
         public void exception(String message, Exception e) {
             if (sb.isPresent()) {
                 log("ERROR: %s: %s", message, e);
@@ -68,6 +71,7 @@ public class ValidateTool {
                 System.err.println(getPrefix() + "ERROR: " + message + ": " + e);
             }
         }
+
         public String print() {
             String res = "";
             if (sb.isPresent()) {
@@ -87,6 +91,7 @@ public class ValidateTool {
     private Logger logger;
     private boolean verbose;
     private HeaderValidator headerValidator;
+    private boolean validateRecordAtATime = true;
 
     public ValidateTool(boolean verbose) {
         this.verbose = verbose;
@@ -274,6 +279,26 @@ public class ValidateTool {
 
     boolean validate(Path warcFile) {
         logger.setCurrentFilename(warcFile.getFileName().toString());
+
+        if (this.validateRecordAtATime) {
+            int n = 0;
+            try {
+                n = RecordAtATimeValidator.getWarcCompressionInformation(warcFile);
+            } catch (IOException e) {
+                return false;
+            }
+            if (n == 0) {
+                System.err.println("No gzip members found (empty or not a gzip file).");
+                return false;
+            } else if (n == 1) {
+                System.err.println("Single-member gzip (likely whole-file gzip). ");
+                return false;
+            } else {
+                System.err.println("Concatenated multi-member gzip (record-at-a-time compressed).");
+                return true;
+            }
+        }
+
         try (WarcReader reader = new WarcReader(warcFile)) {
             reader.calculateBlockDigest();
             if (verbose)
@@ -299,6 +324,7 @@ public class ValidateTool {
         System.err.println("Options:");
         System.err.println("");
         System.err.println(" --no-header-validation\tskips checking headers against WARC standard rules");
+        System.err.println(" --no-gzip-validation\tskips checking record-at-a-time compression");
         System.err.println(" --forbid-extensions\tdisallows non-standard WARC header fields and values");
         System.err.println(" -j / --threads\tmaximum number of threads to use (default: " + Runtime.getRuntime().availableProcessors() + ")");
         System.err.println(" -h / --help\tshow usage message and exit");
@@ -314,6 +340,7 @@ public class ValidateTool {
         int res = 0;
         boolean verbose = false;
         boolean headerValidation = true;
+        boolean gzipValidation = true;
         boolean forbidExtensions = false;
         int threads = Runtime.getRuntime().availableProcessors();
         List<Path> warcFiles = new ArrayList<>();
@@ -323,6 +350,9 @@ public class ValidateTool {
             switch (args[i]) {
                 case "--no-header-validation":
                     headerValidation = false;
+                    break;
+                case "--no-gzip-validation":
+                    gzipValidation = false;
                     break;
                 case "--forbid-extensions":
                     forbidExtensions = true;
@@ -348,6 +378,8 @@ public class ValidateTool {
         if (headerValidation) {
             validator.headerValidator = HeaderValidator.warc_1_1(forbidExtensions);
         }
+
+        validator.validateRecordAtATime = gzipValidation;
 
         ForkJoinPool pool = new ForkJoinPool(threads);
         try {
