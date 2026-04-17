@@ -51,11 +51,9 @@ public class ValidateTool {
         public void log(String form) {
             sb.ifPresent(s -> s.append("    ").append(form).append('\n'));
         }
-
         public void log(String form, Object... args) {
             sb.ifPresent(s -> s.append("    ").append(String.format(form, args)).append('\n'));
         }
-
         public void error(String form, Object... args) {
             if (sb.isPresent()) {
                 log("ERROR: " + form, args);
@@ -63,7 +61,6 @@ public class ValidateTool {
                 System.err.println(getPrefix() + "ERROR: " + String.format(form, args));
             }
         }
-
         public void exception(String message, Exception e) {
             if (sb.isPresent()) {
                 log("ERROR: %s: %s", message, e);
@@ -71,7 +68,6 @@ public class ValidateTool {
                 System.err.println(getPrefix() + "ERROR: " + message + ": " + e);
             }
         }
-
         public String print() {
             String res = "";
             if (sb.isPresent()) {
@@ -193,7 +189,7 @@ public class ValidateTool {
         return valid;
     }
 
-    private boolean validate(WarcReader reader, long[] recordCount) throws IOException {
+    private boolean validate(WarcReader reader, AtomicLong recordCount) throws IOException {
         boolean warcValidates = true;
         AtomicBoolean sawWarning = new AtomicBoolean(false);
         reader.onWarning(message -> {
@@ -202,7 +198,7 @@ public class ValidateTool {
         });
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
-            recordCount[0]++;
+            recordCount.incrementAndGet();
             boolean valid = true;
 
             if (headerValidator != null) {
@@ -285,20 +281,21 @@ public class ValidateTool {
             reader.calculateBlockDigest();
             if (verbose)
                 System.out.println("Validating " + warcFile);
-            long[] recordCount = {0};
+            AtomicLong recordCount = new AtomicLong();
             boolean valid = validate(reader, recordCount);
 
-            if (this.validateRecordAtATime && reader.compression() == WarcCompression.GZIP
-                    && reader.channel() instanceof GunzipChannel) {
-                long members = ((GunzipChannel) reader.channel()).memberCount();
+            if (this.validateRecordAtATime && reader.compression() == WarcCompression.GZIP) {
+                GunzipChannel gz = (GunzipChannel) reader.channel();
+                long members = gz.memberCount();
                 long misaligned = reader.misalignedRecords();
-                if (members != recordCount[0]) {
+                long records = recordCount.get();
+                if (members != records) {
                     System.err.println(warcFile + ": not record-at-a-time compressed — "
-                            + recordCount[0] + " WARC records in " + members + " gzip members");
+                            + records + " WARC records in " + members + " gzip members");
                     valid = false;
                 } else if (misaligned > 0) {
                     System.err.println(warcFile + ": not record-at-a-time compressed — "
-                            + misaligned + " of " + recordCount[0]
+                            + misaligned + " of " + records
                             + " records do not start at a gzip member boundary");
                     valid = false;
                 }
@@ -325,7 +322,7 @@ public class ValidateTool {
         System.err.println("Options:");
         System.err.println("");
         System.err.println(" --no-header-validation\tskips checking headers against WARC standard rules");
-        System.err.println(" --no-gzip-validation\tskips checking record-at-a-time compression");
+        System.err.println(" --no-gzip-validation\tskips checking gzip record-at-a-time compression");
         System.err.println(" --forbid-extensions\tdisallows non-standard WARC header fields and values");
         System.err.println(" -j / --threads\tmaximum number of threads to use (default: " + Runtime.getRuntime().availableProcessors() + ")");
         System.err.println(" -h / --help\tshow usage message and exit");
