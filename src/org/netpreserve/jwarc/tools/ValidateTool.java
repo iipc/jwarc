@@ -193,7 +193,7 @@ public class ValidateTool {
         return valid;
     }
 
-    private boolean validate(WarcReader reader) throws IOException {
+    private boolean validate(WarcReader reader, long[] recordCount) throws IOException {
         boolean warcValidates = true;
         AtomicBoolean sawWarning = new AtomicBoolean(false);
         reader.onWarning(message -> {
@@ -202,6 +202,7 @@ public class ValidateTool {
         });
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
+            recordCount[0]++;
             boolean valid = true;
 
             if (headerValidator != null) {
@@ -280,30 +281,30 @@ public class ValidateTool {
     boolean validate(Path warcFile) {
         logger.setCurrentFilename(warcFile.getFileName().toString());
 
-        if (this.validateRecordAtATime) {
-            int n = 0;
-            try {
-                n = RecordAtATimeValidator.getWarcCompressionInformation(warcFile);
-            } catch (IOException e) {
-                return false;
-            }
-            if (n == 0) {
-                System.err.println("No gzip members found (empty or not a gzip file).");
-                return false;
-            } else if (n == 1) {
-                System.err.println("Single-member gzip (likely whole-file gzip). ");
-                return false;
-            } else {
-                System.err.println("Concatenated multi-member gzip (record-at-a-time compressed).");
-                return true;
-            }
-        }
-
         try (WarcReader reader = new WarcReader(warcFile)) {
             reader.calculateBlockDigest();
             if (verbose)
                 System.out.println("Validating " + warcFile);
-            if (!validate(reader)) {
+            long[] recordCount = {0};
+            boolean valid = validate(reader, recordCount);
+
+            if (this.validateRecordAtATime && reader.compression() == WarcCompression.GZIP
+                    && reader.channel() instanceof GunzipChannel) {
+                long members = ((GunzipChannel) reader.channel()).memberCount();
+                long misaligned = reader.misalignedRecords();
+                if (members != recordCount[0]) {
+                    System.err.println(warcFile + ": not record-at-a-time compressed — "
+                            + recordCount[0] + " WARC records in " + members + " gzip members");
+                    valid = false;
+                } else if (misaligned > 0) {
+                    System.err.println(warcFile + ": not record-at-a-time compressed — "
+                            + misaligned + " of " + recordCount[0]
+                            + " records do not start at a gzip member boundary");
+                    valid = false;
+                }
+            }
+
+            if (!valid) {
                 System.err.println("Failed to validate " + warcFile);
                 return false;
             }

@@ -41,6 +41,7 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
     private boolean blockDigestCalculation = false;
     private Consumer<String> warningHandler;
     private String filename;
+    private long misalignedRecords;
 
     /**
      * Create WarcReader with user-provided buffer. Data contained in the buffer is
@@ -177,6 +178,10 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         }
 
         parser.reset();
+        boolean atGzipBoundary = true;
+        if (channel instanceof GunzipChannel) {
+            atGzipBoundary = !buffer.hasRemaining() && ((GunzipChannel) channel).atMemberBoundary();
+        }
         try {
             if (!parser.parse(channel, buffer)) {
                 return Optional.empty();
@@ -184,6 +189,9 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
         } catch (ParsingException e) {
             e.recordSource = new RecordSource(filename, position);
             throw e;
+        }
+        if (!atGzipBoundary) {
+            misalignedRecords++;
         }
         headerLength = parser.position();
         MessageHeaders headers = parser.headers();
@@ -338,6 +346,23 @@ public class WarcReader implements Iterable<WarcRecord>, Closeable {
      */
     public WarcCompression compression() {
         return compression;
+    }
+
+    /**
+     * The channel the reader is reading from. For compressed WARC files this is the
+     * decompressing wrapper channel (e.g. {@link GunzipChannel}), not the underlying file channel.
+     */
+    public ReadableByteChannel channel() {
+        return channel;
+    }
+
+    /**
+     * Number of records whose first byte did not start at a gzip member boundary.
+     * In a correctly record-at-a-time compressed WARC this is always zero.
+     * Only meaningful for gzip-compressed WARCs.
+     */
+    public long misalignedRecords() {
+        return misalignedRecords;
     }
 
     /**
