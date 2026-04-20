@@ -87,6 +87,7 @@ public class ValidateTool {
     private Logger logger;
     private boolean verbose;
     private HeaderValidator headerValidator;
+    private boolean validateRecordAtATime = true;
 
     public ValidateTool(boolean verbose) {
         this.verbose = verbose;
@@ -188,7 +189,7 @@ public class ValidateTool {
         return valid;
     }
 
-    private boolean validate(WarcReader reader) throws IOException {
+    private boolean validate(WarcReader reader, AtomicLong recordCount) throws IOException {
         boolean warcValidates = true;
         AtomicBoolean sawWarning = new AtomicBoolean(false);
         reader.onWarning(message -> {
@@ -197,6 +198,7 @@ public class ValidateTool {
         });
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
+            recordCount.incrementAndGet();
             boolean valid = true;
 
             if (headerValidator != null) {
@@ -274,11 +276,32 @@ public class ValidateTool {
 
     boolean validate(Path warcFile) {
         logger.setCurrentFilename(warcFile.getFileName().toString());
+
         try (WarcReader reader = new WarcReader(warcFile)) {
             reader.calculateBlockDigest();
             if (verbose)
                 System.out.println("Validating " + warcFile);
-            if (!validate(reader)) {
+            AtomicLong recordCount = new AtomicLong();
+            boolean valid = validate(reader, recordCount);
+
+            if (this.validateRecordAtATime && reader.compression() == WarcCompression.GZIP) {
+                GunzipChannel gz = (GunzipChannel) reader.channel();
+                long members = gz.memberCount();
+                long misaligned = reader.misalignedRecords();
+                long records = recordCount.get();
+                if (members != records) {
+                    System.err.println(warcFile + ": not record-at-a-time compressed - "
+                            + records + " WARC records in " + members + " gzip members");
+                    valid = false;
+                } else if (misaligned > 0) {
+                    System.err.println(warcFile + ": not record-at-a-time compressed - "
+                            + misaligned + " of " + records
+                            + " records do not start at a gzip member boundary");
+                    valid = false;
+                }
+            }
+
+            if (!valid) {
                 System.err.println("Failed to validate " + warcFile);
                 return false;
             }
@@ -299,6 +322,7 @@ public class ValidateTool {
         System.err.println("Options:");
         System.err.println("");
         System.err.println(" --no-header-validation\tskips checking headers against WARC standard rules");
+        System.err.println(" --no-gzip-validation\tskips checking gzip record-at-a-time compression");
         System.err.println(" --forbid-extensions\tdisallows non-standard WARC header fields and values");
         System.err.println(" -j / --threads\tmaximum number of threads to use (default: " + Runtime.getRuntime().availableProcessors() + ")");
         System.err.println(" -h / --help\tshow usage message and exit");
@@ -314,6 +338,7 @@ public class ValidateTool {
         int res = 0;
         boolean verbose = false;
         boolean headerValidation = true;
+        boolean gzipValidation = true;
         boolean forbidExtensions = false;
         int threads = Runtime.getRuntime().availableProcessors();
         List<Path> warcFiles = new ArrayList<>();
@@ -323,6 +348,9 @@ public class ValidateTool {
             switch (args[i]) {
                 case "--no-header-validation":
                     headerValidation = false;
+                    break;
+                case "--no-gzip-validation":
+                    gzipValidation = false;
                     break;
                 case "--forbid-extensions":
                     forbidExtensions = true;
@@ -348,6 +376,8 @@ public class ValidateTool {
         if (headerValidation) {
             validator.headerValidator = HeaderValidator.warc_1_1(forbidExtensions);
         }
+
+        validator.validateRecordAtATime = gzipValidation;
 
         ForkJoinPool pool = new ForkJoinPool(threads);
         try {
