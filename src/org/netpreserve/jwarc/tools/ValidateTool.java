@@ -290,11 +290,11 @@ public class ValidateTool {
                 long misaligned = reader.misalignedRecords();
                 long records = recordCount.get();
                 if (members != records) {
-                    System.err.println(warcFile + ": not record-at-a-time compressed — "
+                    System.err.println(warcFile + ": not record-at-a-time compressed - "
                             + records + " WARC records in " + members + " gzip members");
                     valid = false;
                 } else if (misaligned > 0) {
-                    System.err.println(warcFile + ": not record-at-a-time compressed — "
+                    System.err.println(warcFile + ": not record-at-a-time compressed - "
                             + misaligned + " of " + records
                             + " records do not start at a gzip member boundary");
                     valid = false;
