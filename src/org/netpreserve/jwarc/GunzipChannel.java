@@ -15,7 +15,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipException;
 
-class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
+public class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
     private static final int FHCRC = 2;
     private static final int FEXTRA = 4;
     private static final int FNAME = 8;
@@ -27,6 +27,7 @@ class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
     private final ByteBuffer buffer;
     private final Inflater inflater = new Inflater(true);
     private long inputPosition;
+    private long memberCount;
     private boolean seenHeader;
     private CRC32 crc; //= new CRC32();
 
@@ -168,6 +169,7 @@ class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
             int crc16 = buffer.getShort();
             inputPosition += 2;
         }
+        memberCount++;
         return true;
     }
 
@@ -195,11 +197,25 @@ class GunzipChannel implements ReadableByteChannel, DecompressingChannel {
         return inputPosition;
     }
 
+    public long memberCount() {
+        return memberCount;
+    }
+
+    /**
+     * Returns true when the channel is positioned exactly at a gzip member boundary:
+     * either before any member has been read, or right after the previous member's
+     * trailer was consumed. The next read() call in this state will parse a new gzip header.
+     */
+    public boolean atMemberBoundary() {
+        return !seenHeader;
+    }
+
     public void reset() {
         inflater.reset();
         buffer.clear();
         buffer.flip();
         inputPosition = 0;
+        memberCount = 0;
         seenHeader = false;
     }
 }
