@@ -85,7 +85,8 @@ public class SavebackTool {
         Path temp = Files.createTempFile("jwarc-saveback", ".tmp");
         Instant now = Instant.now();
         HttpURLConnection connection = (HttpURLConnection) new URL(waybackUrl).openConnection();
-        try (InputStream bodyStream = connection.getInputStream();
+        int status = connection.getResponseCode();
+        try (InputStream bodyStream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
              SeekableByteChannel channel = Files.newByteChannel(temp, DELETE_ON_CLOSE, WRITE, READ, TRUNCATE_EXISTING)) {
             IOUtils.copy(bodyStream, Channels.newOutputStream(channel));
             channel.position(0);
@@ -102,7 +103,7 @@ public class SavebackTool {
                 xArchiveSrc = "https://archive.org/download/" + xArchiveSrc;
             }
 
-            HttpResponse.Builder httpBuilder = new HttpResponse.Builder(connection.getResponseCode(), connection.getResponseMessage());
+            HttpResponse.Builder httpBuilder = new HttpResponse.Builder(status, connection.getResponseMessage());
             for (int i = 1; connection.getHeaderFieldKey(i) != null; i++) {
                 String key = connection.getHeaderFieldKey(i);
                 String value = connection.getHeaderField(i);
