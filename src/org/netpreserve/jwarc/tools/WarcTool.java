@@ -39,6 +39,9 @@ public class WarcTool {
             case "ls":
                 ListTool.main(rest);
                 break;
+            case "pack":
+                PackTool.main(rest);
+                break;
             case "record":
                 RecordTool.main(rest);
                 break;
@@ -88,6 +91,7 @@ public class WarcTool {
         System.out.println("  fetch       Download a URL recording the request and response");
         System.out.println("  filter      Copy records that match a given filter expression");
         System.out.println("  ls          List records in WARC file(s)");
+        System.out.println("  pack        Pack local files as WARC resource records");
         System.out.println("  record      Fetch a page and subresources using headless Chrome");
         System.out.println("  recorder    Run a recording proxy");
         System.out.println("  saveback    Saves wayback-style replayed pages as WARC records");
