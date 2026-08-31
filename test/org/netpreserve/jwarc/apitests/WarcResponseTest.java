@@ -94,6 +94,18 @@ public class WarcResponseTest {
     }
 
     @Test
+    public void payloadTypeHeaderShouldExposeMissingHttpContentTypeWithoutChangingDefault() throws IOException {
+        HttpResponse http = new HttpResponse.Builder(200, "OK").build();
+        WarcResponse response = new WarcResponse.Builder("http://example.org/")
+                .body(http)
+                .build();
+        WarcPayload payload = response.payload().get();
+
+        assertEquals(Optional.empty(), payload.typeHeader());
+        assertEquals(MediaType.OCTET_STREAM, payload.type());
+    }
+
+    @Test
     public void nullTruncation() {
         WarcResponse response = new WarcResponse.Builder(URI.create("http://example.org/"))
                 .truncated(WarcTruncationReason.DISCONNECT)

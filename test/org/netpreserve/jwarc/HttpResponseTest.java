@@ -5,11 +5,31 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
+import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 
 public class HttpResponseTest {
+    @Test
+    public void contentTypeHeaderShouldExposeMissingHeaderWithoutChangingDefault() {
+        HttpResponse response = new HttpResponse.Builder(200, "OK").build();
+
+        assertEquals(Optional.empty(), response.contentTypeHeader());
+        assertEquals(MediaType.OCTET_STREAM, response.contentType());
+    }
+
+    @Test
+    public void contentTypeHeaderShouldReturnParsedHeader() {
+        MediaType contentType = MediaType.parse("text/html; charset=UTF-8");
+        HttpResponse response = new HttpResponse.Builder(200, "OK")
+                .setHeader("Content-Type", contentType.toString())
+                .build();
+
+        assertEquals(Optional.of(contentType), response.contentTypeHeader());
+        assertEquals(contentType, response.contentType());
+    }
+
     @Test
     public void serializeHeaderShouldPreserveExactly() throws IOException {
         String header = "HTTP/1.0 404 Not Found\r\n" +

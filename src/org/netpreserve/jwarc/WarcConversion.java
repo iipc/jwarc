@@ -22,6 +22,11 @@ public class WarcConversion extends WarcTargetRecord {
             }
 
             @Override
+            public Optional<MediaType> typeHeader() {
+                return WarcConversion.this.contentTypeHeader();
+            }
+
+            @Override
             Optional<MediaType> identifiedType() {
                 return Optional.empty();
             }

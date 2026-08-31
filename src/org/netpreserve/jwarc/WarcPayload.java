@@ -20,6 +20,11 @@ public abstract class WarcPayload {
 
     public abstract MediaType type();
 
+    /**
+     * The media type specified for this payload, or empty if no content type was specified.
+     */
+    public abstract Optional<MediaType> typeHeader();
+
     abstract Optional<MediaType> identifiedType();
 
     public abstract Optional<WarcDigest> digest();
