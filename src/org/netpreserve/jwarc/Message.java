@@ -53,12 +53,19 @@ public abstract class Message {
     }
 
     /**
+     * The media type specified by the Content-Type header, or empty if the header is missing.
+     */
+    public Optional<MediaType> contentTypeHeader() {
+        return headers.first("Content-Type").map(MediaType::parseLeniently);
+    }
+
+    /**
      * The media type of the body.
      * <p>
      * Returns "application/octet-stream" if the Content-Type header is missing.
      */
     public MediaType contentType() {
-        return headers.first("Content-Type").map(MediaType::parseLeniently).orElse(MediaType.OCTET_STREAM);
+        return contentTypeHeader().orElse(MediaType.OCTET_STREAM);
     }
 
     void serializeHeaderTo(Appendable output) throws IOException {

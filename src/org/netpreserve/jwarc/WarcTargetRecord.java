@@ -81,6 +81,11 @@ public abstract class WarcTargetRecord extends WarcRecord {
             }
 
             @Override
+            public Optional<MediaType> typeHeader() {
+                return WarcTargetRecord.this.contentTypeHeader();
+            }
+
+            @Override
             Optional<MediaType> identifiedType() {
                 return Optional.empty();
             }

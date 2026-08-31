@@ -82,6 +82,11 @@ public class WarcResponse extends WarcCaptureRecord {
                 }
 
                 @Override
+                public Optional<MediaType> typeHeader() {
+                    return http.contentTypeHeader();
+                }
+
+                @Override
                 Optional<MediaType> identifiedType() {
                     return identifiedPayloadType();
                 }
@@ -97,6 +102,11 @@ public class WarcResponse extends WarcCaptureRecord {
                 @Override
                 public MediaType type() {
                     return gemini.contentType();
+                }
+
+                @Override
+                public Optional<MediaType> typeHeader() {
+                    return Optional.of(gemini.contentType());
                 }
 
                 @Override

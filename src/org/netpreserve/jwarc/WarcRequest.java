@@ -84,6 +84,11 @@ public class WarcRequest extends WarcCaptureRecord {
                 }
 
                 @Override
+                public Optional<MediaType> typeHeader() {
+                    return http.contentTypeHeader();
+                }
+
+                @Override
                 Optional<MediaType> identifiedType() {
                     return identifiedPayloadType();
                 }
