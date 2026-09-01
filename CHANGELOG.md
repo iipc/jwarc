@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.37.0 (2026-09-01)
+
+### New features
+
+- `pack` command: pack local files as WARC resource records
+- `Message.contentTypeHeader()`, `WarcPayload.typeHeader()`: returns the Content-Type header value without defaulting to `application/octet-stream` [#113](https://github.com/iipc/jwarc/pull/113)
+- ValidateTool: validate WARC compression [#107](https://github.com/iipc/jwarc/pull/107)
+
+### Fixed
+
+- SavebackTool: correctly handle HTTP error responses (status >= 400) by reading the error stream
+
 ## 0.36.0 (2026-04-07)
 
 ### Fixed
